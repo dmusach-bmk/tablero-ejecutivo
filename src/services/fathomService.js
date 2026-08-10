@@ -1,5 +1,6 @@
 // Service to handle Fathom Video Notetaker API & Transcript Processing
-// Supports Fathom API Key via Vite Proxy /api/fathom -> https://api.fathom.video
+// Official Fathom API endpoint: https://api.fathom.ai/external/v1/meetings
+// Headers: X-Api-Key and Authorization: Bearer
 
 export async function fetchFathomMeetings(apiKey, startDate = '2026-07-01') {
   if (!apiKey) return [];
@@ -10,7 +11,7 @@ export async function fetchFathomMeetings(apiKey, startDate = '2026-07-01') {
   let pageCount = 0;
 
   try {
-    while (hasMore && pageCount < 5) { // Up to 500 meetings across pages
+    while (hasMore && pageCount < 5) {
       pageCount++;
       const queryParams = new URLSearchParams();
       if (startDate) queryParams.set('created_after', `${startDate}T00:00:00Z`);
@@ -18,19 +19,20 @@ export async function fetchFathomMeetings(apiKey, startDate = '2026-07-01') {
       queryParams.set('include_transcripts', 'true');
       if (nextCursor) queryParams.set('cursor', nextCursor);
 
-      const response = await fetch(`/api/fathom/v1/meetings?${queryParams.toString()}`, {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        }
+      const headers = {
+        'X-Api-Key': apiKey,
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      };
+
+      const response = await fetch(`/api/fathom/external/v1/meetings?${queryParams.toString()}`, {
+        headers
       });
 
       if (!response.ok) {
-        // Fallback simple fetch if query params restricted
+        // Fallback without query params if strict params fail
         if (pageCount === 1) {
-          const simpleResp = await fetch('/api/fathom/v1/meetings', {
-            headers: { 'Authorization': `Bearer ${apiKey}` }
-          });
+          const simpleResp = await fetch('/api/fathom/external/v1/meetings', { headers });
           if (simpleResp.ok) {
             const simpleData = await simpleResp.json();
             const resList = simpleData.meetings || simpleData.results || (Array.isArray(simpleData) ? simpleData : []);

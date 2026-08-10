@@ -15,7 +15,7 @@ export default defineConfig({
         }
       },
       '/api/fathom': {
-        target: 'https://api.fathom.video',
+        target: 'https://api.fathom.ai',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/fathom/, '')
       }
