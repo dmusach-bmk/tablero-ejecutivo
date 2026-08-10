@@ -4,6 +4,7 @@ import { Settings, Shield, Key, Mail, Database, X, Check, RefreshCw } from 'luci
 export default function SettingsModal({ isOpen, onClose, credentials, onSaveCredentials }) {
   const [notionToken, setNotionToken] = useState(credentials?.notionToken || '');
   const [notionDbId, setNotionDbId] = useState(credentials?.notionDbId || '');
+  const [fathomApiKey, setFathomApiKey] = useState(credentials?.fathomApiKey || '');
   const [smtpHost, setSmtpHost] = useState(credentials?.smtpHost || 'smtp.gmail.com');
   const [smtpPort, setSmtpPort] = useState(credentials?.smtpPort || '587');
   const [smtpUser, setSmtpUser] = useState(credentials?.smtpUser || 'diegomusach@empresa.com');
@@ -17,6 +18,7 @@ export default function SettingsModal({ isOpen, onClose, credentials, onSaveCred
     onSaveCredentials({
       notionToken,
       notionDbId,
+      fathomApiKey,
       smtpHost,
       smtpPort,
       smtpUser,
@@ -93,6 +95,17 @@ export default function SettingsModal({ isOpen, onClose, credentials, onSaveCred
                 placeholder="32-character database id"
                 value={notionDbId}
                 onChange={(e) => setNotionDbId(e.target.value)}
+              />
+            </div>
+
+            <div className="form-group">
+              <label style={{ color: 'var(--accent-purple)', fontWeight: 700 }}>Fathom Video API Key (Cuenta dmusach@bromteck.com):</label>
+              <input
+                type="password"
+                className="form-input"
+                placeholder="API Key Diego desde Fathom Settings"
+                value={fathomApiKey}
+                onChange={(e) => setFathomApiKey(e.target.value)}
               />
             </div>
           </div>
