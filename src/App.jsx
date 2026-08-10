@@ -8,6 +8,7 @@ import AsesorEjecutivoChat from './components/AsesorEjecutivoChat';
 import TeamScorecard from './components/TeamScorecard';
 import DailyFollowUp from './components/DailyFollowUp';
 import DiegoEjecutivo from './components/DiegoEjecutivo';
+import FathomAnalyzer from './components/FathomAnalyzer';
 import DeadlinesManager from './components/DeadlinesManager';
 import ActionHub from './components/ActionHub';
 import LeadershipAdvisor from './components/LeadershipAdvisor';
@@ -169,6 +170,13 @@ export default function App() {
             credentials={credentials}
             onUpdateTeamTracking={setTeamTracking}
             onOpenEmailWithAgenda={handleOpenEmailWithAgenda}
+            onNavigate={handleTabChange}
+          />
+        )}
+
+        {activeTab === 'fathom' && (
+          <FathomAnalyzer
+            credentials={credentials}
             onNavigate={handleTabChange}
           />
         )}

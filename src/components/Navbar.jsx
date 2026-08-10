@@ -1,11 +1,12 @@
 import React from 'react';
-import { ShieldCheck, Bell, Settings, LayoutDashboard, FileText, BarChart3, Users, Calendar, Mail, Compass, Bot, Award, AlertCircle, Crown } from 'lucide-react';
+import { ShieldCheck, Bell, Settings, LayoutDashboard, FileText, BarChart3, Users, Calendar, Mail, Compass, Bot, Award, AlertCircle, Crown, Video } from 'lucide-react';
 
 export default function Navbar({ activeTab, setActiveTab, missingDeadlinesCount, onOpenDeadlineModal, onOpenSettings }) {
   const navTabs = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'diego_ejecutivo', label: '👑 Diego Ejecutivo', icon: Crown },
     { id: 'followup', label: '🚨 Follow Up Diario', icon: AlertCircle },
+    { id: 'fathom', label: '🎥 Fathom Calls AI', icon: Video },
     { id: 'asesor', label: '🧠 ASESOR EJECUTIVO', icon: Bot },
     { id: 'scorecards', label: '📊 Scorecard Equipo', icon: Award },
     { id: 'micromanagement', label: 'Equipo Real & Temas', icon: Users },
