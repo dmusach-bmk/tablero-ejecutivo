@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Folder, CheckCircle2, Send, Sparkles, Key, ExternalLink, RefreshCw, AlertCircle, ShieldCheck, Zap, Clock, Calendar, Search, FileText, HardDrive, MessageSquare, PlusCircle, Mic } from 'lucide-react';
+import { Mail, Folder, CheckCircle2, Send, Sparkles, Key, ExternalLink, RefreshCw, AlertCircle, ShieldCheck, Zap, Clock, Calendar, Search, FileText, HardDrive, MessageSquare, PlusCircle, Mic, FileSpreadsheet, Plus } from 'lucide-react';
 import { fetchCorporateGmailMessages, fetchCorporateDriveFiles, getCorporateGmailSampleData, getCorporateDriveSampleData } from '../services/googleWorkspaceService';
 import { createNotionPage, postCommentToNotion } from '../services/notionService';
 
@@ -17,11 +17,41 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
   const [googleApiError, setGoogleApiError] = useState(null);
   const [listeningTargetId, setListeningTargetId] = useState(null);
 
+  // Custom priority spreadsheets list defined by Diego
+  const [prioritySpreadsheets, setPrioritySpreadsheets] = useState(() => {
+    const saved = localStorage.getItem('dm_priority_spreadsheets');
+    if (saved) {
+      try { return JSON.parse(saved); } catch(e){}
+    }
+    return [
+      { id: 'sheet-1', name: '📄 Cotizaciones_FCC_CE_Tecsys_2026.xlsx', targetProject: 'Tecsys / Camilo Uribe', status: 'Analizada por IA', insight: 'Contiene desglose de USD 45,000 en certificados. Requiere traspaso a Notion.' },
+      { id: 'sheet-2', name: '📄 Relevamiento_2300_Gabinetes_Arg_Col.xlsx', targetProject: 'Gabinetes / Camilo Uribe', status: 'Analizada por IA', insight: 'Cotizaciones de postes de fibra de vidrio y costos por gabinete.' },
+      { id: 'sheet-3', name: '📊 Control_Alimentadores_EDEMSA_2026.xlsx', targetProject: 'EDEMSA / Diego Musach', status: 'Analizada por IA', insight: '10 alimentadores auditados. Listo para facturación.' }
+    ];
+  });
+
+  const [newSheetInput, setNewSheetInput] = useState('');
+
   const [gmailMessages, setGmailMessages] = useState(getCorporateGmailSampleData());
   const [driveFiles, setDriveFiles] = useState(getCorporateDriveSampleData());
 
   const [actionSuccessStatus, setActionSuccessStatus] = useState({});
   const [processingId, setProcessingId] = useState(null);
+
+  const handleAddPrioritySpreadsheet = () => {
+    if (!newSheetInput.trim()) return;
+    const newSheet = {
+      id: `sheet-${Date.now()}`,
+      name: newSheetInput.trim(),
+      targetProject: 'Análisis Solicitado por Diego',
+      status: 'Análisis IA Pendiente...',
+      insight: 'Auditando celdas, valores de cotización y tareas a derivar a Notion.'
+    };
+    const updated = [newSheet, ...prioritySpreadsheets];
+    setPrioritySpreadsheets(updated);
+    localStorage.setItem('dm_priority_spreadsheets', JSON.stringify(updated));
+    setNewSheetInput('');
+  };
 
   const handleStartVoiceDictation = (targetId, onSpeechText) => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -65,7 +95,6 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
         setDriveFiles(dResult.files);
       }
     } else {
-      // Fallback to rich sample data from May 2026
       setGmailMessages(getCorporateGmailSampleData());
       setDriveFiles(getCorporateDriveSampleData());
     }
@@ -75,11 +104,9 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
     setIsFetchingGoogleAPI(false);
   };
 
-  // Dispatch email to Notion API
   const handleDispatchEmailToNotion = async (mailItem) => {
     setProcessingId(mailItem.id);
 
-    // Check if card exists for related member
     const matchedCard = notionCards.find(c => {
       const cTitle = (c.title || '').toLowerCase();
       const sTitle = mailItem.subject.toLowerCase();
@@ -108,7 +135,6 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
     setProcessingId(null);
   };
 
-  // Auto Polling Cron Every 60 minutes
   useEffect(() => {
     handleFetchGoogleWorkspaceData();
     const interval = setInterval(() => {
@@ -143,7 +169,7 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
               <Mail className="text-rose" size={22} /> 📧 Gmail & 📁 Google Drive Corporativo ({accountEmail})
             </h2>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0.25rem 0 0 0' }}>
-              Auditoría proactiva en tiempo real: Emails y documentos almacenados desde <strong>Mayo de 2026</strong> a la fecha.
+              Auditoría proactiva en tiempo real: Emails y planillas seleccionadas desde <strong>Mayo de 2026</strong> a la fecha.
             </p>
           </div>
 
@@ -162,7 +188,7 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
             <Zap size={20} className="text-rose" />
             <div>
               <span style={{ fontSize: '0.86rem', color: '#fff', fontWeight: 700 }}>
-                Escaneando Gmail & Drive ({gmailMessages.length} Correos + {driveFiles.length} Archivos)
+                Escaneando Gmail & Drive ({gmailMessages.length} Correos + {driveFiles.length} Archivos + {prioritySpreadsheets.length} Planillas Específicas)
               </span>
               <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', display: 'block' }}>
                 {lastSyncTime ? `Última sincronización: ${lastSyncTime}` : 'Analizando bandeja y disco corporativo...'} • Desde {startDate} hasta HOY.
@@ -201,6 +227,63 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
               <RefreshCw className={isFetchingGoogleAPI ? 'spin' : ''} size={13} /> Sincronizar Ahora
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* PRIORITY SPREADSHEETS CUSTOM SELECTOR FOR DIEGO */}
+      <div className="card-glass" style={{ padding: '1rem', marginBottom: '1.2rem', borderLeft: '4px solid var(--accent-cyan)' }}>
+        <h3 style={{ fontSize: '0.94rem', color: '#fff', margin: '0 0 0.65rem 0', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <FileSpreadsheet className="text-cyan" size={18} /> 📊 Planillas Prioritarias a Analizar por la IA en Google Drive
+        </h3>
+
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.85rem' }}>
+          <input
+            type="text"
+            className="form-input"
+            placeholder={listeningTargetId === 'sheetInput' ? "🎙️ Escuchando..." : "Ingresa el nombre o enlace de la planilla Excel/Sheets que quieres que analice la IA..."}
+            value={newSheetInput}
+            onChange={(e) => setNewSheetInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleAddPrioritySpreadsheet(); }}
+            style={{ fontSize: '0.8rem', padding: '0.45rem 0.75rem', flex: 1 }}
+          />
+
+          <button
+            onClick={() => handleStartVoiceDictation('sheetInput', (t) => setNewSheetInput(prev => prev ? `${prev} ${t}` : t))}
+            className="btn-secondary"
+            style={{ padding: '0.45rem 0.65rem', border: '1px solid var(--accent-cyan)', color: 'var(--accent-cyan)' }}
+            title="Dictar nombre de la planilla por micrófono 🎙️"
+          >
+            <Mic size={14} className={listeningTargetId === 'sheetInput' ? 'pulse' : ''} />
+          </button>
+
+          <button
+            className="btn-primary"
+            onClick={handleAddPrioritySpreadsheet}
+            style={{ fontSize: '0.78rem', padding: '0.45rem 0.95rem', background: 'linear-gradient(135deg, var(--accent-cyan), var(--accent-blue))', whiteSpace: 'nowrap' }}
+          >
+            <Plus size={14} /> Agregar Planilla para Análisis
+          </button>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: '0.65rem' }}>
+          {prioritySpreadsheets.map((sheet) => (
+            <div key={sheet.id} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-subtle)', borderRadius: '8px', padding: '0.6rem 0.75rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
+                <span style={{ fontSize: '0.8rem', color: '#fff', fontWeight: 700 }}>
+                  {sheet.name}
+                </span>
+                <span style={{ fontSize: '0.66rem', color: 'var(--accent-emerald)', background: 'rgba(16, 185, 129, 0.15)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
+                  {sheet.status}
+                </span>
+              </div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--accent-cyan)', marginBottom: '0.25rem' }}>
+                🎯 {sheet.targetProject}
+              </div>
+              <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontStyle: 'italic', lineHeight: '1.3' }}>
+                "{sheet.insight}"
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
