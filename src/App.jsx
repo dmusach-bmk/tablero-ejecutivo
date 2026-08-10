@@ -31,7 +31,7 @@ export default function App() {
     const saved = localStorage.getItem('dm_notion_cards');
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (parsed.length >= INITIAL_NOTION_CARDS.length) return parsed;
+      if (parsed.length >= 160) return parsed;
     }
     return INITIAL_NOTION_CARDS;
   });
@@ -43,8 +43,7 @@ export default function App() {
     const saved = localStorage.getItem('dm_team_tracking');
     if (saved) {
       const parsed = JSON.parse(saved);
-      const enrique = parsed.find(p => p.id === 'dev-enrique');
-      if (enrique && enrique.topics?.length >= 25) return parsed;
+      if (parsed.length >= 10) return parsed;
     }
     return INITIAL_TEAM_TRACKING;
   });

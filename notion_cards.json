@@ -3,1500 +3,990 @@
     "id": "34ace95d-6a9a-8054-b33b-cad2cbaf4c70",
     "title": "Sin T\u00edtulo",
     "responsable": "Sin Asignar",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "3b1ce95d-6a9a-80c1-96e9-c19d7c24824e",
     "title": "Telecable CR",
     "responsable": "Enrique",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "3b1ce95d-6a9a-80c7-9f11-f71a06d2d44a",
     "title": "Sin T\u00edtulo",
     "responsable": "Enrique",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "3b1ce95d-6a9a-8042-b9c2-ec482df2611e",
     "title": "CableView Paralelo",
     "responsable": "Enrique",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "3b1ce95d-6a9a-8007-8f13-d517b99dbb36",
     "title": "TMS",
     "responsable": "Enrique",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "3b1ce95d-6a9a-8067-8bf6-e6504c6494aa",
     "title": "ROKU",
     "responsable": "Enrique",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "3b1ce95d-6a9a-80fc-9b4e-f76adbb887b0",
     "title": "Telemetria",
     "responsable": "Enrique",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "3aece95d-6a9a-8008-adcc-ea340eeefffa",
     "title": "Recursos Bromteck TV",
     "responsable": "DIego",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "3a7ce95d-6a9a-802f-a5eb-e4ebc1c8309b",
     "title": "Follow Up Mario",
     "responsable": "Mario",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "39dce95d-6a9a-8031-8c30-da4fe060af69",
     "title": "Agente AI para Soporte",
     "responsable": "Joseph",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "359ce95d-6a9a-804e-9da9-fa24ca83af03",
     "title": "Temas con Fabricio",
     "responsable": "Enrique",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "390ce95d-6a9a-80a0-a365-d2c6320c05a3",
     "title": "TMS para AOSP Elebao",
     "responsable": "Joseph",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "390ce95d-6a9a-80bb-8752-cbe111cf49a0",
     "title": "Instalaciones Video",
     "responsable": "Enrique",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "37bce95d-6a9a-8066-8b4e-d16ac934971d",
     "title": "POC AES",
     "responsable": "Camilo",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "37bce95d-6a9a-809a-8536-c24004ae1774",
     "title": "POC Delsur",
     "responsable": "Camilo",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "37bce95d-6a9a-80c0-8a04-dc4b95ca1e0d",
     "title": "Migracion Heroku ",
     "responsable": "Leonard",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "381ce95d-6a9a-80e0-a03d-c0fbe5b454e9",
     "title": "Catelsa HN",
     "responsable": "DIego",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "381ce95d-6a9a-809c-afb5-d06375579797",
     "title": "Cable Color HN",
     "responsable": "DIego",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "384ce95d-6a9a-8097-adf1-d59d9d9bd5af",
     "title": "Buscar solucion para perdidas ",
     "responsable": "DIego",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "38ace95d-6a9a-80f1-8935-cc943b13db3e",
     "title": "Edemsa: Enrique: Tema de tramos subterraneos, ver como SI nos sirve.",
     "responsable": "Enrique",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "37cce95d-6a9a-809b-aba3-c330618daffc",
     "title": "Calls con DeLancer",
     "responsable": "DIego",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "37cce95d-6a9a-805b-a576-d9be05047055",
     "title": "Necesitamos hacer mas negocios con Bromteck 4.0 y con Bromteck Pulse.",
     "responsable": "Enrique",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "37cce95d-6a9a-8097-86f8-ee6ac80aee5a",
     "title": "Seguridad DRM",
     "responsable": "Enrique",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "37cce95d-6a9a-80e6-ad23-c2f78c611bad",
     "title": "Necesitamos ser proveedor de Telecable de AOSP.",
     "responsable": "Enrique",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "350ce95d-6a9a-8048-a382-c0779eafab55",
     "title": "Temas de Fabricio.",
     "responsable": "Enrique",
-    "status": "Cerrado",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Cerrado"
   },
   {
     "id": "350ce95d-6a9a-80d0-8de5-eb58fda219bc",
     "title": "Maurio Zuin, tengo temas con las vistas, como podemos mejorarlo?",
     "responsable": "Enrique",
-    "status": "Cerrado",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Cerrado"
   },
   {
     "id": "34bce95d-6a9a-80e7-b83d-feb8331a612c",
     "title": "Solucion Bromteck: Vamos a aumentar el servicio de la nube. Con que queres seguir? Asi lo vamos a comunicar eso al tema.\n",
     "responsable": "Enrique",
-    "status": "Cerrado",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Cerrado"
   },
   {
     "id": "34ace95d-6a9a-8017-9544-cb772bbfecd4",
     "title": "Enrique: Viajas a Telecable Costa Rica? Pensaba que si.\n",
     "responsable": "Enrique",
-    "status": "Cerrado",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Cerrado"
   },
   {
     "id": "34ace95d-6a9a-800c-8cb3-e07ca0715011",
     "title": "Edemsa: Filtros y Opciones que solicito Nicolas",
     "responsable": "Enrique",
-    "status": "Cerrado",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Cerrado"
   },
   {
     "id": "34ace95d-6a9a-8044-9afc-ee0694b2a042",
     "title": "WIND: Reinstalacion Clouster (VMs)",
     "responsable": "Enrique",
-    "status": "Cerrado",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Cerrado"
   },
   {
     "id": "34ace95d-6a9a-80fd-af86-f07e8116754c",
     "title": "Informe Final 60 Puntos Edemsa (Puntos Nuevos) Ahora: 10 Alimentadores",
     "responsable": "Enrique",
-    "status": "Cerrado",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Cerrado"
   },
   {
     "id": "37cce95d-6a9a-80ac-89d5-df976311b39a",
     "title": "Servidores: Identificar servidores Utiles y solo dejar encendido lo necesario.",
     "responsable": "Joseph",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "34cce95d-6a9a-80b6-a671-c87a4de2307e",
     "title": "Soporte Premium: Balance de Horas Actuales y Excedentes por cliente.",
     "responsable": "Joseph",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "34bce95d-6a9a-8061-bd49-e57ac570c1f9",
     "title": "WIND: La platforma actual de WIND tiene Single Sign On? Y si es asi, hay que ver de que manera y como se hace.",
     "responsable": "Joseph",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "350ce95d-6a9a-8032-86fa-e537f90df069",
     "title": "Bromteck Video Pulse",
     "responsable": "Joseph",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "34cce95d-6a9a-8035-9491-d6570d75a3f7",
     "title": "Averiguar Sistema de Tickets y Soporte integrado con AI",
     "responsable": "Joseph",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "34cce95d-6a9a-8007-aa82-f10c92b563ef",
     "title": "Gemas Gemini de Soporte",
     "responsable": "Joseph",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "36ece95d-6a9a-8068-bf0f-fa1bf23c8480",
     "title": "Urgente Joseph: BOT de soporte para responder rapidamente y de forma automatica.",
     "responsable": "Joseph",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "36ece95d-6a9a-800c-ab5c-ceefbaff88f3",
     "title": "BOT video: Capactiaciones Filmadas.",
     "responsable": "Joseph",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "35ace95d-6a9a-80a3-959d-fbe9a2303e3d",
     "title": "Test Report de Montage Telecable con FingerPrint",
     "responsable": "Joseph",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "356ce95d-6a9a-8041-a9bf-ed126415580b",
     "title": "Datos de Kenyi Solis",
     "responsable": "DIego",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "34cce95d-6a9a-80ec-8d34-f5c3c5c57cc9",
     "title": "Reportes Anual de Soporte",
     "responsable": "Joseph",
-    "status": "Cerrado",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Cerrado"
   },
   {
     "id": "37bce95d-6a9a-808e-9041-f5d9599e73ac",
     "title": "Gabinete para Clientes en Colombia",
     "responsable": "Sin Asignar",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "37bce95d-6a9a-80cd-82c7-d3786fe8bb19",
     "title": "Gabinete para Clientes en Argentina",
     "responsable": "Sin Asignar",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "37bce95d-6a9a-8025-93d8-d82e44060f88",
     "title": "Relevamiento Gabinete y Poste de Fibra de Vidrio",
     "responsable": "Sin Asignar",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "37bce95d-6a9a-8036-9007-cdea966a5eb2",
     "title": "Retomar tema de ferrocarriles para gabinetes (700 y 2300 en total)",
     "responsable": "Camilo",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "379ce95d-6a9a-808b-bb6e-c1f4ca13e575",
     "title": "ESPH HN (A Visitar)",
     "responsable": "Sin Asignar",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "36fce95d-6a9a-80d1-91f9-e07925f80f68",
     "title": "RSO: ",
     "responsable": "Sin Asignar",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "36ece95d-6a9a-8064-83b3-ef49c6a25687",
     "title": "Objetivos Viaje a Mendoza",
     "responsable": "Sin Asignar",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "36ece95d-6a9a-80c3-9f38-f1728af01897",
     "title": "Propuesta de Alejandro para US",
     "responsable": "DIego",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "36ece95d-6a9a-80ac-8644-f64d56aaf0f6",
     "title": "Capacitacion 100% de Smart Sensor: instalacion, Facil, para que alguien del area tecnica lo entienda.",
     "responsable": "Camilo",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "36ece95d-6a9a-80c7-8ea1-d507a93ff98b",
     "title": "Contactar a Claro y a Betty",
     "responsable": "DIego",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "36ece95d-6a9a-80c3-80e1-fcb8e67d8d80",
     "title": "Franco, que usas para Whatsapp?",
     "responsable": "DIego",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "36ece95d-6a9a-80f5-9bcb-f28aec018be0",
     "title": "Realytic Product Placement Panaccess",
     "responsable": "DIego",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "34ace95d-6a9a-800f-9794-ef32d444b49f",
     "title": "Edemsa: Correccion vistas de Alberti/Plastiandina",
     "responsable": "Enrique",
-    "status": "Cerrado",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Cerrado"
   },
   {
     "id": "365ce95d-6a9a-8063-a8de-c6b42d04de1b",
     "title": "Realizar Documento con requerimientos de cada Desarrollo (UDID, Bromteck 4.0, otros).",
     "responsable": "Leonard",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "35ace95d-6a9a-8017-bc00-f748e43effb8",
     "title": "STB AOSP UM ELEBAO para Telecable CR",
     "responsable": "Joseph",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "361ce95d-6a9a-8025-9e80-f6600c509d26",
     "title": "Sin T\u00edtulo",
     "responsable": "Sin Asignar",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "35ece95d-6a9a-8067-b679-c54b3d26be0c",
     "title": "NECESITAMOS COBRAR EDEMSA!!! Como logro de forma autonoma",
     "responsable": "Sin Asignar",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "35ece95d-6a9a-8061-99ad-c4fec8281b1e",
     "title": "Reporte DM a AHC. Proceso y Procedimiento para nuevos clientes de Godel Perdidas.",
     "responsable": "Camilo",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "35ece95d-6a9a-808f-9694-c999dd41f835",
     "title": "Objetivo: Proyecto para probar BOT con Pasantes. Autorizado y activarlo ya, con pasantes (2) de Huergo.",
     "responsable": "DIego",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "34cce95d-6a9a-80d5-8bde-da6032778fc9",
     "title": "Lineamientos a Camilo",
     "responsable": "Camilo",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "34cce95d-6a9a-804d-8157-dd181a078d59",
     "title": "Configuracion: Equipos de Delsur y AES: Ayudar a Enrique y Fabricio a configurarlos remotamente",
     "responsable": "Joseph",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "35ece95d-6a9a-80b6-a192-c30b2b4791a0",
     "title": "Objetivo: Prueba con Pasante ",
     "responsable": "Sin Asignar",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "35ece95d-6a9a-8020-bb31-c030c8490616",
     "title": "Activar Pasantes Huergo",
     "responsable": "DIego",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "35ece95d-6a9a-8003-81dc-cd8456594fbe",
     "title": "Capacitaciones filmadas (Video) de todo Video",
     "responsable": "Enrique",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "350ce95d-6a9a-80ac-8a64-d96a4575a02b",
     "title": "Camilo, porque NO hiciste el seguimiento de Tecsys con Notion y compartiste un Excel tan basico?",
     "responsable": "Camilo",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "358ce95d-6a9a-80c0-9eda-c1a444ade69a",
     "title": "Presentacion a Comerciales de SS para Perdidas (Sin Godel)",
     "responsable": "Camilo",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "352ce95d-6a9a-8060-8307-cade0cc22785",
     "title": "Tecsys: Cotizacion por certificado FCC y CE",
     "responsable": "DIego",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "352ce95d-6a9a-80e2-b0e4-c89ee069aa88",
     "title": "Ingenieria: Nuevo producto (armar)",
     "responsable": "Camilo",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "351ce95d-6a9a-804b-8420-c7190480b03b",
     "title": "Busqueda de llamada con Javier Fuentes de GIGMAX MX",
     "responsable": "Sin Asignar",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "351ce95d-6a9a-80a8-9266-ecced0e23d2e",
     "title": "Entrenamiento en Profundidad con Camilo",
     "responsable": "Martin",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "2c0ce95d-6a9a-805c-9138-f368259e268e",
     "title": "AA Enrique Weekly Follow Up",
     "responsable": "DIego",
-    "status": "Enrique",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Enrique"
   },
   {
     "id": "357ce95d-6a9a-80de-bf19-c5937549225d",
     "title": "Informe TS100 en Zona de Nieve",
     "responsable": "Enrique",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "35ace95d-6a9a-8067-873c-c2ccf0d3810e",
     "title": "Estrategia US",
     "responsable": "DIego",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "359ce95d-6a9a-80f1-ab98-ca970c11bafe",
     "title": "Sin T\u00edtulo",
     "responsable": "Sin Asignar",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "359ce95d-6a9a-80b4-88ee-d4366ce33c43",
     "title": "Login Social FB y G",
     "responsable": "Leonard",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "359ce95d-6a9a-8078-ac1f-c0243f9b0b03",
     "title": "Tariff y Flete US",
     "responsable": "DIego",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "35ace95d-6a9a-808f-bf36-d39e69a2595d",
     "title": "STB ATV UM ELEBAO para Telecable CR",
     "responsable": "Joseph",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "34fce95d-6a9a-80a1-a468-cf54dd111e3d",
     "title": "Re-Estructuracion Area Soporte",
     "responsable": "Sabrina",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "34cce95d-6a9a-80b0-84bd-edeb30e30713",
     "title": "Soportes y Costos",
     "responsable": "Sabrina",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "34ace95d-6a9a-80e4-808c-d1e2f8200ec9",
     "title": "2 a 3 calls Semanales entre Camilo y Martin por temas Comerciales y alineamiento.",
     "responsable": "Camilo",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "34ace95d-6a9a-8029-9e61-f4c06b3e6122",
     "title": "Checkeo semanal de reslutado de Godel Edemsa (Por zonas, regiones, alimentadores)",
     "responsable": "Camilo",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "352ce95d-6a9a-808b-904f-f3be8ce06150",
     "title": "US: Avangrid POC 100 Koalas",
     "responsable": "DIego",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "34ace95d-6a9a-804c-be55-fecb1512a612",
     "title": "POC Naturgy: No avanza mas, hay que recuperar los equipos.",
     "responsable": "Camilo",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "34ace95d-6a9a-80a7-a6a0-f9dc7ec6d6d3",
     "title": "POC Edelap: Generacion de informe a cliente.",
     "responsable": "Camilo",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "34ace95d-6a9a-8017-add5-f27b8edd1e5a",
     "title": "Gestion de Soporte a Clientes: Reportes Premium y horas consumidas.",
     "responsable": "Joseph",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "34ace95d-6a9a-80ec-a1df-f849ac606ed0",
     "title": "POC Delsur: Configuracion de equipos, cronograma y validacion con Cliente.",
     "responsable": "Camilo",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "34ace95d-6a9a-8035-9a84-f7712a1c8889",
     "title": "POC AES: Configuracion de equipos, cronograma y validacion con Cliente.",
     "responsable": "Camilo",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "34ace95d-6a9a-8022-a380-c1879c7683d8",
     "title": "Documento FAQ a Comercial (Documento de Preguntas y Respuestas para Guia Comercial)",
     "responsable": "Camilo",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "34ace95d-6a9a-803b-bec1-c728e5ebf2c9",
     "title": "Sinapsis: Documento con Requisitos de Servidores e Implementacion de Godel perdidas para Comercial.",
     "responsable": "Camilo",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "34bce95d-6a9a-8003-a22f-c57c40c22246",
     "title": "Bromteck TV: Features definidos en presntacion. Con Marketing: Hacer nueva presentacion del producto con los nuevos features. De todo lo de WIND. Con Marketing, poner UDID como un feature y ver como lo promocionamos como un feature adicional.",
     "responsable": "Leonard",
-    "status": "Temas Cerrados",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Temas Cerrados"
   },
   {
     "id": "35ace95d-6a9a-8057-bc90-d168e4a79ac1",
     "title": "Pasante Programador",
     "responsable": "DIego",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "34fce95d-6a9a-8091-be1f-eef520bfd1d6",
     "title": "Definicion de Solucion Lorawan en Documento",
     "responsable": "Camilo",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "34bce95d-6a9a-80b8-9264-f0ff9884b480",
     "title": "Edemsa: Nueva zona a tener Analisis",
     "responsable": "Enrique",
-    "status": "Cerrado",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Cerrado"
   },
   {
     "id": "34bce95d-6a9a-804b-be3b-ff5423af0d85",
     "title": "Edemsa: Entregar resumen de analisis de los nuevos puntos agregados al sistema",
     "responsable": "Enrique",
-    "status": "Cerrado",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Cerrado"
   },
   {
     "id": "34ace95d-6a9a-804b-997f-fbe83a34e403",
     "title": "Edemsa: Envio a Diego de fallas en las vistas, para que se las traslade a Nicolas.",
     "responsable": "Enrique",
-    "status": "Cerrado",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Cerrado"
   },
   {
     "id": "350ce95d-6a9a-8006-8d0b-fa252a421749",
     "title": "Totalizadores para importarlo a Godel",
     "responsable": "Enrique",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "350ce95d-6a9a-803f-a75d-f10787cd4e95",
     "title": "WIND: La etapa 1 de ellos es la inicial como estaban las aplicaciones, mas las mejoras que ya estan. Eso es previo a la 1 de Cliente.",
     "responsable": "Enrique",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
   },
   {
     "id": "34cce95d-6a9a-80b6-83ef-e38c5491ad50",
     "title": "Weekly Follow Up Enrique",
     "responsable": "Enrique",
-    "status": "Abierto",
-    "properties_keys": [
-      "Log de Seguimiento",
-      "Vencimiento",
-      "Prioridad",
-      "Status 1",
-      "joseph",
-      "Name",
-      "Status"
-    ]
+    "status": "Abierto"
+  },
+  {
+    "id": "358ce95d-6a9a-8057-ad5b-efc085534f02",
+    "title": "Weekly Follow Up Video",
+    "responsable": "DIego",
+    "status": "Abierto"
+  },
+  {
+    "id": "de3037fc-6a19-4b6a-b6d1-08a8b6e09a40",
+    "title": "Weekly Follow Up Energia",
+    "responsable": "DIego",
+    "status": "Abierto"
+  },
+  {
+    "id": "34bce95d-6a9a-80ae-a113-ff02053c22b6",
+    "title": "Tablero para Informe de resultados obtenidos (Este Tablero)\n",
+    "responsable": "DIego",
+    "status": "Abierto"
+  },
+  {
+    "id": "34bce95d-6a9a-8084-8cf7-f2fec9360df5",
+    "title": "Edemsa: El cliente Edemsa esta ingresando a GLPI? El cliente entiende que el soporte esta funcionando?\n",
+    "responsable": "Enrique",
+    "status": "Abierto"
+  },
+  {
+    "id": "34bce95d-6a9a-80ec-a1ec-e1f9f6e52e51",
+    "title": "Edemsa: Call Nicolas + Diego (21/04/2026)",
+    "responsable": "Enrique",
+    "status": "Abierto"
+  },
+  {
+    "id": "34bce95d-6a9a-807b-89f4-de3f0139393a",
+    "title": "Mejora de Approach en Reuniones: mas proactivo y mas reactivo",
+    "responsable": "Camilo",
+    "status": "Abierto"
+  },
+  {
+    "id": "34bce95d-6a9a-80f9-b97a-f516b94949cb",
+    "title": "POCs: tenemos que cambiar la estrategia de POCs, ya no se hace sin datos previos.\n",
+    "responsable": "Camilo",
+    "status": "Abierto"
+  },
+  {
+    "id": "34bce95d-6a9a-802d-bc9d-f79f202b18d8",
+    "title": "Edemsa: Informe de Perdidas No Tecnicas y Tecnicas.",
+    "responsable": "Camilo",
+    "status": "Abierto"
+  },
+  {
+    "id": "34bce95d-6a9a-8051-a9ae-d3549c8d12f0",
+    "title": "Edemsa: Informe de nuevos alimentadores y ranking, revisarlo para cliente.",
+    "responsable": "Camilo",
+    "status": "Abierto"
+  },
+  {
+    "id": "34ace95d-6a9a-8080-9993-d2a53045c5dc",
+    "title": "AI Soporte Premium: Automatizacion con Whatsapp",
+    "responsable": "Joseph",
+    "status": "Abierto"
+  },
+  {
+    "id": "294ce95d-6a9a-80fc-a6f2-d2332ac57677",
+    "title": "US CB Associates",
+    "responsable": "DIego",
+    "status": "Abierto"
+  },
+  {
+    "id": "34cce95d-6a9a-804e-905f-de769c1351fa",
+    "title": "US Marcelo Perez",
+    "responsable": "DIego",
+    "status": "Abierto"
+  },
+  {
+    "id": "34cce95d-6a9a-80d8-8d7e-cb2b8e75f438",
+    "title": "Edemsa: Feedback de Nicolas y Luis",
+    "responsable": "DIego",
+    "status": "Abierto"
+  },
+  {
+    "id": "34ace95d-6a9a-80ae-b968-d7ba117e7d2d",
+    "title": "Prospeccion y llamados a Clientes y Distribuidores de US",
+    "responsable": "DIego",
+    "status": "Abierto"
+  },
+  {
+    "id": "34ace95d-6a9a-80ac-866b-dc2e75163528",
+    "title": "Edemsa: Escribirle a Ricardo, pedirle hablar.",
+    "responsable": "DIego",
+    "status": "Abierto"
+  },
+  {
+    "id": "34ace95d-6a9a-8071-a06f-ebb81e6b2ac5",
+    "title": "ROKU: Consulta y analisis de 3 links que envio Alejandro a Diego.",
+    "responsable": "DIego",
+    "status": "Abierto"
+  },
+  {
+    "id": "34bce95d-6a9a-807e-9e4c-e22a8f8bf74c",
+    "title": "US: LLamados Miercoles y Jueves 100% del dia. Y seguimiento en planilla con estados: 0, A, B y C",
+    "responsable": "DIego",
+    "status": "Abierto"
+  },
+  {
+    "id": "34bce95d-6a9a-802c-9e69-c8336f5dec77",
+    "title": "Resumen ejecutivo de Conferencia de Energia",
+    "responsable": "DIego",
+    "status": "Abierto"
+  },
+  {
+    "id": "34bce95d-6a9a-806c-8d03-dc606d89aeaa",
+    "title": "Guia para Mercado US\n",
+    "responsable": "DIego",
+    "status": "Abierto"
+  },
+  {
+    "id": "34bce95d-6a9a-80e4-ba17-fb1866293581",
+    "title": "Temas a hablar con Alejandro en Reuniones",
+    "responsable": "DIego",
+    "status": "Abierto"
+  },
+  {
+    "id": "34bce95d-6a9a-8089-9582-e3931da92960",
+    "title": "Seguimiento de Tablero, diario 1:1",
+    "responsable": "DIego",
+    "status": "Abierto"
+  },
+  {
+    "id": "34cce95d-6a9a-807a-95ac-f82dbe96c203",
+    "title": "US Magnefy",
+    "responsable": "DIego",
+    "status": "Abierto"
+  },
+  {
+    "id": "34fce95d-6a9a-80f9-bf3c-e15c8b9f3547",
+    "title": "OPEX Ricardo Segura",
+    "responsable": "DIego",
+    "status": "Abierto"
+  },
+  {
+    "id": "34fce95d-6a9a-8085-88c3-fba618693919",
+    "title": "US: Seguimiento con S&C",
+    "responsable": "DIego",
+    "status": "Abierto"
+  },
+  {
+    "id": "350ce95d-6a9a-802c-b4e5-f9a4b7cb6cc3",
+    "title": "Julian: Hay empresas que pueden importar en US y gestionan la importacion mas la entrega.",
+    "responsable": "DIego",
+    "status": "Abierto"
+  },
+  {
+    "id": "350ce95d-6a9a-8030-9f6f-d221cba3ada2",
+    "title": "Diego, enviar contacto QR a Marcelo, de US.",
+    "responsable": "DIego",
+    "status": "Abierto"
+  },
+  {
+    "id": "350ce95d-6a9a-8084-a68b-e3f2fe430a10",
+    "title": "Diego, Fabiano, comentar lo de US. Todo coordinado para IEEE.",
+    "responsable": "DIego",
+    "status": "Abierto"
+  },
+  {
+    "id": "350ce95d-6a9a-8056-bb3a-dbebc1b848fd",
+    "title": "Edemsa: Calls con Nicolas",
+    "responsable": "DIego",
+    "status": "Abierto"
+  },
+  {
+    "id": "350ce95d-6a9a-8022-a359-fa08f8bb7cdb",
+    "title": "Trasladarle a Franco el curso que estoy haciendo de AI?",
+    "responsable": "DIego",
+    "status": "Abierto"
+  },
+  {
+    "id": "350ce95d-6a9a-80d9-a849-c3320e9b553c",
+    "title": "Estrategia de US: Coordinar Call con Sabrina y Alejandro para el Martes 5 de Mayo. Definir que estrategia queda planteada y como sigue US.",
+    "responsable": "DIego",
+    "status": "Abierto"
+  },
+  {
+    "id": "31fce95d-6a9a-80b4-90c9-dbb2a8dfbf39",
+    "title": "Weekly Follow Up Tecnologia (con Alejandro)",
+    "responsable": "DIego",
+    "status": "2026"
+  },
+  {
+    "id": "350ce95d-6a9a-800e-aff8-ef07437bd162",
+    "title": "Diego, a Bruno de S&C, cuando es el proximo evento que va a estar S&C, lo puedo preguntar yo o Fabiano?",
+    "responsable": "DIego",
+    "status": "Abierto"
+  },
+  {
+    "id": "352ce95d-6a9a-8021-9a94-dba94badcbf5",
+    "title": "Panaccess: Migracion CV10 a Munich.",
+    "responsable": "DIego",
+    "status": "Abierto"
+  },
+  {
+    "id": "352ce95d-6a9a-8075-8250-dbb77f01bafd",
+    "title": "Tecsys: Pedirle usar Habitat de ellos.",
+    "responsable": "DIego",
+    "status": "Abierto"
+  },
+  {
+    "id": "327ce95d-6a9a-8062-8640-dd9c5f98a6d1",
+    "title": "Bromteck AI (Energia y Video) - Habitat, Estadistica, otros",
+    "responsable": "Leonard",
+    "status": "2026"
+  },
+  {
+    "id": "34fce95d-6a9a-80d3-94f2-de7864239edc",
+    "title": "AI Telemetria: Implementacion de proceso de datos para Telemetria",
+    "responsable": "Leonard",
+    "status": "Abierto"
+  },
+  {
+    "id": "34fce95d-6a9a-8051-9ce2-cc4c4bfbecf6",
+    "title": "AI Bromteck: Implementacion Cervantes (Habitat Bromteck)",
+    "responsable": "Leonard",
+    "status": "Abierto"
+  },
+  {
+    "id": "34fce95d-6a9a-80d6-b298-f26fdfdbde52",
+    "title": "Leonard: Leonard\nLogo del cliente, es que EL LOGO CAMBIA AUTOMATICAMENTE DESDE EL BACK OFFICE?",
+    "responsable": "Leonard",
+    "status": "Abierto"
+  },
+  {
+    "id": "328ce95d-6a9a-80f0-a983-cc6251de2832",
+    "title": "ReporTV Valor Agregado",
+    "responsable": "Leonard",
+    "status": "Abierto"
+  },
+  {
+    "id": "34cce95d-6a9a-80ef-b78e-d6e70156416d",
+    "title": "Tiempos WEB",
+    "responsable": "Leonard",
+    "status": "Abierto"
+  },
+  {
+    "id": "34ace95d-6a9a-80ca-bf56-db4db9476424",
+    "title": "WIND: Apoyo para cierre de etapa 1 y venta de etapa 2",
+    "responsable": "Enrique",
+    "status": "Abierto"
+  },
+  {
+    "id": "34ace95d-6a9a-802d-9d9e-e485d4fcdadc",
+    "title": "Binit AI: RFP",
+    "responsable": "Camilo",
+    "status": "Abierto"
+  },
+  {
+    "id": "23ece95d-6a9a-80ba-8f0d-c41ae60db4cd",
+    "title": "ZZ Follow Up Video",
+    "responsable": "Sin Asignar",
+    "status": "Clientes Video"
+  },
+  {
+    "id": "34cce95d-6a9a-80a2-bb39-fff1f60dcabe",
+    "title": "Armar documento de POC: Agenda, preuebas previas, responsables, otros.",
+    "responsable": "Camilo",
+    "status": "Abierto"
+  },
+  {
+    "id": "22ace95d-6a9a-8084-8e6a-f115a9324135",
+    "title": "Tecsys Follow Up",
+    "responsable": "DIego",
+    "status": "Proveedores"
+  },
+  {
+    "id": "2e1ce95d-6a9a-8001-85dc-e16aedebfd84",
+    "title": "AA Seguimiento Bimensual con Telecable y Christian Chinchilla",
+    "responsable": "DIego",
+    "status": "Clientes Video"
+  },
+  {
+    "id": "351ce95d-6a9a-80c1-8850-f9e39ca88340",
+    "title": "Energia: Analisis de Proveedor Camlin",
+    "responsable": "Camilo",
+    "status": "Abierto"
+  },
+  {
+    "id": "351ce95d-6a9a-8090-8bf1-d4c13c4a3d9b",
+    "title": "Tablero CTO: Documento para Gemini",
+    "responsable": "DIego",
+    "status": "Abierto"
+  },
+  {
+    "id": "34cce95d-6a9a-80e0-b6b3-da4c62a4fac8",
+    "title": "Aprobacion de STBs en Cliente (Telecable)",
+    "responsable": "Kenyi",
+    "status": "Abierto"
+  },
+  {
+    "id": "34fce95d-6a9a-80cd-9450-fb9d00e20637",
+    "title": "Cable Payakas CR: Validacion STB AOSP",
+    "responsable": "Kenyi",
+    "status": "Abierto"
+  },
+  {
+    "id": "34fce95d-6a9a-8062-92cb-d265edf6ba4d",
+    "title": "Proveedor EKT Digital: Homologar APK en STB AOSP",
+    "responsable": "Kenyi",
+    "status": "Abierto"
+  },
+  {
+    "id": "34ace95d-6a9a-80b9-953d-f54cc3a8ec56",
+    "title": "Busqueda de nuevos proveedores de STBs AOSP con Automatizacion y AI.",
+    "responsable": "Kenyi",
+    "status": "Abierto"
+  },
+  {
+    "id": "34ace95d-6a9a-80e2-b9f0-c45880171b1e",
+    "title": "Programacion y Migracion a Kotlin",
+    "responsable": "Kenyi",
+    "status": "Abierto"
+  },
+  {
+    "id": "350ce95d-6a9a-8023-9135-dc3e97094449",
+    "title": "Enrique te delego un tema de RSO que se quejaron de un STB Montage.",
+    "responsable": "Kenyi",
+    "status": "Abierto"
+  },
+  {
+    "id": "350ce95d-6a9a-8004-86bf-fb691ef38d09",
+    "title": "Mario, pasar la primera version de WIND con Buscador e imagenes, esta semana.",
+    "responsable": "Mario",
+    "status": "Abierto"
+  },
+  {
+    "id": "350ce95d-6a9a-800f-9abb-c0dd12b588a3",
+    "title": "Analisis de Precio de mercado US de Paso de Falla y de SS, competidores.",
+    "responsable": "Camilo",
+    "status": "Abierto"
+  },
+  {
+    "id": "350ce95d-6a9a-80d6-8088-f36dd68eb003",
+    "title": "Informacion de Totalizadores en Godel",
+    "responsable": "Sin Asignar",
+    "status": "Abierto"
+  },
+  {
+    "id": "350ce95d-6a9a-80e8-8b97-eed61cba0669",
+    "title": "Armar PPT de Godel para mostrar SOLO perdidas tecnicas (y no NO Tecnicas).",
+    "responsable": "Camilo",
+    "status": "Abierto"
+  },
+  {
+    "id": "34bce95d-6a9a-80b0-8f24-e27ea3b60e42",
+    "title": "WIND: Definir la fecha de Android de: Prueba gratis\n",
+    "responsable": "Mario",
+    "status": "Cerrado"
+  },
+  {
+    "id": "34fce95d-6a9a-80a9-8c57-f1c818379c48",
+    "title": "Soportes y CV10",
+    "responsable": "DIego",
+    "status": "Abierto"
+  },
+  {
+    "id": "34fce95d-6a9a-80f1-8318-dcb6826a1618",
+    "title": "Con tiempo, avisarle los desfasajes de fechas de WIND. Avisarle con tiempo.\n",
+    "responsable": "Sabrina",
+    "status": "Abierto"
+  },
+  {
+    "id": "326ce95d-6a9a-808d-b3f8-f66e28de1212",
+    "title": "Weekly Follow Up con Camilo",
+    "responsable": "Camilo",
+    "status": "Abierto"
+  },
+  {
+    "id": "34fce95d-6a9a-800b-ba91-f936a52fe2ee",
+    "title": "Planilla POCs",
+    "responsable": "Camilo",
+    "status": "Abierto"
+  },
+  {
+    "id": "34cce95d-6a9a-80bd-b1b0-faaa0cf97ab8",
+    "title": "Lineamientos con Sinapsis y Proveedores",
+    "responsable": "Camilo",
+    "status": "Abierto"
+  },
+  {
+    "id": "34cce95d-6a9a-8054-989c-cbb2ef20db40",
+    "title": "Lograr una respuesta inicial del BOT por Whatsapp",
+    "responsable": "Joseph",
+    "status": "Abierto"
   }
 ]
