@@ -5,6 +5,7 @@ import { createNotionPage } from '../services/notionService';
 
 export default function FathomAnalyzer({ credentials, onNavigate }) {
   const [fathomApiKey, setFathomApiKey] = useState(credentials?.fathomApiKey || '');
+  const [webhookSecret, setWebhookSecret] = useState(credentials?.fathomWebhookSecret || '');
   const [accountEmail, setAccountEmail] = useState('dmusach@bromteck.com');
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
   const [meetingTitle, setMeetingTitle] = useState('Reunión de Control Directivo CTO - Fathom');
@@ -122,14 +123,22 @@ Diego Musach: Mario, fijamos la matriz de métricas analytics y Scorecard para t
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
             <input
               type="password"
               className="form-input"
-              placeholder="Pega tu Fathom API Key aquí (opcional)..."
+              placeholder="API Key (BgtG...)"
               value={fathomApiKey}
               onChange={(e) => setFathomApiKey(e.target.value)}
-              style={{ fontSize: '0.76rem', padding: '0.35rem 0.65rem', width: '240px' }}
+              style={{ fontSize: '0.76rem', padding: '0.35rem 0.65rem', width: '170px' }}
+            />
+            <input
+              type="password"
+              className="form-input"
+              placeholder="Webhook Secret (...oxVx)"
+              value={webhookSecret}
+              onChange={(e) => setWebhookSecret(e.target.value)}
+              style={{ fontSize: '0.76rem', padding: '0.35rem 0.65rem', width: '170px' }}
             />
             <button
               className="btn-primary"
