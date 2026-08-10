@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, MessageSquare, ShieldAlert, CheckCircle2, Send, RefreshCw, Search, Layers, ExternalLink, Archive, CheckSquare } from 'lucide-react';
+import { Calendar, MessageSquare, ShieldAlert, CheckCircle2, Send, RefreshCw, Search, Layers, ExternalLink, Archive, CheckSquare, Mic } from 'lucide-react';
 import { postCommentToNotion, updateNotionPageStatus, fetchNotionComments } from '../services/notionService';
 
 export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamTracking, onOpenEmailWithAgenda, onNavigate }) {
@@ -13,6 +13,7 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
   const [cardStatusMap, setCardStatusMap] = useState({});
   const [localCommentsMap, setLocalCommentsMap] = useState({});
   const [isFetchingNotionComments, setIsFetchingNotionComments] = useState(false);
+  const [listeningTargetId, setListeningTargetId] = useState(null);
 
   const currentDate = new Date().toLocaleDateString('es-ES', {
     weekday: 'long',
@@ -25,6 +26,32 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
     if (!notionPageId) return 'https://notion.so';
     const cleanId = notionPageId.replace(/-/g, '');
     return `https://notion.so/${cleanId}`;
+  };
+
+  const handleStartVoiceDictation = (targetId, onSpeechText) => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("🎙️ Dictado por voz: Te recomendamos abrir el tablero en Google Chrome para usar el micrófono.");
+      return;
+    }
+    setListeningTargetId(targetId);
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'es-ES';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      if (transcript) {
+        onSpeechText(transcript);
+      }
+      setListeningTargetId(null);
+    };
+
+    recognition.onerror = () => setListeningTargetId(null);
+    recognition.onend = () => setListeningTargetId(null);
+
+    recognition.start();
   };
 
   // INTELLIGENT DYNAMIC SPEECH & REACTION GENERATOR PER SPECIFIC TOPIC TITLE
@@ -281,7 +308,7 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
               <span style={{ fontSize: '0.74rem', color: 'var(--accent-cyan)', fontWeight: 400 }}>• {currentDate}</span>
             </h2>
             <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: '0.1rem 0 0 0' }}>
-              Ordenamiento cronológico estricto del último comentario e ingesta en vivo desde Notion API.
+              Entrada por voz habilitada: Haz clic en el ícono 🎙️ para dictar comentarios o búsquedas.
             </p>
           </div>
 
@@ -365,17 +392,34 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
         })}
       </div>
 
-      {/* CROSS-TEAM GLOBAL SEARCH BAR */}
+      {/* CROSS-TEAM GLOBAL SEARCH BAR WITH VOICE DICTATION */}
       <div className="card-glass" style={{ padding: '0.65rem 0.9rem', marginBottom: '1rem', border: '1.5px solid var(--accent-cyan)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
           <Search size={18} className="text-cyan" />
           <input
             type="text"
-            placeholder="🔍 BUSCADOR CROSS DE TEMAS: Escribe cualquier palabra clave (ej: EDEMSA, Tecsys, WIND, Telecable, Bromteck, Ferrocarril, POC)..."
+            placeholder="🔍 BUSCADOR CROSS DE TEMAS: Escribe o dicta con el micrófono (ej: EDEMSA, Tecsys, WIND, Telecable)..."
             value={globalSearchQuery}
             onChange={(e) => setGlobalSearchQuery(e.target.value)}
             style={{ background: 'transparent', border: 'none', color: '#fff', outline: 'none', fontSize: '0.88rem', width: '100%', fontWeight: 500 }}
           />
+
+          <button
+            className={`btn-icon ${listeningTargetId === 'globalSearch' ? 'active' : ''}`}
+            onClick={() => handleStartVoiceDictation('globalSearch', (text) => setGlobalSearchQuery(prev => prev ? `${prev} ${text}` : text))}
+            style={{
+              padding: '0.3rem',
+              borderRadius: '50%',
+              background: listeningTargetId === 'globalSearch' ? 'var(--accent-rose)' : 'rgba(6, 182, 212, 0.2)',
+              color: '#fff',
+              border: 'none',
+              cursor: 'pointer'
+            }}
+            title="Dictar búsqueda por voz 🎙️"
+          >
+            <Mic size={15} className={listeningTargetId === 'globalSearch' ? 'pulse' : ''} />
+          </button>
+
           {globalSearchQuery && (
             <button
               onClick={() => setGlobalSearchQuery('')}
@@ -417,6 +461,7 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
             const rawComments = topic.comments || [];
             const sortedComments = [...rawComments].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
             const lastComment = sortedComments.length > 0 ? sortedComments[sortedComments.length - 1] : null;
+            const isListeningCard = listeningTargetId === topic.id;
 
             return (
               <div 
@@ -530,20 +575,47 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
                   </div>
                 )}
 
-                {/* Automatic Live Notion API Comment Input */}
+                {/* Automatic Live Notion API Comment Input WITH MICROPHONE BUTTON */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                   <div style={{ display: 'flex', gap: '0.4rem' }}>
                     <input
                       type="text"
                       className="form-input"
-                      placeholder={`Comentar directamente a Notion para ${topic.memberName}...`}
+                      placeholder={isListeningCard ? "🎙️ Escuchando tu voz por micrófono..." : `Comentar a Notion para ${topic.memberName}... (escribe o dicta con 🎙️)`}
                       value={inputVal}
                       onChange={(e) => setCommentInputs({ ...commentInputs, [topic.id]: e.target.value })}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') handlePostCommentForTopic(topic.id, topic.notionPageId, topic.memberName);
                       }}
-                      style={{ fontSize: '0.78rem', padding: '0.4rem 0.75rem' }}
+                      style={{ 
+                        fontSize: '0.78rem', 
+                        padding: '0.4rem 0.75rem',
+                        borderColor: isListeningCard ? 'var(--accent-rose)' : undefined
+                      }}
                     />
+
+                    {/* Microphone Dictation Button */}
+                    <button
+                      className={`btn-icon ${isListeningCard ? 'active' : ''}`}
+                      onClick={() => handleStartVoiceDictation(topic.id, (text) => {
+                        setCommentInputs(prev => ({
+                          ...prev,
+                          [topic.id]: prev[topic.id] ? `${prev[topic.id]} ${text}` : text
+                        }));
+                      })}
+                      style={{
+                        padding: '0.4rem 0.6rem',
+                        borderRadius: '6px',
+                        background: isListeningCard ? 'var(--accent-rose)' : 'rgba(6, 182, 212, 0.15)',
+                        color: '#fff',
+                        border: isListeningCard ? '1px solid var(--accent-rose)' : '1px solid var(--accent-cyan)',
+                        cursor: 'pointer'
+                      }}
+                      title="Dictar comentario por micrófono 🎙️"
+                    >
+                      <Mic size={14} className={isListeningCard ? 'pulse' : ''} />
+                    </button>
+
                     <button
                       className="btn-primary"
                       onClick={() => handlePostCommentForTopic(topic.id, topic.notionPageId, topic.memberName)}

@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Video, FileText, CheckCircle2, Send, Sparkles, Key, ExternalLink, RefreshCw, AlertCircle, ShieldCheck, Zap, Clock, Calendar, Search, MessageSquare, PlusCircle } from 'lucide-react';
+import { Video, FileText, CheckCircle2, Send, Sparkles, Key, ExternalLink, RefreshCw, AlertCircle, ShieldCheck, Zap, Clock, Calendar, Search, MessageSquare, PlusCircle, Mic } from 'lucide-react';
 import { parseFathomTranscript, fetchFathomMeetings, fetchSingleFathomMeetingDetails, extractTextFromFathomMeeting } from '../services/fathomService';
 import { createNotionPage, postCommentToNotion } from '../services/notionService';
 
 export default function FathomAnalyzer({ credentials, notionCards = [], onSaveCredentials, onNavigate }) {
-  // Read persistent standalone API Key from localStorage
   const [fathomApiKey, setFathomApiKey] = useState(() => {
     const standalone = localStorage.getItem('dm_fathom_api_key');
     if (standalone && standalone.trim()) return standalone.trim();
@@ -17,6 +16,7 @@ export default function FathomAnalyzer({ credentials, notionCards = [], onSaveCr
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [callSearchQuery, setCallSearchQuery] = useState('');
+  const [listeningTargetId, setListeningTargetId] = useState(null);
   
   // Persistent meetings list from localStorage
   const [meetingsList, setMeetingsList] = useState(() => {
@@ -41,6 +41,32 @@ export default function FathomAnalyzer({ credentials, notionCards = [], onSaveCr
   const [isFetchingFathomAPI, setIsFetchingFathomAPI] = useState(false);
   const [fathomApiError, setFathomApiError] = useState(null);
   const [fathomApiStatus, setFathomApiStatus] = useState(null);
+
+  const handleStartVoiceDictation = (targetId, onSpeechText) => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("🎙️ Dictado por voz: Te recomendamos abrir el tablero en Google Chrome para usar el micrófono.");
+      return;
+    }
+    setListeningTargetId(targetId);
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'es-ES';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      if (transcript) {
+        onSpeechText(transcript);
+      }
+      setListeningTargetId(null);
+    };
+
+    recognition.onerror = () => setListeningTargetId(null);
+    recognition.onend = () => setListeningTargetId(null);
+
+    recognition.start();
+  };
 
   const sampleTranscripts = [
     {
@@ -156,7 +182,6 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
     setAnalysisResult(result);
   };
 
-  // IF CARD EXISTS: POST COMMENT TO EXISTING CARD IN NOTION API
   const handlePostCommentToExistingNotionCard = async (delegation) => {
     if (!delegation.existingCard) return;
     setProcessingMember(delegation.memberName);
@@ -174,7 +199,6 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
     setProcessingMember(null);
   };
 
-  // IF NO CARD EXISTS: CREATE NEW EXECUTIVE CARD IN NOTION API
   const handleCreateNewNotionTaskFromFathom = async (delegation) => {
     setProcessingMember(delegation.memberName);
 
@@ -228,7 +252,7 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
               <Video className="text-purple" size={22} /> 🎥 Fathom Video Notetaker AI Integrator ({accountEmail})
             </h2>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0.25rem 0 0 0' }}>
-              Análisis ejecutivo inteligente: Vincula comentarios a tarjetas existentes de Notion o crea tareas con criterio.
+              Dictado por voz habilitado: Toca el micrófono 🎙️ para hablar o filtrar tus llamadas de Fathom.
             </p>
           </div>
 
@@ -303,7 +327,7 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
       {/* Main Grid: Call History List vs Active Transcript Analysis */}
       <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr 1fr', gap: '1rem' }}>
         
-        {/* Column 1: Historical Meetings List (Julio 2026 - Today with Search) */}
+        {/* Column 1: Historical Meetings List (Julio 2026 - Today with Search & Microphone) */}
         <div className="card-glass" style={{ padding: '0.9rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
             <h3 style={{ fontSize: '0.86rem', color: 'var(--accent-purple)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 700 }}>
@@ -311,17 +335,24 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
             </h3>
           </div>
 
-          {/* Search Box in Call List */}
-          <div style={{ position: 'relative', marginBottom: '0.65rem' }}>
-            <Search size={13} style={{ position: 'absolute', left: '8px', top: '8px', color: 'var(--text-muted)' }} />
+          {/* Search Box in Call List WITH MICROPHONE BUTTON */}
+          <div style={{ position: 'relative', marginBottom: '0.65rem', display: 'flex', alignItems: 'center' }}>
+            <Search size={13} style={{ position: 'absolute', left: '8px', color: 'var(--text-muted)' }} />
             <input
               type="text"
-              placeholder="Buscar llamada..."
+              placeholder={listeningTargetId === 'callSearch' ? "🎙️ Escuchando..." : "Buscar llamada o dictar (🎙️)..."}
               value={callSearchQuery}
               onChange={(e) => setCallSearchQuery(e.target.value)}
-              style={{ paddingLeft: '26px', fontSize: '0.72rem', height: '28px' }}
+              style={{ paddingLeft: '26px', paddingRight: '28px', fontSize: '0.72rem', height: '28px', width: '100%' }}
               className="form-input"
             />
+            <button
+              onClick={() => handleStartVoiceDictation('callSearch', (text) => setCallSearchQuery(prev => prev ? `${prev} ${text}` : text))}
+              style={{ position: 'absolute', right: '6px', background: 'none', border: 'none', color: listeningTargetId === 'callSearch' ? 'var(--accent-rose)' : 'var(--accent-purple)', cursor: 'pointer' }}
+              title="Dictar búsqueda por micrófono 🎙️"
+            >
+              <Mic size={13} className={listeningTargetId === 'callSearch' ? 'pulse' : ''} />
+            </button>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', maxHeight: '520px', overflowY: 'auto' }}>
@@ -359,7 +390,7 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
           </div>
         </div>
 
-        {/* Column 2: Transcript Input / Active Call View */}
+        {/* Column 2: Transcript Input / Active Call View WITH MICROPHONE DICTATION */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           
           <div className="card-glass" style={{ padding: '1rem' }}>
@@ -367,11 +398,15 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
               <h3 style={{ fontSize: '0.92rem', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                 <FileText size={16} className="text-purple" /> Transcripción / Resumen de Fathom
               </h3>
-              {isFetchingSingleDetails && (
-                <span style={{ fontSize: '0.7rem', color: 'var(--accent-purple)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                  <RefreshCw className="spin" size={12} /> Obteniendo texto completo...
-                </span>
-              )}
+              <button
+                className={`btn-secondary ${listeningTargetId === 'transcriptBox' ? 'active' : ''}`}
+                onClick={() => handleStartVoiceDictation('transcriptBox', (text) => setTranscriptText(prev => prev ? `${prev}\n${text}` : text))}
+                style={{ fontSize: '0.72rem', padding: '0.25rem 0.5rem', display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'var(--accent-purple)' }}
+                title="Dictar notas a la transcripción por micrófono 🎙️"
+              >
+                <Mic size={13} className={listeningTargetId === 'transcriptBox' ? 'pulse' : ''} />
+                <span>{listeningTargetId === 'transcriptBox' ? 'Escuchando...' : 'Dictar Notas 🎙️'}</span>
+              </button>
             </div>
 
             <div style={{ marginBottom: '0.65rem' }}>
