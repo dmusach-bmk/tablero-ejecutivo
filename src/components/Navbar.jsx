@@ -3,19 +3,21 @@ import { ShieldCheck, Bell, Settings, LayoutDashboard, FileText, BarChart3, User
 
 export default function Navbar({ activeTab, setActiveTab, missingDeadlinesCount, onOpenDeadlineModal, onOpenSettings }) {
   const navTabs = [
-    { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-    { id: 'diego_ejecutivo', label: '👑 Diego Ejecutivo', icon: Crown },
-    { id: 'followup', label: '🚨 Follow Up Diario', icon: AlertCircle },
-    { id: 'fathom', label: '🎥 Fathom Calls AI', icon: Video },
-    { id: 'google_workspace', label: '📧 Gmail & Drive AI', icon: Mail },
-    { id: 'asesor', label: '🧠 ASESOR EJECUTIVO', icon: Bot },
-    { id: 'scorecards', label: '📊 Scorecard Equipo', icon: Award },
-    { id: 'micromanagement', label: 'Equipo Real & Temas', icon: Users },
-    { id: 'notion', label: 'Notion & Transcripts', icon: FileText },
-    { id: 'excel', label: 'Excel Analytics', icon: BarChart3 },
-    { id: 'deadlines', label: 'Fechas Límite', icon: Calendar },
-    { id: 'actions', label: 'Borrador Email / Notion', icon: Mail },
-    { id: 'leadership', label: 'Liderazgo & Eng', icon: Compass },
+    { id: 'overview', label: 'Overview', icon: LayoutDashboard, inDevelopment: false },
+    { id: 'diego_ejecutivo', label: '👑 Diego Ejecutivo', icon: Crown, inDevelopment: false },
+    { id: 'followup', label: '🚨 Follow Up Diario', icon: AlertCircle, inDevelopment: false },
+    { id: 'fathom', label: '🎥 Fathom Calls AI', icon: Video, inDevelopment: false },
+    { id: 'google_workspace', label: '📧 Gmail & Drive AI', icon: Mail, inDevelopment: false },
+    { id: 'asesor', label: '🧠 ASESOR EJECUTIVO', icon: Bot, inDevelopment: false },
+    { id: 'scorecards', label: '📊 Scorecard Equipo', icon: Award, inDevelopment: false },
+    
+    // Items not customized yet marked as (En desarrollo) and disabled
+    { id: 'micromanagement', label: 'Equipo Real & Temas (En desarrollo)', icon: Users, inDevelopment: true },
+    { id: 'notion', label: 'Notion & Transcripts (En desarrollo)', icon: FileText, inDevelopment: true },
+    { id: 'excel', label: 'Excel Analytics (En desarrollo)', icon: BarChart3, inDevelopment: true },
+    { id: 'deadlines', label: 'Fechas Límite (En desarrollo)', icon: Calendar, inDevelopment: true },
+    { id: 'actions', label: 'Borrador Email / Notion (En desarrollo)', icon: Mail, inDevelopment: true },
+    { id: 'leadership', label: 'Liderazgo & Eng (En desarrollo)', icon: Compass, inDevelopment: true },
   ];
 
   return (
@@ -62,11 +64,22 @@ export default function Navbar({ activeTab, setActiveTab, missingDeadlinesCount,
         {navTabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
+          const isDisabled = tab.inDevelopment;
+
           return (
             <button
               key={tab.id}
               className={`nav-tab-btn ${isActive ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                if (!isDisabled) setActiveTab(tab.id);
+              }}
+              disabled={isDisabled}
+              style={{
+                opacity: isDisabled ? 0.45 : 1,
+                cursor: isDisabled ? 'not-allowed' : 'pointer',
+                filter: isDisabled ? 'grayscale(0.6)' : 'none'
+              }}
+              title={isDisabled ? 'Módulo en desarrollo (No interactivo)' : tab.label}
             >
               <Icon size={16} />
               <span>{tab.label}</span>
