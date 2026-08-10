@@ -113,7 +113,8 @@ export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWi
         memberName: mem.name,
         memberRole: mem.role,
         memberAvatar: mem.avatar,
-        memberId: mem.id
+        memberId: mem.id,
+        notionPageId: t.notionPageId || t.notionId
       });
     });
   });
@@ -149,11 +150,12 @@ export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWi
       setCommentedTopicIds(prev => [...prev, topicId]);
     }
 
-    // 2. Send live to Notion API
+    // 2. Send live to Notion API EXACTLY AS TYPED (no prefixes!)
+    const targetNotionId = notionPageId || existingTopic?.notionPageId || existingTopic?.notionId;
     const result = await postCommentToNotion(
       credentials?.notionToken,
-      notionPageId,
-      `[Follow Up Diario Diego Musach - ${new Date().toLocaleDateString()}]: ${text.trim()}`
+      targetNotionId,
+      text.trim()
     );
 
     if (result.success) {
@@ -210,7 +212,7 @@ export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWi
               <span style={{ fontSize: '0.74rem', color: 'var(--accent-cyan)', fontWeight: 400 }}>• {currentDate}</span>
             </h2>
             <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: '0.1rem 0 0 0' }}>
-              Cada tarjeta tiene un Speech Directivo y Contra-argumento 100% personalizado según el tema real de Notion.
+              Comentarios publicados a Notion API 100% literales tal cual los escribes.
             </p>
           </div>
 
