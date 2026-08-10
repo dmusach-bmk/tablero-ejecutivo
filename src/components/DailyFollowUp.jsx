@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, MessageSquare, ShieldAlert, CheckCircle2, Send, RefreshCw, Search, Filter, Layers } from 'lucide-react';
+import { Calendar, MessageSquare, ShieldAlert, CheckCircle2, Send, RefreshCw, Search, Layers, ExternalLink } from 'lucide-react';
 import { postCommentToNotion } from '../services/notionService';
 
 export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWithAgenda, onNavigate }) {
@@ -15,6 +15,12 @@ export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWi
     month: 'long',
     day: 'numeric'
   });
+
+  const getNotionUrl = (notionPageId) => {
+    if (!notionPageId) return 'https://notion.so';
+    const cleanId = notionPageId.replace(/-/g, '');
+    return `https://notion.so/${cleanId}`;
+  };
 
   // Flatten all 165 cards across all team members for cross-search
   const allCardsCross = [];
@@ -67,6 +73,8 @@ export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWi
 
     setSyncStatus(prev => ({ ...prev, [topicId]: 'syncing' }));
 
+    const nowFormatted = new Date().toISOString().replace('T', ' ').substring(0, 16);
+
     // Send directly to Notion API
     const result = await postCommentToNotion(
       credentials?.notionToken,
@@ -76,6 +84,16 @@ export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWi
 
     if (result.success) {
       setSyncStatus(prev => ({ ...prev, [topicId]: 'success' }));
+      
+      // Update local comment list for this topic so last comment displays immediately
+      const targetCard = allCardsCross.find(c => c.id === topicId);
+      if (targetCard) {
+        targetCard.comments = [
+          ...(targetCard.comments || []),
+          { author: 'Diego Musach (CTO)', date: nowFormatted, text: text.trim() }
+        ];
+      }
+
       setCommentInputs(prev => ({ ...prev, [topicId]: '' }));
       
       // Move this topic to bottom
@@ -126,7 +144,7 @@ export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWi
               <span style={{ fontSize: '0.74rem', color: 'var(--accent-cyan)', fontWeight: 400 }}>• {currentDate}</span>
             </h2>
             <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: '0.1rem 0 0 0' }}>
-              Filtro compacto sin scroll horizontal. Buscador Cross de temas y sincronización automática con Notion API.
+              Muestra el último comentario con fecha e incluye link directo para abrir cada tarjeta en Notion.
             </p>
           </div>
 
@@ -136,10 +154,8 @@ export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWi
         </div>
       </div>
 
-      {/* COMPACT MULTI-ROW MEMBER CHIPS (NO HORIZONTAL SCROLL) */}
+      {/* COMPACT MULTI-ROW MEMBER CHIPS */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem', marginBottom: '0.85rem' }}>
-        
-        {/* ALL MEMBERS CHIP */}
         <button
           onClick={() => {
             setActiveMemberId('all');
@@ -167,7 +183,6 @@ export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWi
           const isActive = mem.id === activeMemberId && !globalSearchQuery;
           const count = (mem.topics || []).length;
           
-          // Shorten member label for max compactness
           let shortName = mem.name.split(' ')[0];
           if (mem.name.includes('Musach')) shortName = 'Diego (CTO)';
           else if (mem.name.includes('Sin Asignar')) shortName = 'Sin Asignar';
@@ -204,7 +219,7 @@ export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWi
         })}
       </div>
 
-      {/* CROSS-TEAM GLOBAL SEARCH BAR (BUSCADOR CROSS DE TEMAS) */}
+      {/* CROSS-TEAM GLOBAL SEARCH BAR */}
       <div className="card-glass" style={{ padding: '0.65rem 0.9rem', marginBottom: '1rem', border: '1.5px solid var(--accent-cyan)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
           <Search size={18} className="text-cyan" />
@@ -243,6 +258,8 @@ export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWi
             const inputVal = commentInputs[topic.id] || '';
             const status = syncStatus[topic.id];
             const isCommented = commentedTopicIds.includes(topic.id);
+            const notionUrl = getNotionUrl(topic.notionPageId);
+            const lastComment = (topic.comments || []).length > 0 ? topic.comments[topic.comments.length - 1] : null;
 
             return (
               <div 
@@ -259,7 +276,7 @@ export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWi
                   transition: 'all 0.3s ease'
                 }}
               >
-                {/* Compact Card Header */}
+                {/* Compact Card Header with Direct Notion Link */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', marginBottom: '0.15rem' }}>
@@ -283,6 +300,18 @@ export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWi
                       {topic.title}
                     </h4>
                   </div>
+
+                  {/* DIRECT NOTION PAGE LINK BUTTON */}
+                  <a
+                    href={notionUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-secondary"
+                    style={{ fontSize: '0.72rem', padding: '0.3rem 0.65rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.3rem', border: '1px solid var(--accent-cyan)', color: 'var(--accent-cyan)' }}
+                    title="Abrir esta tarjeta directamente en Notion"
+                  >
+                    <ExternalLink size={13} /> Abrir en Notion
+                  </a>
                 </div>
 
                 {/* Compact Speech & Reaction Grid */}
@@ -310,11 +339,18 @@ export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWi
 
                 </div>
 
-                {/* Existing Comments */}
-                {(topic.comments || []).length > 0 && (
-                  <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.35rem 0.65rem', borderRadius: '6px', fontSize: '0.74rem' }}>
-                    <strong style={{ color: 'var(--accent-cyan)' }}>💬 Último comentario: </strong>
-                    <span style={{ color: '#fff' }}>{topic.comments[topic.comments.length - 1].text}</span>
+                {/* LATEST NOTION COMMENT DISPLAY WITH DATE */}
+                {lastComment ? (
+                  <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.45rem 0.75rem', borderRadius: '6px', fontSize: '0.76rem', borderLeft: '3px solid var(--accent-cyan)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', fontSize: '0.7rem', marginBottom: '0.15rem' }}>
+                      <strong>💬 Último comentario por {lastComment.author}</strong>
+                      <span>📅 {lastComment.date}</span>
+                    </div>
+                    <div style={{ color: '#fff', fontSize: '0.8rem' }}>"{lastComment.text}"</div>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', fontStyle: 'italic' }}>
+                    Sin comentarios previos registrados en Notion.
                   </div>
                 )}
 
