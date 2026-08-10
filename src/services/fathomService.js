@@ -1,10 +1,11 @@
 // Service to handle Fathom Video Notetaker API & Transcript Processing
 // Supports Fathom API Key via Vite Proxy /api/fathom -> https://api.fathom.video
 
-export async function fetchFathomMeetings(apiKey) {
+export async function fetchFathomMeetings(apiKey, startDate = '2026-07-01') {
   if (!apiKey) return [];
   try {
-    const response = await fetch('/api/fathom/v1/meetings', {
+    const query = startDate ? `?created_after=${startDate}T00:00:00Z` : '';
+    const response = await fetch(`/api/fathom/v1/meetings${query}`, {
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json'
@@ -17,7 +18,8 @@ export async function fetchFathomMeetings(apiKey) {
     }
 
     const data = await response.json();
-    return data.meetings || data.results || data || [];
+    const meetings = data.meetings || data.results || data || [];
+    return Array.isArray(meetings) ? meetings : [];
   } catch (err) {
     console.error("Fathom API Proxy Error:", err);
     return [];
