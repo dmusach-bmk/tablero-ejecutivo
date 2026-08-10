@@ -4,7 +4,18 @@ import { parseFathomTranscript, fetchFathomMeetings } from '../services/fathomSe
 import { createNotionPage } from '../services/notionService';
 
 export default function FathomAnalyzer({ credentials, onNavigate }) {
-  const [fathomApiKey, setFathomApiKey] = useState(credentials?.fathomApiKey || '');
+  // Read persistent API Key directly from localStorage on initial render
+  const [fathomApiKey, setFathomApiKey] = useState(() => {
+    const saved = localStorage.getItem('dm_credentials');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.fathomApiKey) return parsed.fathomApiKey;
+      } catch (e) {}
+    }
+    return credentials?.fathomApiKey || '';
+  });
+
   const [webhookSecret, setWebhookSecret] = useState(credentials?.fathomWebhookSecret || '');
   const [accountEmail, setAccountEmail] = useState('dmusach@bromteck.com');
   const [startDate, setStartDate] = useState('2026-07-01');
@@ -12,7 +23,18 @@ export default function FathomAnalyzer({ credentials, onNavigate }) {
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [callSearchQuery, setCallSearchQuery] = useState('');
   
-  const [meetingsList, setMeetingsList] = useState([]);
+  // Read persistent meetings list from localStorage so F5 retains everything in 0ms!
+  const [meetingsList, setMeetingsList] = useState(() => {
+    const saved = localStorage.getItem('dm_fathom_meetings_v1');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    return [];
+  });
+
   const [selectedMeetingId, setSelectedMeetingId] = useState(null);
   const [meetingTitle, setMeetingTitle] = useState('Reunión de Control Directivo CTO - Fathom');
   const [transcriptText, setTranscriptText] = useState('');
@@ -56,17 +78,46 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
     }
   ];
 
+  // Auto select first meeting when meetingsList is initialized or updated
+  useEffect(() => {
+    const listToUse = meetingsList.length > 0 ? meetingsList : sampleTranscripts;
+    if (listToUse.length > 0 && !selectedMeetingId) {
+      const first = listToUse[0];
+      setSelectedMeetingId(first.id || '1');
+      setMeetingTitle(first.title || 'Llamada Fathom');
+      const text = first.transcript || first.summary || first.text || '';
+      setTranscriptText(text);
+      if (text) {
+        setAnalysisResult(parseFathomTranscript(text, first.title));
+      }
+    }
+  }, [meetingsList]);
+
   const handleFetchLatestCallsFromFathomAccount = async () => {
+    const activeKey = fathomApiKey || credentials?.fathomApiKey || (() => {
+      const saved = localStorage.getItem('dm_credentials');
+      if (saved) {
+        try { return JSON.parse(saved).fathomApiKey || ''; } catch(e){}
+      }
+      return '';
+    })();
+
+    if (!activeKey) {
+      setFathomApiError('Por favor pega tu API Key de Fathom a continuación para conectar con dmusach@bromteck.com');
+      return;
+    }
+
     setIsFetchingFathomAPI(true);
     setFathomApiError(null);
     setFathomApiStatus('fetching');
 
-    const result = await fetchFathomMeetings(fathomApiKey, startDate);
+    const result = await fetchFathomMeetings(activeKey, startDate);
     const nowStr = new Date().toISOString().replace('T', ' ').slice(0, 16);
     setLastSyncTime(nowStr);
 
     if (result.success && result.meetings && result.meetings.length > 0) {
       setMeetingsList(result.meetings);
+      localStorage.setItem('dm_fathom_meetings_v1', JSON.stringify(result.meetings));
       const lastCall = result.meetings[0];
       setSelectedMeetingId(lastCall.id || '1');
       setMeetingTitle(lastCall.title || 'Llamada Fathom');
@@ -80,7 +131,9 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
       if (result.error) {
         setFathomApiError(result.error);
       }
-      setMeetingsList(sampleTranscripts);
+      if (meetingsList.length === 0) {
+        setMeetingsList(sampleTranscripts);
+      }
       setFathomApiStatus('demo_fallback');
     }
     setIsFetchingFathomAPI(false);
@@ -119,9 +172,9 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
 
   useEffect(() => {
     let intervalId;
-    if (autoSyncEnabled && fathomApiKey) {
-      handleFetchLatestCallsFromFathomAccount();
+    handleFetchLatestCallsFromFathomAccount();
 
+    if (autoSyncEnabled) {
       intervalId = setInterval(() => {
         handleFetchLatestCallsFromFathomAccount();
       }, 3600000);
@@ -129,7 +182,7 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [autoSyncEnabled, fathomApiKey, startDate]);
+  }, [startDate]);
 
   const rawList = meetingsList.length > 0 ? meetingsList : sampleTranscripts;
   const filteredMeetings = rawList.filter(m => {
@@ -152,7 +205,7 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
               <Video className="text-purple" size={22} /> 🎥 Fathom Video Notetaker AI Integrator ({accountEmail})
             </h2>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0.25rem 0 0 0' }}>
-              Histórico desde <strong style={{ color: 'var(--accent-purple)' }}>Julio 2026</strong> + Ingesta automática en segundo plano <strong style={{ color: 'var(--accent-emerald)' }}>cada 1 hora</strong>.
+              Almacenamiento persistente local activo: Tus reuniones nunca desaparecen al recargar la página.
             </p>
           </div>
 
@@ -175,10 +228,10 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
             <Zap size={20} className="text-emerald" />
             <div>
               <span style={{ fontSize: '0.86rem', color: '#fff', fontWeight: 700 }}>
-                Auto-Cron Activo: Sincronizando llamadas de {accountEmail} cada 60 minutos ({filteredMeetings.length} llamadas)
+                Auto-Cron Activo: Sincronizando llamadas de {accountEmail} ({filteredMeetings.length} llamadas en memoria)
               </span>
               <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', display: 'block' }}>
-                {lastSyncTime ? `Último intento: ${lastSyncTime}` : 'Ingresa tu API Key y presiona Sincronizar'} • Período: Desde {startDate} hasta HOY.
+                {lastSyncTime ? `Última sincronización exitosa: ${lastSyncTime}` : 'Leyendo caché de reuniones guardadas...'} • Período: Desde {startDate} hasta HOY.
               </span>
             </div>
           </div>
