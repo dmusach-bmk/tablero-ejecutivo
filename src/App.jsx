@@ -9,6 +9,7 @@ import TeamScorecard from './components/TeamScorecard';
 import DailyFollowUp from './components/DailyFollowUp';
 import DiegoEjecutivo from './components/DiegoEjecutivo';
 import FathomAnalyzer from './components/FathomAnalyzer';
+import GoogleWorkspaceHub from './components/GoogleWorkspaceHub';
 import DeadlinesManager from './components/DeadlinesManager';
 import ActionHub from './components/ActionHub';
 import LeadershipAdvisor from './components/LeadershipAdvisor';
@@ -180,6 +181,13 @@ export default function App() {
             notionCards={notionCards}
             onSaveCredentials={setCredentials}
             onNavigate={handleTabChange}
+          />
+        )}
+
+        {activeTab === 'google_workspace' && (
+          <GoogleWorkspaceHub
+            credentials={credentials}
+            notionCards={notionCards}
           />
         )}
 
