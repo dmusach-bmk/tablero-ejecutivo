@@ -14,11 +14,8 @@ import LeadershipAdvisor from './components/LeadershipAdvisor';
 import DeadlineModal from './components/DeadlineModal';
 import SettingsModal from './components/SettingsModal';
 
-import {
-  INITIAL_NOTION_CARDS,
-  INITIAL_EXCEL_DATA,
-  INITIAL_TEAM_TRACKING
-} from './mockData';
+import { REAL_NOTION_CARDS, REAL_TEAM_TRACKING } from './realNotionData';
+import { INITIAL_EXCEL_DATA } from './mockData';
 
 export default function App() {
   const getTabFromHash = () => {
@@ -27,26 +24,32 @@ export default function App() {
   };
 
   const [activeTab, setActiveTab] = useState(getTabFromHash());
+  
+  // Use REAL_NOTION_CARDS from Notion API
   const [notionCards, setNotionCards] = useState(() => {
-    const saved = localStorage.getItem('dm_notion_cards');
+    const saved = localStorage.getItem('dm_notion_cards_v2');
     if (saved) {
       const parsed = JSON.parse(saved);
       if (parsed.length >= 160) return parsed;
     }
-    return INITIAL_NOTION_CARDS;
+    return REAL_NOTION_CARDS;
   });
+
   const [excelData, setExcelData] = useState(() => {
     const saved = localStorage.getItem('dm_excel_data');
     return saved ? JSON.parse(saved) : INITIAL_EXCEL_DATA;
   });
+
+  // Use REAL_TEAM_TRACKING with 370 real Notion comments
   const [teamTracking, setTeamTracking] = useState(() => {
-    const saved = localStorage.getItem('dm_team_tracking');
+    const saved = localStorage.getItem('dm_team_tracking_v2');
     if (saved) {
       const parsed = JSON.parse(saved);
       if (parsed.length >= 10) return parsed;
     }
-    return INITIAL_TEAM_TRACKING;
+    return REAL_TEAM_TRACKING;
   });
+
   const [credentials, setCredentials] = useState(() => {
     const saved = localStorage.getItem('dm_credentials');
     return saved ? JSON.parse(saved) : {};
@@ -70,7 +73,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('dm_notion_cards', JSON.stringify(notionCards));
+    localStorage.setItem('dm_notion_cards_v2', JSON.stringify(notionCards));
   }, [notionCards]);
 
   useEffect(() => {
@@ -78,7 +81,7 @@ export default function App() {
   }, [excelData]);
 
   useEffect(() => {
-    localStorage.setItem('dm_team_tracking', JSON.stringify(teamTracking));
+    localStorage.setItem('dm_team_tracking_v2', JSON.stringify(teamTracking));
   }, [teamTracking]);
 
   useEffect(() => {
@@ -95,11 +98,11 @@ export default function App() {
           deadline: newDeadline,
           missingDeadline: false,
           comments: [
-            ...card.comments,
+            ...(card.comments || []),
             {
               author: "Diego Paolo Musach",
-              date: new Date().toISOString().replace('T', ' ').substring(0, 16),
-              text: `📅 Fecha Límite fijada institucionalmente para el ${newDeadline}.`
+              date: new Date().toISOString().split('T')[0],
+              text: `Plazo fijado/actualizado a ${newDeadline}`
             }
           ]
         };
@@ -108,32 +111,17 @@ export default function App() {
     }));
   };
 
-  const handleAddNotionComment = (taskId, commentText) => {
-    setNotionCards(prev => prev.map(card => {
-      if (card.id === taskId) {
-        return {
-          ...card,
-          comments: [
-            ...card.comments,
-            {
-              author: "Diego Paolo Musach (Director)",
-              date: new Date().toISOString().replace('T', ' ').substring(0, 16),
-              text: commentText
-            }
-          ]
-        };
-      }
-      return card;
-    }));
-  };
+  const handleOpenEmailWithAgenda = (memberName, topics) => {
+    const topicText = (topics || [])
+      .map((t, idx) => `${idx + 1}. [${t.priority || 'P2'}] ${t.title}`)
+      .join('\n');
 
-  const handleOpenEmailWithAgenda = (dev) => {
     setPrefilledEmailData({
-      to: `${dev.name.toLowerCase().replace(' ', '.')}@empresa.com`,
-      subject: `Agenda 1-on-1 & Alineación | Diego Musach`,
-      body: `Hola ${dev.name},\n\nTe comparto los puntos de alineación para nuestra próxima sesión de 1-on-1:\n\n1. Estado de entregables del proyecto y seguimiento en Notion.\n2. Avance en el objetivo semanal: "${dev.weeklyGoal}".\n3. Feedback de reconocimiento y alineación de prioridades.\n\nSaludos,\nDiego Paolo Musach`
+      to: `${memberName.toLowerCase().split(' ')[0]}@company.com`,
+      subject: `🚨 Agenda de Prioridades y Bloqueos - 1-on-1 CTO`,
+      body: `Hola ${memberName},\n\nRepasemos hoy los siguientes temas prioritarios:\n\n${topicText}\n\nPor favor trae tu status y blockers listos.\n\nSaludos,\nDiego Paolo Musach\nHead of Engineering (CTO)`
     });
-    handleTabChange('actions');
+    setIsDeadlineModalOpen(true);
   };
 
   return (
@@ -141,8 +129,7 @@ export default function App() {
       <Navbar
         activeTab={activeTab}
         setActiveTab={handleTabChange}
-        missingDeadlinesCount={missingTasks.length}
-        onOpenDeadlineModal={() => setIsDeadlineModalOpen(true)}
+        missingTasksCount={missingTasks.length}
         onOpenSettings={() => setIsSettingsOpen(true)}
       />
 
@@ -153,17 +140,26 @@ export default function App() {
             excelData={excelData}
             teamTracking={teamTracking}
             onNavigate={handleTabChange}
-            onOpenDeadlineModal={() => setIsDeadlineModalOpen(true)}
           />
         )}
 
-        {activeTab === 'diego_ejecutivo' && (
-          <DiegoEjecutivo
-            teamTracking={teamTracking}
-            notionCards={notionCards}
+        {activeTab === 'notion' && (
+          <NotionTranscripts
+            cards={notionCards}
+            onUpdateCards={setNotionCards}
             credentials={credentials}
-            onUpdateNotionCards={(updated) => setNotionCards(updated)}
-            onOpenSettings={() => setIsSettingsOpen(true)}
+          />
+        )}
+
+        {activeTab === 'excel' && (
+          <ExcelAnalytics data={excelData} />
+        )}
+
+        {activeTab === 'micromanagement' && (
+          <MicromanagementEngine
+            teamTracking={teamTracking}
+            onOpenEmailWithAgenda={handleOpenEmailWithAgenda}
+            onNavigate={handleTabChange}
           />
         )}
 
@@ -176,79 +172,59 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'asesor' && (
-          <AsesorEjecutivoChat
+        {activeTab === 'diego_ejecutivo' && (
+          <DiegoEjecutivo
             teamTracking={teamTracking}
             notionCards={notionCards}
             credentials={credentials}
+            onNavigate={handleTabChange}
           />
         )}
 
-        {activeTab === 'scorecards' && (
-          <TeamScorecard
-            teamTracking={teamTracking}
-            onNavigateToAsesor={() => handleTabChange('asesor')}
-            onOpenEmailWithAgenda={handleOpenEmailWithAgenda}
-          />
-        )}
-
-        {activeTab === 'micromanagement' && (
-          <MicromanagementEngine
-            teamTracking={teamTracking}
-            credentials={credentials}
-            onUpdateTeamTracking={(updated) => setTeamTracking(updated)}
-            onOpenEmailWithAgenda={handleOpenEmailWithAgenda}
-          />
-        )}
-
-        {activeTab === 'notion' && (
-          <NotionTranscripts
-            notionCards={notionCards}
-            onAddComment={handleAddNotionComment}
-            onSetDeadline={handleSetDeadline}
-            onOpenDeadlineModal={() => setIsDeadlineModalOpen(true)}
-          />
-        )}
-
-        {activeTab === 'excel' && (
-          <ExcelAnalytics
-            excelData={excelData}
-            onUploadData={(newData) => setExcelData(newData)}
-          />
+        {activeTab === 'scorecard' && (
+          <TeamScorecard teamTracking={teamTracking} />
         )}
 
         {activeTab === 'deadlines' && (
           <DeadlinesManager
-            notionCards={notionCards}
+            cards={notionCards}
             onSetDeadline={handleSetDeadline}
-            onOpenDeadlineModal={() => setIsDeadlineModalOpen(true)}
           />
         )}
 
-        {activeTab === 'actions' && (
+        {activeTab === 'action_hub' && (
           <ActionHub
-            prefilledEmailData={prefilledEmailData}
-            onAddComment={handleAddNotionComment}
+            notionCards={notionCards}
+            excelData={excelData}
+            teamTracking={teamTracking}
+            onOpenEmailWithAgenda={handleOpenEmailWithAgenda}
           />
         )}
 
-        {activeTab === 'leadership' && (
-          <LeadershipAdvisor />
+        {activeTab === 'leadership_advisor' && (
+          <LeadershipAdvisor teamTracking={teamTracking} />
+        )}
+
+        {activeTab === 'chat' && (
+          <AsesorEjecutivoChat
+            notionCards={notionCards}
+            excelData={excelData}
+            teamTracking={teamTracking}
+          />
         )}
       </main>
 
       <DeadlineModal
         isOpen={isDeadlineModalOpen}
         onClose={() => setIsDeadlineModalOpen(false)}
-        missingTasks={missingTasks}
-        onSetDeadline={handleSetDeadline}
+        emailData={prefilledEmailData}
       />
 
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         credentials={credentials}
-        onSaveCredentials={(newCreds) => setCredentials(newCreds)}
+        onSaveCredentials={setCredentials}
       />
     </div>
   );
