@@ -10,6 +10,41 @@ function formatNotionUuid(id) {
   return id;
 }
 
+export async function fetchNotionComments(token, pageId) {
+  const authToken = token || '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';
+  const targetPageId = formatNotionUuid(pageId);
+  if (!targetPageId) return [];
+
+  try {
+    const response = await fetch(`/api/notion/v1/comments?block_id=${targetPageId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${authToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) return [];
+
+    const data = await response.json();
+    const results = data.results || [];
+    return results.map(r => {
+      const textArr = r.rich_text || [];
+      const textContent = textArr.map(t => t.plain_text || '').join('');
+      const authorName = r.created_by?.name || 'Diego Musach';
+      const createdTime = (r.created_time || '').replace('T', ' ').slice(0, 16);
+      return {
+        author: authorName,
+        date: createdTime,
+        text: textContent
+      };
+    }).filter(c => c.text.trim());
+  } catch (error) {
+    console.error("Error fetching Notion comments:", error);
+    return [];
+  }
+}
+
 export async function fetchNotionDatabase(token, databaseId) {
   if (!token || !databaseId) {
     throw new Error("Token o Database ID no configurados");

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Calendar, MessageSquare, ShieldAlert, CheckCircle2, Send, RefreshCw, Search, Layers, ExternalLink, Archive, CheckSquare } from 'lucide-react';
-import { postCommentToNotion, updateNotionPageStatus } from '../services/notionService';
+import { postCommentToNotion, updateNotionPageStatus, fetchNotionComments } from '../services/notionService';
 
 export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamTracking, onOpenEmailWithAgenda, onNavigate }) {
   const [activeMemberId, setActiveMemberId] = useState('all');
@@ -12,6 +12,7 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
   const [showClosedSection, setShowClosedSection] = useState(false);
   const [cardStatusMap, setCardStatusMap] = useState({});
   const [localCommentsMap, setLocalCommentsMap] = useState({});
+  const [isFetchingNotionComments, setIsFetchingNotionComments] = useState(false);
 
   const currentDate = new Date().toLocaleDateString('es-ES', {
     weekday: 'long',
@@ -128,6 +129,24 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
     setStatusUpdatingId(null);
   };
 
+  const handleFetchLiveCommentsForCard = async (topicId, notionPageId) => {
+    setIsFetchingNotionComments(true);
+    const freshComments = await fetchNotionComments(credentials?.notionToken, notionPageId);
+    if (freshComments && freshComments.length > 0) {
+      setLocalCommentsMap(prev => ({
+        ...prev,
+        [topicId]: freshComments
+      }));
+      if (onUpdateTeamTracking) {
+        onUpdateTeamTracking(prevTeam => prevTeam.map(mem => ({
+          ...mem,
+          topics: (mem.topics || []).map(top => top.id === topicId ? { ...top, comments: freshComments } : top)
+        })));
+      }
+    }
+    setIsFetchingNotionComments(false);
+  };
+
   const handlePostCommentForTopic = async (topicId, notionPageId, memberName) => {
     const text = commentInputs[topicId];
     if (!text || !text.trim()) return;
@@ -180,9 +199,12 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
 
     if (result.success) {
       setSyncStatus(prev => ({ ...prev, [topicId]: 'success' }));
-      setTimeout(() => {
+      
+      // Re-fetch live comments from Notion API to verify exact server state
+      setTimeout(async () => {
+        await handleFetchLiveCommentsForCard(topicId, targetNotionId);
         setSyncStatus(prev => ({ ...prev, [topicId]: null }));
-      }, 3500);
+      }, 1200);
     } else {
       setSyncStatus(prev => ({ ...prev, [topicId]: 'error' }));
     }
@@ -232,7 +254,7 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
               <span style={{ fontSize: '0.74rem', color: 'var(--accent-cyan)', fontWeight: 400 }}>• {currentDate}</span>
             </h2>
             <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: '0.1rem 0 0 0' }}>
-              Sincronización bidireccional en tiempo real con Notion API.
+              Sincronización en vivo con la API oficial de Notion.
             </p>
           </div>
 
@@ -418,16 +440,27 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
                     </h4>
                   </div>
 
-                  {/* DIRECT NOTION LINK */}
-                  <a
-                    href={notionUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn-secondary"
-                    style={{ fontSize: '0.72rem', padding: '0.3rem 0.65rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.3rem', border: '1px solid var(--accent-cyan)', color: 'var(--accent-cyan)' }}
-                  >
-                    <ExternalLink size={13} /> Abrir en Notion
-                  </a>
+                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    <button
+                      onClick={() => handleFetchLiveCommentsForCard(topic.id, topic.notionPageId)}
+                      className="btn-secondary"
+                      style={{ fontSize: '0.72rem', padding: '0.3rem 0.55rem' }}
+                      title="Refrescar comentarios de Notion en vivo"
+                    >
+                      <RefreshCw size={12} className={isFetchingNotionComments ? 'spin' : ''} />
+                    </button>
+
+                    {/* DIRECT NOTION LINK */}
+                    <a
+                      href={notionUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn-secondary"
+                      style={{ fontSize: '0.72rem', padding: '0.3rem 0.65rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.3rem', border: '1px solid var(--accent-cyan)', color: 'var(--accent-cyan)' }}
+                    >
+                      <ExternalLink size={13} /> Abrir en Notion
+                    </a>
+                  </div>
                 </div>
 
                 {/* TAILORED DYNAMIC SPEECH & REACTION GRID FOR THIS EXACT TOPIC */}
