@@ -187,9 +187,16 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
             <input
               type="password"
               className="form-input"
-              placeholder="API Key Diego (BgtG...)"
+              placeholder="API Key Diego..."
               value={fathomApiKey}
-              onChange={(e) => setFathomApiKey(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setFathomApiKey(val);
+                try {
+                  const savedCreds = JSON.parse(localStorage.getItem('dm_credentials') || '{}');
+                  localStorage.setItem('dm_credentials', JSON.stringify({ ...savedCreds, fathomApiKey: val }));
+                } catch (err) {}
+              }}
               style={{ fontSize: '0.76rem', padding: '0.35rem 0.65rem', width: '180px' }}
             />
 
