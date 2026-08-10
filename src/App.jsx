@@ -177,6 +177,7 @@ export default function App() {
         {activeTab === 'fathom' && (
           <FathomAnalyzer
             credentials={credentials}
+            notionCards={notionCards}
             onSaveCredentials={setCredentials}
             onNavigate={handleTabChange}
           />

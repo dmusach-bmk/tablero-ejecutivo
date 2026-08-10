@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Video, FileText, CheckCircle2, Send, Sparkles, Key, ExternalLink, RefreshCw, AlertCircle, ShieldCheck, Zap, Clock, Calendar, Search } from 'lucide-react';
+import { Video, FileText, CheckCircle2, Send, Sparkles, Key, ExternalLink, RefreshCw, AlertCircle, ShieldCheck, Zap, Clock, Calendar, Search, MessageSquare, PlusCircle } from 'lucide-react';
 import { parseFathomTranscript, fetchFathomMeetings, fetchSingleFathomMeetingDetails, extractTextFromFathomMeeting } from '../services/fathomService';
-import { createNotionPage } from '../services/notionService';
+import { createNotionPage, postCommentToNotion } from '../services/notionService';
 
-export default function FathomAnalyzer({ credentials, onSaveCredentials, onNavigate }) {
+export default function FathomAnalyzer({ credentials, notionCards = [], onSaveCredentials, onNavigate }) {
+  // Read persistent standalone API Key from localStorage
   const [fathomApiKey, setFathomApiKey] = useState(() => {
     const standalone = localStorage.getItem('dm_fathom_api_key');
     if (standalone && standalone.trim()) return standalone.trim();
@@ -17,6 +18,7 @@ export default function FathomAnalyzer({ credentials, onSaveCredentials, onNavig
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [callSearchQuery, setCallSearchQuery] = useState('');
   
+  // Persistent meetings list from localStorage
   const [meetingsList, setMeetingsList] = useState(() => {
     const saved = localStorage.getItem('dm_fathom_meetings_v1');
     if (saved) {
@@ -34,8 +36,8 @@ export default function FathomAnalyzer({ credentials, onSaveCredentials, onNavig
   const [analysisResult, setAnalysisResult] = useState(null);
   const [isFetchingSingleDetails, setIsFetchingSingleDetails] = useState(false);
   
-  const [creatingTaskMember, setCreatingTaskMember] = useState(null);
-  const [createdStatus, setCreatedStatus] = useState({});
+  const [processingMember, setProcessingMember] = useState(null);
+  const [actionSuccessStatus, setActionSuccessStatus] = useState({});
   const [isFetchingFathomAPI, setIsFetchingFathomAPI] = useState(false);
   const [fathomApiError, setFathomApiError] = useState(null);
   const [fathomApiStatus, setFathomApiStatus] = useState(null);
@@ -131,7 +133,6 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
 
     let textToUse = extractTextFromFathomMeeting(m) || m.text || m.transcript || m.summary || '';
 
-    // If text is empty, query single meeting endpoint live
     if (!textToUse.trim() && mId && fathomApiKey) {
       setIsFetchingSingleDetails(true);
       const details = await fetchSingleFathomMeetingDetails(fathomApiKey, mId);
@@ -146,30 +147,48 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
     }
 
     setTranscriptText(textToUse);
-    setAnalysisResult(parseFathomTranscript(textToUse, title));
+    setAnalysisResult(parseFathomTranscript(textToUse, title, notionCards));
   };
 
   const handleAnalyzeTranscript = () => {
     if (!transcriptText.trim()) return;
-    const result = parseFathomTranscript(transcriptText, meetingTitle);
+    const result = parseFathomTranscript(transcriptText, meetingTitle, notionCards);
     setAnalysisResult(result);
   };
 
-  const handleCreateNotionTaskFromFathom = async (delegation) => {
-    setCreatingTaskMember(delegation.memberName);
+  // IF CARD EXISTS: POST COMMENT TO EXISTING CARD IN NOTION API
+  const handlePostCommentToExistingNotionCard = async (delegation) => {
+    if (!delegation.existingCard) return;
+    setProcessingMember(delegation.memberName);
 
-    const taskTitle = `[Fathom ${new Date().toLocaleDateString()}] ${delegation.memberName}: ${delegation.excerpt.substring(0, 70)}`;
+    const commentContent = `[Fathom ${new Date().toLocaleDateString()} - "${meetingTitle}"]: ${delegation.excerpt}`;
+    const res = await postCommentToNotion(
+      credentials?.notionToken,
+      delegation.existingCard.id,
+      commentContent
+    );
+
+    if (res.success) {
+      setActionSuccessStatus(prev => ({ ...prev, [delegation.memberName]: 'commented' }));
+    }
+    setProcessingMember(null);
+  };
+
+  // IF NO CARD EXISTS: CREATE NEW EXECUTIVE CARD IN NOTION API
+  const handleCreateNewNotionTaskFromFathom = async (delegation) => {
+    setProcessingMember(delegation.memberName);
+
     const res = await createNotionPage(credentials?.notionToken, null, {
-      title: taskTitle,
+      title: delegation.executiveTitle,
       responsable: delegation.responsableKey,
       status: 'Abierto',
       priority: 'P1 - CRITICA'
     });
 
     if (res.success) {
-      setCreatedStatus(prev => ({ ...prev, [delegation.memberName]: true }));
+      setActionSuccessStatus(prev => ({ ...prev, [delegation.memberName]: 'created' }));
     }
-    setCreatingTaskMember(null);
+    setProcessingMember(null);
   };
 
   useEffect(() => {
@@ -209,7 +228,7 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
               <Video className="text-purple" size={22} /> 🎥 Fathom Video Notetaker AI Integrator ({accountEmail})
             </h2>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0.25rem 0 0 0' }}>
-              Desglose en tiempo real: Resumen de Fathom + Transcripción + Ingesta directa de compromisos a Notion API.
+              Análisis ejecutivo inteligente: Vincula comentarios a tarjetas existentes de Notion o crea tareas con criterio.
             </p>
           </div>
 
@@ -393,11 +412,11 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
 
         </div>
 
-        {/* Column 3: AI Analysis Output & Notion Task Dispatch */}
+        {/* Column 3: AI Analysis Output & Notion Task/Comment Dispatch */}
         <div>
           <div className="card-glass" style={{ padding: '1rem', minHeight: '480px' }}>
             <h3 style={{ fontSize: '0.92rem', color: '#fff', marginBottom: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <Sparkles size={16} className="text-purple" /> Temas Delegados Extraídos por la IA
+              <Sparkles size={16} className="text-purple" /> Temas Delegados & Tareas con Criterio
             </h3>
 
             {!analysisResult ? (
@@ -414,8 +433,8 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
                 </div>
 
                 {analysisResult.teamDelegations.map((del, idx) => {
-                  const isCreated = createdStatus[del.memberName];
-                  const isCreating = creatingTaskMember === del.memberName;
+                  const status = actionSuccessStatus[del.memberName];
+                  const isProcessing = processingMember === del.memberName;
 
                   return (
                     <div 
@@ -424,52 +443,102 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
                         background: 'rgba(0,0,0,0.3)', 
                         border: '1px solid var(--border-subtle)', 
                         borderRadius: '8px', 
-                        padding: '0.65rem 0.8rem',
-                        borderLeft: '4px solid var(--accent-purple)'
+                        padding: '0.7rem 0.85rem',
+                        borderLeft: del.existingCard ? '4px solid var(--accent-emerald)' : '4px solid var(--accent-purple)'
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                        <span style={{ fontSize: '0.82rem', color: '#fff', fontWeight: 700 }}>
+                        <span style={{ fontSize: '0.84rem', color: '#fff', fontWeight: 700 }}>
                           👤 {del.memberName}
                         </span>
-                        <span style={{ fontSize: '0.68rem', color: 'var(--accent-purple)', background: 'rgba(168, 85, 247, 0.15)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
-                          {del.mentionCount} compromisos
-                        </span>
+
+                        {del.existingCard ? (
+                          <span style={{ fontSize: '0.66rem', color: 'var(--accent-emerald)', background: 'rgba(16, 185, 129, 0.15)', padding: '0.1rem 0.4rem', borderRadius: '4px', fontWeight: 700 }}>
+                            📌 Tarjeta Abierta Coincidente
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: '0.66rem', color: 'var(--accent-purple)', background: 'rgba(168, 85, 247, 0.15)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
+                            ✨ Nueva Tarea Sugerida
+                          </span>
+                        )}
                       </div>
 
-                      <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontStyle: 'italic', marginBottom: '0.45rem', lineHeight: '1.3' }}>
+                      {/* Analysed Executive Title */}
+                      <div style={{ fontSize: '0.78rem', color: 'var(--accent-cyan)', fontWeight: 600, marginBottom: '0.3rem', lineHeight: '1.3' }}>
+                        🎯 {del.executiveTitle}
+                      </div>
+
+                      <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontStyle: 'italic', marginBottom: '0.55rem', lineHeight: '1.3' }}>
                         «{del.excerpt}»
                       </div>
 
-                      <button
-                        className="btn-secondary"
-                        onClick={() => handleCreateNotionTaskFromFathom(del)}
-                        disabled={isCreated || isCreating}
-                        style={{
-                          fontSize: '0.7rem',
-                          padding: '0.25rem 0.55rem',
-                          background: isCreated ? 'rgba(16, 185, 129, 0.15)' : undefined,
-                          color: isCreated ? 'var(--accent-emerald)' : 'var(--accent-purple)',
-                          border: isCreated ? '1px solid var(--accent-emerald)' : '1px solid var(--accent-purple)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.3rem'
-                        }}
-                      >
-                        {isCreating ? (
-                          <>
-                            <RefreshCw className="spin" size={11} /> Creando en Notion API...
-                          </>
-                        ) : isCreated ? (
-                          <>
-                            <CheckCircle2 size={11} /> ¡Tarjeta Creada en Notion!
-                          </>
-                        ) : (
-                          <>
-                            <Send size={11} /> ⚡ Convertir en Tarea de Notion
-                          </>
-                        )}
-                      </button>
+                      {/* MATCHED EXISTING CARD INFO OR NEW CARD CREATION BUTTON */}
+                      {del.existingCard ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--accent-emerald)' }}>
+                            Coincide con tarjeta abierta en Notion: <strong>"{del.existingCard.title}"</strong>
+                          </div>
+                          <button
+                            className="btn-secondary"
+                            onClick={() => handlePostCommentToExistingNotionCard(del)}
+                            disabled={status === 'commented' || isProcessing}
+                            style={{
+                              fontSize: '0.72rem',
+                              padding: '0.3rem 0.6rem',
+                              background: status === 'commented' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.1)',
+                              color: 'var(--accent-emerald)',
+                              border: '1px solid var(--accent-emerald)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.35rem'
+                            }}
+                          >
+                            {isProcessing ? (
+                              <>
+                                <RefreshCw className="spin" size={12} /> Enviando comentario a Notion...
+                              </>
+                            ) : status === 'commented' ? (
+                              <>
+                                <CheckCircle2 size={12} /> ¡Comentario Sumado a la Tarjeta Existente!
+                              </>
+                            ) : (
+                              <>
+                                <MessageSquare size={12} /> 💬 Sumar Comentario a Tarjeta Existente en Notion
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          className="btn-secondary"
+                          onClick={() => handleCreateNewNotionTaskFromFathom(del)}
+                          disabled={status === 'created' || isProcessing}
+                          style={{
+                            fontSize: '0.72rem',
+                            padding: '0.3rem 0.6rem',
+                            background: status === 'created' ? 'rgba(168, 85, 247, 0.2)' : undefined,
+                            color: 'var(--accent-purple)',
+                            border: '1px solid var(--accent-purple)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.35rem'
+                          }}
+                        >
+                          {isProcessing ? (
+                            <>
+                              <RefreshCw className="spin" size={12} /> Creando en Notion API...
+                            </>
+                          ) : status === 'created' ? (
+                            <>
+                              <CheckCircle2 size={12} /> ¡Tarjeta Creada con Criterio!
+                            </>
+                          ) : (
+                            <>
+                              <PlusCircle size={12} /> ⚡ Crear Nueva Tarjeta Ejecutiva en Notion API
+                            </>
+                          )}
+                        </button>
+                      )}
 
                     </div>
                   );
