@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Folder, CheckCircle2, Send, Sparkles, Key, ExternalLink, RefreshCw, AlertCircle, ShieldCheck, Zap, Clock, Calendar, Search, FileText, HardDrive, MessageSquare, PlusCircle, Mic, FileSpreadsheet, Plus } from 'lucide-react';
+import { Mail, Folder, CheckCircle2, Send, Sparkles, Key, ExternalLink, RefreshCw, AlertCircle, ShieldCheck, Zap, Clock, Calendar, Search, FileText, HardDrive, MessageSquare, PlusCircle, Mic, FileSpreadsheet, Plus, LogIn } from 'lucide-react';
 import { fetchCorporateGmailMessages, fetchCorporateDriveFiles, getCorporateGmailSampleData, getCorporateDriveSampleData } from '../services/googleWorkspaceService';
 import { createNotionPage, postCommentToNotion } from '../services/notionService';
 
@@ -10,14 +10,14 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
 
   const [accountEmail, setAccountEmail] = useState('dmusach@bromteck.com');
   const [startDate, setStartDate] = useState('2026-05-01');
-  const [activeTab, setActiveTab] = useState('gmail'); // 'gmail' or 'drive'
+  const [activeTab, setActiveTab] = useState('gmail');
   const [searchQuery, setSearchQuery] = useState('');
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [isFetchingGoogleAPI, setIsFetchingGoogleAPI] = useState(false);
   const [googleApiError, setGoogleApiError] = useState(null);
   const [listeningTargetId, setListeningTargetId] = useState(null);
+  const [showAuthGuide, setShowAuthGuide] = useState(false);
 
-  // Custom priority spreadsheets list defined by Diego
   const [prioritySpreadsheets, setPrioritySpreadsheets] = useState(() => {
     const saved = localStorage.getItem('dm_priority_spreadsheets');
     if (saved) {
@@ -31,10 +31,8 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
   });
 
   const [newSheetInput, setNewSheetInput] = useState('');
-
   const [gmailMessages, setGmailMessages] = useState(getCorporateGmailSampleData());
   const [driveFiles, setDriveFiles] = useState(getCorporateDriveSampleData());
-
   const [actionSuccessStatus, setActionSuccessStatus] = useState({});
   const [processingId, setProcessingId] = useState(null);
 
@@ -88,6 +86,8 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
       const gResult = await fetchCorporateGmailMessages(googleAccessToken.trim(), startDate);
       if (gResult.success && gResult.messages.length > 0) {
         setGmailMessages(gResult.messages);
+      } else if (gResult.error) {
+        setGoogleApiError(gResult.error);
       }
 
       const dResult = await fetchCorporateDriveFiles(googleAccessToken.trim());
@@ -173,13 +173,45 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
             </p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '0.74rem', color: 'var(--accent-emerald)', background: 'rgba(16, 185, 129, 0.15)', padding: '0.25rem 0.6rem', borderRadius: '6px', fontWeight: 700 }}>
-              ● Polling Activo cada 60m
-            </span>
-          </div>
+          <button
+            className="btn-secondary"
+            onClick={() => setShowAuthGuide(!showAuthGuide)}
+            style={{ fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '0.35rem', border: '1px solid var(--accent-rose)', color: 'var(--accent-rose)' }}
+          >
+            <Key size={14} /> ¿Cómo obtener mi token en 30 segundos?
+          </button>
         </div>
       </div>
+
+      {/* EASY 2-STEP GOOGLE TOKEN GENERATION GUIDE MODAL / BANNER */}
+      {showAuthGuide && (
+        <div className="card-glass" style={{ padding: '1.2rem', marginBottom: '1.2rem', border: '1.5px solid var(--accent-rose)', background: 'rgba(15, 23, 42, 0.98)' }}>
+          <h3 style={{ fontSize: '1.05rem', color: '#fff', margin: '0 0 0.65rem 0', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Key size={18} className="text-rose" /> Guía de 3 Pasos para obtener tu Token de Google (30 Segundos):
+          </h3>
+
+          <ol style={{ fontSize: '0.84rem', color: 'var(--text-muted)', paddingLeft: '1.2rem', margin: '0 0 0.85rem 0', lineHeight: '1.6' }}>
+            <li>
+              Abre la página oficial de Google OAuth Playground:  
+              <a href="https://developers.google.com/oauthplayground" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-rose)', fontWeight: 700, marginLeft: '0.3rem' }}>
+                https://developers.google.com/oauthplayground <ExternalLink size={12} />
+              </a>
+            </li>
+            <li>
+              En la columna izquierda, marca las casillas:  
+              <strong style={{ color: '#fff' }}> Gmail API v1 (`https://www.googleapis.com/auth/gmail.readonly`)</strong> y  
+              <strong style={{ color: '#fff' }}> Google Drive API v3 (`https://www.googleapis.com/auth/drive.readonly`)</strong>.
+            </li>
+            <li>
+              Haz clic en <strong style={{ color: '#fff' }}>"Authorize APIs"</strong>, inicia sesión con tu cuenta <strong style={{ color: 'var(--accent-cyan)' }}>dmusach@bromteck.com</strong>, presiona <strong style={{ color: '#fff' }}>"Exchange authorization code for tokens"</strong>, copia el <strong style={{ color: 'var(--accent-emerald)' }}>Access Token (`ya29...`)</strong> y pégalo abajo.
+            </li>
+          </ol>
+
+          <button className="btn-secondary" onClick={() => setShowAuthGuide(false)} style={{ fontSize: '0.74rem' }}>
+            Entendido, cerrar guía
+          </button>
+        </div>
+      )}
 
       {/* Account Settings & OAuth Token Panel */}
       <div className="card-glass" style={{ padding: '0.85rem 1.2rem', marginBottom: '1.2rem', border: '1px dashed var(--accent-rose)', background: 'rgba(234, 67, 53, 0.05)' }}>
@@ -188,7 +220,7 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
             <Zap size={20} className="text-rose" />
             <div>
               <span style={{ fontSize: '0.86rem', color: '#fff', fontWeight: 700 }}>
-                Escaneando Gmail & Drive ({gmailMessages.length} Correos + {driveFiles.length} Archivos + {prioritySpreadsheets.length} Planillas Específicas)
+                Escaneando Gmail & Drive ({gmailMessages.length} Correos + {driveFiles.length} Archivos)
               </span>
               <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', display: 'block' }}>
                 {lastSyncTime ? `Última sincronización: ${lastSyncTime}` : 'Analizando bandeja y disco corporativo...'} • Desde {startDate} hasta HOY.
@@ -200,10 +232,14 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
             <input
               type="password"
               className="form-input"
-              placeholder="Google OAuth Token (Opcional)..."
+              placeholder="Pega tu Access Token de Google (ya29...)"
               value={googleAccessToken}
-              onChange={(e) => setGoogleAccessToken(e.target.value)}
-              style={{ fontSize: '0.76rem', padding: '0.35rem 0.65rem', width: '200px' }}
+              onChange={(e) => {
+                const val = e.target.value;
+                setGoogleAccessToken(val);
+                localStorage.setItem('dm_google_oauth_token', val.trim());
+              }}
+              style={{ fontSize: '0.76rem', padding: '0.35rem 0.65rem', width: '230px' }}
             />
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
@@ -228,6 +264,13 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
             </button>
           </div>
         </div>
+
+        {googleApiError && (
+          <div style={{ marginTop: '0.65rem', padding: '0.5rem 0.75rem', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid var(--accent-rose)', borderRadius: '6px', color: '#fff', fontSize: '0.76rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <AlertCircle size={14} className="text-rose" />
+            <span>{googleApiError}</span>
+          </div>
+        )}
       </div>
 
       {/* PRIORITY SPREADSHEETS CUSTOM SELECTOR FOR DIEGO */}
