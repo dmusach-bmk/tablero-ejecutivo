@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
-import { Video, FileText, CheckCircle2, Send, Sparkles, Key, ExternalLink, RefreshCw, AlertCircle } from 'lucide-react';
-import { parseFathomTranscript } from '../services/fathomService';
+import { Video, FileText, CheckCircle2, Send, Sparkles, Key, ExternalLink, RefreshCw, AlertCircle, ShieldCheck, Zap } from 'lucide-react';
+import { parseFathomTranscript, fetchFathomMeetings } from '../services/fathomService';
 import { createNotionPage } from '../services/notionService';
 
 export default function FathomAnalyzer({ credentials, onNavigate }) {
   const [fathomApiKey, setFathomApiKey] = useState(credentials?.fathomApiKey || '');
+  const [accountEmail, setAccountEmail] = useState('dmusach@bromteck.com');
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
   const [meetingTitle, setMeetingTitle] = useState('Reunión de Control Directivo CTO - Fathom');
   const [transcriptText, setTranscriptText] = useState('');
   const [analysisResult, setAnalysisResult] = useState(null);
   const [creatingTaskMember, setCreatingTaskMember] = useState(null);
   const [createdStatus, setCreatedStatus] = useState({});
+  const [isFetchingFathomAPI, setIsFetchingFathomAPI] = useState(false);
+  const [fathomApiStatus, setFathomApiStatus] = useState(null);
 
   const sampleTranscripts = [
     {
@@ -30,6 +34,28 @@ Fabricio Jose Nieva: Estoy grabando los videos de capacitaciones y armando los r
 Diego Musach: Mario, fijamos la matriz de métricas analytics y Scorecard para todo el equipo.`
     }
   ];
+
+  const handleFetchLatestCallsFromFathomAccount = async () => {
+    if (!fathomApiKey) {
+      setFathomApiStatus('no_key');
+      return;
+    }
+    setIsFetchingFathomAPI(true);
+    setFathomApiStatus('fetching');
+
+    const meetings = await fetchFathomMeetings(fathomApiKey);
+    if (meetings && meetings.length > 0) {
+      const lastCall = meetings[0];
+      setMeetingTitle(lastCall.title || 'Última llamada Grabada en Fathom');
+      setTranscriptText(lastCall.transcript || lastCall.summary || 'Transcripción cargada automáticamente.');
+      const result = parseFathomTranscript(lastCall.transcript || lastCall.summary, lastCall.title);
+      setAnalysisResult(result);
+      setFathomApiStatus('success');
+    } else {
+      setFathomApiStatus('empty');
+    }
+    setIsFetchingFathomAPI(false);
+  };
 
   const handleAnalyzeTranscript = () => {
     if (!transcriptText.trim()) return;
@@ -62,23 +88,65 @@ Diego Musach: Mario, fijamos la matriz de métricas analytics y Scorecard para t
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h2 style={{ fontSize: '1.25rem', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Video className="text-purple" size={22} /> 🎥 Fathom Video Notetaker AI Integrator
+              <Video className="text-purple" size={22} /> 🎥 Fathom Video Notetaker Auto-Integrator ({accountEmail})
             </h2>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0.25rem 0 0 0' }}>
-              Analiza las llamadas filmadas en Fathom, detecta los temas delegados a cada integrante y publícalos directamente a Notion API.
+              Sincronización en segundo plano con tu cuenta oficial de Fathom <strong style={{ color: '#fff' }}>dmusach@bromteck.com</strong>.
             </p>
           </div>
 
           <a 
-            href="https://fathom.video" 
+            href="https://fathom.video/settings/api" 
             target="_blank" 
             rel="noopener noreferrer" 
             className="btn-secondary"
-            style={{ fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+            style={{ fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '0.35rem', border: '1px solid var(--accent-purple)', color: 'var(--accent-purple)' }}
           >
-            <ExternalLink size={14} /> Abrir Fathom Notetaker
+            <Key size={14} /> Obtener API Key de Fathom
           </a>
         </div>
+      </div>
+
+      {/* Account & Auto Sync Banner */}
+      <div className="card-glass" style={{ padding: '0.85rem 1.2rem', marginBottom: '1.2rem', border: '1px dashed var(--accent-purple)', background: 'rgba(168, 85, 247, 0.05)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <Zap size={18} className="text-purple" />
+            <div>
+              <span style={{ fontSize: '0.84rem', color: '#fff', fontWeight: 700 }}>
+                Cuenta Vinculada: {accountEmail}
+              </span>
+              <span style={{ fontSize: '0.74rem', color: 'var(--accent-purple)', display: 'block' }}>
+                {autoSyncEnabled ? '⚡ Auto-sync activo: Escaneando llamadas nuevas al finalizar' : 'Sincronización manual activa'}
+              </span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <input
+              type="password"
+              className="form-input"
+              placeholder="Pega tu Fathom API Key aquí (opcional)..."
+              value={fathomApiKey}
+              onChange={(e) => setFathomApiKey(e.target.value)}
+              style={{ fontSize: '0.76rem', padding: '0.35rem 0.65rem', width: '240px' }}
+            />
+            <button
+              className="btn-primary"
+              onClick={handleFetchLatestCallsFromFathomAccount}
+              disabled={isFetchingFathomAPI}
+              style={{ fontSize: '0.76rem', padding: '0.4rem 0.85rem', background: 'linear-gradient(135deg, var(--accent-purple), var(--accent-blue))', whiteSpace: 'nowrap' }}
+            >
+              <RefreshCw className={isFetchingFathomAPI ? 'spin' : ''} size={13} /> Sincronizar Llamadas Recientes
+            </button>
+          </div>
+        </div>
+
+        {fathomApiStatus === 'no_key' && (
+          <div style={{ fontSize: '0.72rem', color: 'var(--accent-amber)', marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            <AlertCircle size={13} /> Ingresa tu Fathom API Key arriba o usa el pegado manual de transcripciones a continuación.
+          </div>
+        )}
       </div>
 
       {/* Main Grid: Input / Quick Samples vs Analysis Result */}
@@ -89,7 +157,7 @@ Diego Musach: Mario, fijamos la matriz de métricas analytics y Scorecard para t
           
           <div className="card-glass" style={{ padding: '1rem' }}>
             <h3 style={{ fontSize: '0.95rem', color: '#fff', marginBottom: '0.65rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <FileText size={16} className="text-purple" /> Pegar Transcript / Resumen de Fathom
+              <FileText size={16} className="text-purple" /> Transcripción / Webhook de Fathom ({accountEmail})
             </h3>
 
             <div style={{ marginBottom: '0.75rem' }}>
@@ -107,7 +175,7 @@ Diego Musach: Mario, fijamos la matriz de métricas analytics y Scorecard para t
 
             <div style={{ marginBottom: '0.75rem' }}>
               <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.25rem' }}>
-                Transcripción / Notas de la reunión Fathom:
+                Texto del resumen o transcripción completa de Fathom:
               </label>
               <textarea
                 className="form-input"
@@ -125,7 +193,7 @@ Diego Musach: Mario, fijamos la matriz de métricas analytics y Scorecard para t
                 onClick={handleAnalyzeTranscript}
                 style={{ flex: 1, padding: '0.5rem 1rem', fontSize: '0.82rem', background: 'linear-gradient(135deg, var(--accent-purple), var(--accent-blue))' }}
               >
-                <Sparkles size={14} /> Analizar Llamada Fathom
+                <Sparkles size={14} /> Analizar Llamada Fathom con IA
               </button>
             </div>
           </div>
@@ -173,7 +241,7 @@ Diego Musach: Mario, fijamos la matriz de métricas analytics y Scorecard para t
             {!analysisResult ? (
               <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                 <Video size={36} style={{ margin: '0 auto 0.75rem auto', opacity: 0.4 }} />
-                Pega un transcript a la izquierda o selecciona uno de los ejemplos rápidos para ver los temas delegados extraídos por la IA.
+                Pega un transcript a la izquierda o haz clic en "Sincronizar Llamadas Recientes" para analizar automáticamente los temas delegados.
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
