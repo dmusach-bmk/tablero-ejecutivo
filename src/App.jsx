@@ -4,6 +4,10 @@ import Overview from './components/Overview';
 import NotionTranscripts from './components/NotionTranscripts';
 import ExcelAnalytics from './components/ExcelAnalytics';
 import MicromanagementEngine from './components/MicromanagementEngine';
+import AsesorEjecutivoChat from './components/AsesorEjecutivoChat';
+import TeamScorecard from './components/TeamScorecard';
+import DailyFollowUp from './components/DailyFollowUp';
+import DiegoEjecutivo from './components/DiegoEjecutivo';
 import DeadlinesManager from './components/DeadlinesManager';
 import ActionHub from './components/ActionHub';
 import LeadershipAdvisor from './components/LeadershipAdvisor';
@@ -17,7 +21,6 @@ import {
 } from './mockData';
 
 export default function App() {
-  // Navigation tab state based on URL hash (Isolated routing: #overview, #notion, etc.)
   const getTabFromHash = () => {
     const hash = window.location.hash.replace('#', '');
     return hash || 'overview';
@@ -26,7 +29,11 @@ export default function App() {
   const [activeTab, setActiveTab] = useState(getTabFromHash());
   const [notionCards, setNotionCards] = useState(() => {
     const saved = localStorage.getItem('dm_notion_cards');
-    return saved ? JSON.parse(saved) : INITIAL_NOTION_CARDS;
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.length >= INITIAL_NOTION_CARDS.length) return parsed;
+    }
+    return INITIAL_NOTION_CARDS;
   });
   const [excelData, setExcelData] = useState(() => {
     const saved = localStorage.getItem('dm_excel_data');
@@ -34,7 +41,12 @@ export default function App() {
   });
   const [teamTracking, setTeamTracking] = useState(() => {
     const saved = localStorage.getItem('dm_team_tracking');
-    return saved ? JSON.parse(saved) : INITIAL_TEAM_TRACKING;
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      const enrique = parsed.find(p => p.id === 'dev-enrique');
+      if (enrique && enrique.topics?.length >= 25) return parsed;
+    }
+    return INITIAL_TEAM_TRACKING;
   });
   const [credentials, setCredentials] = useState(() => {
     const saved = localStorage.getItem('dm_credentials');
@@ -45,7 +57,6 @@ export default function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [prefilledEmailData, setPrefilledEmailData] = useState(null);
 
-  // Sync tab with URL hash to avoid internal path collisions
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
     window.location.hash = tabId;
@@ -59,7 +70,6 @@ export default function App() {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  // Save changes to localStorage
   useEffect(() => {
     localStorage.setItem('dm_notion_cards', JSON.stringify(notionCards));
   }, [notionCards]);
@@ -76,17 +86,8 @@ export default function App() {
     localStorage.setItem('dm_credentials', JSON.stringify(credentials));
   }, [credentials]);
 
-  // Auto prompter for missing deadlines on startup
   const missingTasks = notionCards.filter(c => c.missingDeadline);
-  useEffect(() => {
-    if (missingTasks.length > 0) {
-      // Auto open modal once if missing deadlines exist
-      const timer = setTimeout(() => setIsDeadlineModalOpen(true), 800);
-      return () => clearTimeout(timer);
-    }
-  }, []);
 
-  // Actions
   const handleSetDeadline = (taskId, newDeadline) => {
     setNotionCards(prev => prev.map(card => {
       if (card.id === taskId) {
@@ -130,8 +131,8 @@ export default function App() {
   const handleOpenEmailWithAgenda = (dev) => {
     setPrefilledEmailData({
       to: `${dev.name.toLowerCase().replace(' ', '.')}@empresa.com`,
-      subject: `Agenda 1-on-1 & Alignment | Diego Musach`,
-      body: `Hola ${dev.name},\n\nTe comparto los puntos de alineación para nuestra próxima sesión de 1-on-1 el ${dev.next1on1Date}:\n\n1. Estado de PRs activas (${dev.activePRs}) y revisión de latencia.\n2. Avance en el objetivo semanal: "${dev.weeklyGoal}".\n3. Feedback de reconocimiento y alineación con estándares de ingeniería.\n\nSaludos,\nDiego Paolo Musach`
+      subject: `Agenda 1-on-1 & Alineación | Diego Musach`,
+      body: `Hola ${dev.name},\n\nTe comparto los puntos de alineación para nuestra próxima sesión de 1-on-1:\n\n1. Estado de entregables del proyecto y seguimiento en Notion.\n2. Avance en el objetivo semanal: "${dev.weeklyGoal}".\n3. Feedback de reconocimiento y alineación de prioridades.\n\nSaludos,\nDiego Paolo Musach`
     });
     handleTabChange('actions');
   };
@@ -157,6 +158,50 @@ export default function App() {
           />
         )}
 
+        {activeTab === 'diego_ejecutivo' && (
+          <DiegoEjecutivo
+            teamTracking={teamTracking}
+            notionCards={notionCards}
+            credentials={credentials}
+            onUpdateNotionCards={(updated) => setNotionCards(updated)}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+          />
+        )}
+
+        {activeTab === 'followup' && (
+          <DailyFollowUp
+            teamTracking={teamTracking}
+            credentials={credentials}
+            onOpenEmailWithAgenda={handleOpenEmailWithAgenda}
+            onNavigate={handleTabChange}
+          />
+        )}
+
+        {activeTab === 'asesor' && (
+          <AsesorEjecutivoChat
+            teamTracking={teamTracking}
+            notionCards={notionCards}
+            credentials={credentials}
+          />
+        )}
+
+        {activeTab === 'scorecards' && (
+          <TeamScorecard
+            teamTracking={teamTracking}
+            onNavigateToAsesor={() => handleTabChange('asesor')}
+            onOpenEmailWithAgenda={handleOpenEmailWithAgenda}
+          />
+        )}
+
+        {activeTab === 'micromanagement' && (
+          <MicromanagementEngine
+            teamTracking={teamTracking}
+            credentials={credentials}
+            onUpdateTeamTracking={(updated) => setTeamTracking(updated)}
+            onOpenEmailWithAgenda={handleOpenEmailWithAgenda}
+          />
+        )}
+
         {activeTab === 'notion' && (
           <NotionTranscripts
             notionCards={notionCards}
@@ -170,14 +215,6 @@ export default function App() {
           <ExcelAnalytics
             excelData={excelData}
             onUploadData={(newData) => setExcelData(newData)}
-          />
-        )}
-
-        {activeTab === 'micromanagement' && (
-          <MicromanagementEngine
-            teamTracking={teamTracking}
-            onUpdateDevStatus={(updated) => setTeamTracking(updated)}
-            onOpenEmailWithAgenda={handleOpenEmailWithAgenda}
           />
         )}
 

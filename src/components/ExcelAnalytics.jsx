@@ -165,6 +165,7 @@ export default function ExcelAnalytics({ excelData, onUploadData }) {
               <tr style={{ borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}>
                 <th style={{ padding: '0.65rem' }}>Fecha</th>
                 <th style={{ padding: '0.65rem' }}>Sprint</th>
+                <th style={{ padding: '0.65rem' }}>Responsable</th>
                 <th style={{ padding: '0.65rem' }}>PRs Revisadas</th>
                 <th style={{ padding: '0.65rem' }}>Velocidad Pts</th>
                 <th style={{ padding: '0.65rem' }}>Errores Prod</th>
@@ -178,6 +179,9 @@ export default function ExcelAnalytics({ excelData, onUploadData }) {
                 <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
                   <td style={{ padding: '0.65rem', color: '#fff', fontWeight: 600 }}>{row.fecha || row.Date}</td>
                   <td style={{ padding: '0.65rem', color: 'var(--text-muted)' }}>{row.sprint || 'Sprint 43'}</td>
+                  <td style={{ padding: '0.65rem', color: 'var(--accent-amber)', fontWeight: 600 }}>
+                    👤 {row.responsable || row.Responsable || 'Diego Musach'}
+                  </td>
                   <td style={{ padding: '0.65rem', color: 'var(--accent-cyan)' }}>{row.prsRevisadas}</td>
                   <td style={{ padding: '0.65rem', color: '#fff' }}>{row.velEquipo}</td>
                   <td style={{ padding: '0.65rem' }}>

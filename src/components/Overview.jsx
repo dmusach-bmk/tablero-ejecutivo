@@ -122,7 +122,7 @@ export default function Overview({ notionCards, excelData, teamTracking, onNavig
                   borderRadius: '12px',
                   padding: '0.9rem',
                   display: 'flex',
-                  justify-content: 'space-between',
+                  justifyContent: 'space-between',
                   alignItems: 'center',
                   gap: '1rem'
                 }}
@@ -136,7 +136,7 @@ export default function Overview({ notionCards, excelData, teamTracking, onNavig
                   </div>
                   <h4 style={{ fontSize: '0.92rem', color: '#fff' }}>{card.title}</h4>
                   <p style={{ fontSize: '0.78rem', color: 'var(--text-dim)', marginTop: '0.2rem' }}>
-                    👤 {card.assignedTo} {card.deadline ? `• 📅 ${card.deadline}` : '• ⚠️ Sin Fecha'}
+                    👤 Responsable: <strong style={{ color: 'var(--accent-cyan)' }}>{card.responsable || card.assignedTo}</strong> {card.deadline ? `• 📅 ${card.deadline}` : '• ⚠️ Sin Fecha'}
                   </p>
                 </div>
                 <span className="tag info">{card.status}</span>
@@ -167,7 +167,7 @@ export default function Overview({ notionCards, excelData, teamTracking, onNavig
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    justify-content: 'space-between',
+                    justifyContent: 'space-between',
                     padding: '0.75rem',
                     background: 'rgba(255, 255, 255, 0.02)',
                     borderRadius: '10px',
