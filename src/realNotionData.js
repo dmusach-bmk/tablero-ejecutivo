@@ -6,17 +6,17 @@ export const REAL_NOTION_CARDS = [
     "project": "Control de Gesti\u00f3n CTO",
     "status": "Abierto",
     "priority": "P2 - ALTA",
-    "responsable": "Sin Asignar",
-    "assignedTo": "Sin Asignar",
+    "responsable": "Sin Asignar (Pendientes)",
+    "assignedTo": "Sin Asignar (Pendientes)",
     "deadline": "2026-08-20",
     "missingDeadline": false,
-    "summary": "Tarea registrada en Notion bajo la responsabilidad de Sin Asignar.",
-    "transcript": "Registro de Notion:\n- T\u00edtulo: Tarea sin t\u00edtulo #1\n- Responsable: Sin Asignar\n- Estado: Abierto",
+    "summary": "Tarea registrada en Notion bajo la responsabilidad de Sin Asignar (Pendientes).",
+    "transcript": "Registro de Notion:\n- T\u00edtulo: Tarea sin t\u00edtulo #1\n- Responsable: Sin Asignar (Pendientes)\n- Estado: Abierto",
     "comments": [
       {
         "author": "Diego Musach",
         "date": "2026-08-09 12:00",
-        "text": "Seguimiento activo en Notion para Sin Asignar."
+        "text": "Seguimiento activo en Notion para Sin Asignar (Pendientes)."
       }
     ]
   },
@@ -888,17 +888,17 @@ export const REAL_NOTION_CARDS = [
     "project": "Control de Gesti\u00f3n CTO",
     "status": "Abierto",
     "priority": "P2 - ALTA",
-    "responsable": "Sin Asignar",
-    "assignedTo": "Sin Asignar",
+    "responsable": "Sin Asignar (Pendientes)",
+    "assignedTo": "Sin Asignar (Pendientes)",
     "deadline": "2026-08-20",
     "missingDeadline": false,
-    "summary": "Tarea registrada en Notion bajo la responsabilidad de Sin Asignar.",
-    "transcript": "Registro de Notion:\n- T\u00edtulo: Gabinete para Clientes en Colombia\n- Responsable: Sin Asignar\n- Estado: Abierto",
+    "summary": "Tarea registrada en Notion bajo la responsabilidad de Sin Asignar (Pendientes).",
+    "transcript": "Registro de Notion:\n- T\u00edtulo: Gabinete para Clientes en Colombia\n- Responsable: Sin Asignar (Pendientes)\n- Estado: Abierto",
     "comments": [
       {
         "author": "Diego Musach",
         "date": "2026-08-09 12:00",
-        "text": "Seguimiento activo en Notion para Sin Asignar."
+        "text": "Seguimiento activo en Notion para Sin Asignar (Pendientes)."
       }
     ]
   },
@@ -909,17 +909,17 @@ export const REAL_NOTION_CARDS = [
     "project": "Control de Gesti\u00f3n CTO",
     "status": "Abierto",
     "priority": "P2 - ALTA",
-    "responsable": "Sin Asignar",
-    "assignedTo": "Sin Asignar",
+    "responsable": "Sin Asignar (Pendientes)",
+    "assignedTo": "Sin Asignar (Pendientes)",
     "deadline": "2026-08-20",
     "missingDeadline": false,
-    "summary": "Tarea registrada en Notion bajo la responsabilidad de Sin Asignar.",
-    "transcript": "Registro de Notion:\n- T\u00edtulo: Gabinete para Clientes en Argentina\n- Responsable: Sin Asignar\n- Estado: Abierto",
+    "summary": "Tarea registrada en Notion bajo la responsabilidad de Sin Asignar (Pendientes).",
+    "transcript": "Registro de Notion:\n- T\u00edtulo: Gabinete para Clientes en Argentina\n- Responsable: Sin Asignar (Pendientes)\n- Estado: Abierto",
     "comments": [
       {
         "author": "Diego Musach",
         "date": "2026-08-09 12:00",
-        "text": "Seguimiento activo en Notion para Sin Asignar."
+        "text": "Seguimiento activo en Notion para Sin Asignar (Pendientes)."
       }
     ]
   },
@@ -930,17 +930,17 @@ export const REAL_NOTION_CARDS = [
     "project": "Control de Gesti\u00f3n CTO",
     "status": "Abierto",
     "priority": "P2 - ALTA",
-    "responsable": "Sin Asignar",
-    "assignedTo": "Sin Asignar",
+    "responsable": "Sin Asignar (Pendientes)",
+    "assignedTo": "Sin Asignar (Pendientes)",
     "deadline": "2026-08-20",
     "missingDeadline": false,
-    "summary": "Tarea registrada en Notion bajo la responsabilidad de Sin Asignar.",
-    "transcript": "Registro de Notion:\n- T\u00edtulo: Relevamiento Gabinete y Poste de Fibra de Vidrio\n- Responsable: Sin Asignar\n- Estado: Abierto",
+    "summary": "Tarea registrada en Notion bajo la responsabilidad de Sin Asignar (Pendientes).",
+    "transcript": "Registro de Notion:\n- T\u00edtulo: Relevamiento Gabinete y Poste de Fibra de Vidrio\n- Responsable: Sin Asignar (Pendientes)\n- Estado: Abierto",
     "comments": [
       {
         "author": "Diego Musach",
         "date": "2026-08-09 12:00",
-        "text": "Seguimiento activo en Notion para Sin Asignar."
+        "text": "Seguimiento activo en Notion para Sin Asignar (Pendientes)."
       }
     ]
   },
@@ -972,17 +972,17 @@ export const REAL_NOTION_CARDS = [
     "project": "Control de Gesti\u00f3n CTO",
     "status": "Abierto",
     "priority": "P2 - ALTA",
-    "responsable": "Sin Asignar",
-    "assignedTo": "Sin Asignar",
+    "responsable": "Sin Asignar (Pendientes)",
+    "assignedTo": "Sin Asignar (Pendientes)",
     "deadline": "2026-08-20",
     "missingDeadline": false,
-    "summary": "Tarea registrada en Notion bajo la responsabilidad de Sin Asignar.",
-    "transcript": "Registro de Notion:\n- T\u00edtulo: ESPH HN (A Visitar)\n- Responsable: Sin Asignar\n- Estado: Abierto",
+    "summary": "Tarea registrada en Notion bajo la responsabilidad de Sin Asignar (Pendientes).",
+    "transcript": "Registro de Notion:\n- T\u00edtulo: ESPH HN (A Visitar)\n- Responsable: Sin Asignar (Pendientes)\n- Estado: Abierto",
     "comments": [
       {
         "author": "Diego Musach",
         "date": "2026-08-09 12:00",
-        "text": "Seguimiento activo en Notion para Sin Asignar."
+        "text": "Seguimiento activo en Notion para Sin Asignar (Pendientes)."
       }
     ]
   },
@@ -993,17 +993,17 @@ export const REAL_NOTION_CARDS = [
     "project": "Control de Gesti\u00f3n CTO",
     "status": "Abierto",
     "priority": "P2 - ALTA",
-    "responsable": "Sin Asignar",
-    "assignedTo": "Sin Asignar",
+    "responsable": "Sin Asignar (Pendientes)",
+    "assignedTo": "Sin Asignar (Pendientes)",
     "deadline": "2026-08-20",
     "missingDeadline": false,
-    "summary": "Tarea registrada en Notion bajo la responsabilidad de Sin Asignar.",
-    "transcript": "Registro de Notion:\n- T\u00edtulo: RSO: \n- Responsable: Sin Asignar\n- Estado: Abierto",
+    "summary": "Tarea registrada en Notion bajo la responsabilidad de Sin Asignar (Pendientes).",
+    "transcript": "Registro de Notion:\n- T\u00edtulo: RSO: \n- Responsable: Sin Asignar (Pendientes)\n- Estado: Abierto",
     "comments": [
       {
         "author": "Diego Musach",
         "date": "2026-08-09 12:00",
-        "text": "Seguimiento activo en Notion para Sin Asignar."
+        "text": "Seguimiento activo en Notion para Sin Asignar (Pendientes)."
       }
     ]
   },
@@ -1014,17 +1014,17 @@ export const REAL_NOTION_CARDS = [
     "project": "Control de Gesti\u00f3n CTO",
     "status": "Abierto",
     "priority": "P2 - ALTA",
-    "responsable": "Sin Asignar",
-    "assignedTo": "Sin Asignar",
+    "responsable": "Sin Asignar (Pendientes)",
+    "assignedTo": "Sin Asignar (Pendientes)",
     "deadline": "2026-08-20",
     "missingDeadline": false,
-    "summary": "Tarea registrada en Notion bajo la responsabilidad de Sin Asignar.",
-    "transcript": "Registro de Notion:\n- T\u00edtulo: Objetivos Viaje a Mendoza\n- Responsable: Sin Asignar\n- Estado: Abierto",
+    "summary": "Tarea registrada en Notion bajo la responsabilidad de Sin Asignar (Pendientes).",
+    "transcript": "Registro de Notion:\n- T\u00edtulo: Objetivos Viaje a Mendoza\n- Responsable: Sin Asignar (Pendientes)\n- Estado: Abierto",
     "comments": [
       {
         "author": "Diego Musach",
         "date": "2026-08-09 12:00",
-        "text": "Seguimiento activo en Notion para Sin Asignar."
+        "text": "Seguimiento activo en Notion para Sin Asignar (Pendientes)."
       }
     ]
   },
@@ -1203,17 +1203,17 @@ export const REAL_NOTION_CARDS = [
     "project": "Control de Gesti\u00f3n CTO",
     "status": "Abierto",
     "priority": "P2 - ALTA",
-    "responsable": "Sin Asignar",
-    "assignedTo": "Sin Asignar",
+    "responsable": "Sin Asignar (Pendientes)",
+    "assignedTo": "Sin Asignar (Pendientes)",
     "deadline": "2026-08-20",
     "missingDeadline": false,
-    "summary": "Tarea registrada en Notion bajo la responsabilidad de Sin Asignar.",
-    "transcript": "Registro de Notion:\n- T\u00edtulo: Tarea sin t\u00edtulo #58\n- Responsable: Sin Asignar\n- Estado: Abierto",
+    "summary": "Tarea registrada en Notion bajo la responsabilidad de Sin Asignar (Pendientes).",
+    "transcript": "Registro de Notion:\n- T\u00edtulo: Tarea sin t\u00edtulo #58\n- Responsable: Sin Asignar (Pendientes)\n- Estado: Abierto",
     "comments": [
       {
         "author": "Diego Musach",
         "date": "2026-08-09 12:00",
-        "text": "Seguimiento activo en Notion para Sin Asignar."
+        "text": "Seguimiento activo en Notion para Sin Asignar (Pendientes)."
       }
     ]
   },
@@ -1224,17 +1224,17 @@ export const REAL_NOTION_CARDS = [
     "project": "Control de Gesti\u00f3n CTO",
     "status": "Abierto",
     "priority": "P1 - CRITICA",
-    "responsable": "Sin Asignar",
-    "assignedTo": "Sin Asignar",
+    "responsable": "Sin Asignar (Pendientes)",
+    "assignedTo": "Sin Asignar (Pendientes)",
     "deadline": "2026-08-20",
     "missingDeadline": false,
-    "summary": "Tarea registrada en Notion bajo la responsabilidad de Sin Asignar.",
-    "transcript": "Registro de Notion:\n- T\u00edtulo: NECESITAMOS COBRAR EDEMSA!!! Como logro de forma autonoma\n- Responsable: Sin Asignar\n- Estado: Abierto",
+    "summary": "Tarea registrada en Notion bajo la responsabilidad de Sin Asignar (Pendientes).",
+    "transcript": "Registro de Notion:\n- T\u00edtulo: NECESITAMOS COBRAR EDEMSA!!! Como logro de forma autonoma\n- Responsable: Sin Asignar (Pendientes)\n- Estado: Abierto",
     "comments": [
       {
         "author": "Diego Musach",
         "date": "2026-08-09 12:00",
-        "text": "Seguimiento activo en Notion para Sin Asignar."
+        "text": "Seguimiento activo en Notion para Sin Asignar (Pendientes)."
       }
     ]
   },
@@ -1329,17 +1329,17 @@ export const REAL_NOTION_CARDS = [
     "project": "Control de Gesti\u00f3n CTO",
     "status": "Abierto",
     "priority": "P2 - ALTA",
-    "responsable": "Sin Asignar",
-    "assignedTo": "Sin Asignar",
+    "responsable": "Sin Asignar (Pendientes)",
+    "assignedTo": "Sin Asignar (Pendientes)",
     "deadline": "2026-08-20",
     "missingDeadline": false,
-    "summary": "Tarea registrada en Notion bajo la responsabilidad de Sin Asignar.",
-    "transcript": "Registro de Notion:\n- T\u00edtulo: Objetivo: Prueba con Pasante \n- Responsable: Sin Asignar\n- Estado: Abierto",
+    "summary": "Tarea registrada en Notion bajo la responsabilidad de Sin Asignar (Pendientes).",
+    "transcript": "Registro de Notion:\n- T\u00edtulo: Objetivo: Prueba con Pasante \n- Responsable: Sin Asignar (Pendientes)\n- Estado: Abierto",
     "comments": [
       {
         "author": "Diego Musach",
         "date": "2026-08-09 12:00",
-        "text": "Seguimiento activo en Notion para Sin Asignar."
+        "text": "Seguimiento activo en Notion para Sin Asignar (Pendientes)."
       }
     ]
   },
@@ -1476,17 +1476,17 @@ export const REAL_NOTION_CARDS = [
     "project": "Control de Gesti\u00f3n CTO",
     "status": "Abierto",
     "priority": "P2 - ALTA",
-    "responsable": "Sin Asignar",
-    "assignedTo": "Sin Asignar",
+    "responsable": "Sin Asignar (Pendientes)",
+    "assignedTo": "Sin Asignar (Pendientes)",
     "deadline": "2026-08-20",
     "missingDeadline": false,
-    "summary": "Tarea registrada en Notion bajo la responsabilidad de Sin Asignar.",
-    "transcript": "Registro de Notion:\n- T\u00edtulo: Busqueda de llamada con Javier Fuentes de GIGMAX MX\n- Responsable: Sin Asignar\n- Estado: Abierto",
+    "summary": "Tarea registrada en Notion bajo la responsabilidad de Sin Asignar (Pendientes).",
+    "transcript": "Registro de Notion:\n- T\u00edtulo: Busqueda de llamada con Javier Fuentes de GIGMAX MX\n- Responsable: Sin Asignar (Pendientes)\n- Estado: Abierto",
     "comments": [
       {
         "author": "Diego Musach",
         "date": "2026-08-09 12:00",
-        "text": "Seguimiento activo en Notion para Sin Asignar."
+        "text": "Seguimiento activo en Notion para Sin Asignar (Pendientes)."
       }
     ]
   },
@@ -1497,17 +1497,17 @@ export const REAL_NOTION_CARDS = [
     "project": "Control de Gesti\u00f3n CTO",
     "status": "Abierto",
     "priority": "P2 - ALTA",
-    "responsable": "Martin",
-    "assignedTo": "Martin",
+    "responsable": "Martin (Comercial)",
+    "assignedTo": "Martin (Comercial)",
     "deadline": "2026-08-20",
     "missingDeadline": false,
-    "summary": "Tarea registrada en Notion bajo la responsabilidad de Martin.",
-    "transcript": "Registro de Notion:\n- T\u00edtulo: Entrenamiento en Profundidad con Camilo\n- Responsable: Martin\n- Estado: Abierto",
+    "summary": "Tarea registrada en Notion bajo la responsabilidad de Martin (Comercial).",
+    "transcript": "Registro de Notion:\n- T\u00edtulo: Entrenamiento en Profundidad con Camilo\n- Responsable: Martin (Comercial)\n- Estado: Abierto",
     "comments": [
       {
         "author": "Diego Musach",
         "date": "2026-08-09 12:00",
-        "text": "Seguimiento activo en Notion para Martin."
+        "text": "Seguimiento activo en Notion para Martin (Comercial)."
       }
     ]
   },
@@ -1581,17 +1581,17 @@ export const REAL_NOTION_CARDS = [
     "project": "Control de Gesti\u00f3n CTO",
     "status": "Abierto",
     "priority": "P2 - ALTA",
-    "responsable": "Sin Asignar",
-    "assignedTo": "Sin Asignar",
+    "responsable": "Sin Asignar (Pendientes)",
+    "assignedTo": "Sin Asignar (Pendientes)",
     "deadline": "2026-08-20",
     "missingDeadline": false,
-    "summary": "Tarea registrada en Notion bajo la responsabilidad de Sin Asignar.",
-    "transcript": "Registro de Notion:\n- T\u00edtulo: Tarea sin t\u00edtulo #76\n- Responsable: Sin Asignar\n- Estado: Abierto",
+    "summary": "Tarea registrada en Notion bajo la responsabilidad de Sin Asignar (Pendientes).",
+    "transcript": "Registro de Notion:\n- T\u00edtulo: Tarea sin t\u00edtulo #76\n- Responsable: Sin Asignar (Pendientes)\n- Estado: Abierto",
     "comments": [
       {
         "author": "Diego Musach",
         "date": "2026-08-09 12:00",
-        "text": "Seguimiento activo en Notion para Sin Asignar."
+        "text": "Seguimiento activo en Notion para Sin Asignar (Pendientes)."
       }
     ]
   },
@@ -1665,17 +1665,17 @@ export const REAL_NOTION_CARDS = [
     "project": "Control de Gesti\u00f3n CTO",
     "status": "Abierto",
     "priority": "P2 - ALTA",
-    "responsable": "Sabrina",
-    "assignedTo": "Sabrina",
+    "responsable": "Sabrina (Soporte)",
+    "assignedTo": "Sabrina (Soporte)",
     "deadline": "2026-08-20",
     "missingDeadline": false,
-    "summary": "Tarea registrada en Notion bajo la responsabilidad de Sabrina.",
-    "transcript": "Registro de Notion:\n- T\u00edtulo: Re-Estructuracion Area Soporte\n- Responsable: Sabrina\n- Estado: Abierto",
+    "summary": "Tarea registrada en Notion bajo la responsabilidad de Sabrina (Soporte).",
+    "transcript": "Registro de Notion:\n- T\u00edtulo: Re-Estructuracion Area Soporte\n- Responsable: Sabrina (Soporte)\n- Estado: Abierto",
     "comments": [
       {
         "author": "Diego Musach",
         "date": "2026-08-09 12:00",
-        "text": "Seguimiento activo en Notion para Sabrina."
+        "text": "Seguimiento activo en Notion para Sabrina (Soporte)."
       }
     ]
   },
@@ -1686,17 +1686,17 @@ export const REAL_NOTION_CARDS = [
     "project": "Control de Gesti\u00f3n CTO",
     "status": "Abierto",
     "priority": "P2 - ALTA",
-    "responsable": "Sabrina",
-    "assignedTo": "Sabrina",
+    "responsable": "Sabrina (Soporte)",
+    "assignedTo": "Sabrina (Soporte)",
     "deadline": "2026-08-20",
     "missingDeadline": false,
-    "summary": "Tarea registrada en Notion bajo la responsabilidad de Sabrina.",
-    "transcript": "Registro de Notion:\n- T\u00edtulo: Soportes y Costos\n- Responsable: Sabrina\n- Estado: Abierto",
+    "summary": "Tarea registrada en Notion bajo la responsabilidad de Sabrina (Soporte).",
+    "transcript": "Registro de Notion:\n- T\u00edtulo: Soportes y Costos\n- Responsable: Sabrina (Soporte)\n- Estado: Abierto",
     "comments": [
       {
         "author": "Diego Musach",
         "date": "2026-08-09 12:00",
-        "text": "Seguimiento activo en Notion para Sabrina."
+        "text": "Seguimiento activo en Notion para Sabrina (Soporte)."
       }
     ]
   },
@@ -2112,9 +2112,9 @@ export const REAL_TEAM_TRACKING = [
     "prReviewTimeHours": 2.0,
     "velocityScore": 92,
     "codeQualityScore": 95,
-    "status": "18 Temas en Notion",
+    "status": "18 Tarjetas en Notion",
     "blockers": "Ninguno",
-    "weeklyGoal": "Gestionar los 18 temas en Notion desde el tablero web.",
+    "weeklyGoal": "Gestionar las 18 tarjetas en Notion.",
     "lastFeedback": "Seguimiento directo en el Dashboard CTO.",
     "next1on1Date": "2026-08-14",
     "topics": [
@@ -2400,9 +2400,9 @@ export const REAL_TEAM_TRACKING = [
     "prReviewTimeHours": 2.0,
     "velocityScore": 92,
     "codeQualityScore": 95,
-    "status": "28 Temas en Notion",
+    "status": "28 Tarjetas en Notion",
     "blockers": "Ninguno",
-    "weeklyGoal": "Gestionar los 28 temas en Notion desde el tablero web.",
+    "weeklyGoal": "Gestionar las 28 tarjetas en Notion.",
     "lastFeedback": "Seguimiento directo en el Dashboard CTO.",
     "next1on1Date": "2026-08-14",
     "topics": [
@@ -2838,9 +2838,9 @@ export const REAL_TEAM_TRACKING = [
     "prReviewTimeHours": 2.0,
     "velocityScore": 92,
     "codeQualityScore": 95,
-    "status": "0 Temas en Notion",
+    "status": "0 Tarjetas en Notion",
     "blockers": "Ninguno",
-    "weeklyGoal": "Gestionar los 0 temas en Notion desde el tablero web.",
+    "weeklyGoal": "Gestionar las 0 tarjetas en Notion.",
     "lastFeedback": "Seguimiento directo en el Dashboard CTO.",
     "next1on1Date": "2026-08-14",
     "topics": []
@@ -2855,9 +2855,9 @@ export const REAL_TEAM_TRACKING = [
     "prReviewTimeHours": 2.0,
     "velocityScore": 92,
     "codeQualityScore": 95,
-    "status": "1 Temas en Notion",
+    "status": "1 Tarjetas en Notion",
     "blockers": "Ninguno",
-    "weeklyGoal": "Gestionar los 1 temas en Notion desde el tablero web.",
+    "weeklyGoal": "Gestionar las 1 tarjetas en Notion.",
     "lastFeedback": "Seguimiento directo en el Dashboard CTO.",
     "next1on1Date": "2026-08-14",
     "topics": [
@@ -2888,9 +2888,9 @@ export const REAL_TEAM_TRACKING = [
     "prReviewTimeHours": 2.0,
     "velocityScore": 92,
     "codeQualityScore": 95,
-    "status": "4 Temas en Notion",
+    "status": "4 Tarjetas en Notion",
     "blockers": "Ninguno",
-    "weeklyGoal": "Gestionar los 4 temas en Notion desde el tablero web.",
+    "weeklyGoal": "Gestionar las 4 tarjetas en Notion.",
     "lastFeedback": "Seguimiento directo en el Dashboard CTO.",
     "next1on1Date": "2026-08-14",
     "topics": [
@@ -2966,9 +2966,9 @@ export const REAL_TEAM_TRACKING = [
     "prReviewTimeHours": 2.0,
     "velocityScore": 92,
     "codeQualityScore": 95,
-    "status": "16 Temas en Notion",
+    "status": "16 Tarjetas en Notion",
     "blockers": "Ninguno",
-    "weeklyGoal": "Gestionar los 16 temas en Notion desde el tablero web.",
+    "weeklyGoal": "Gestionar las 16 tarjetas en Notion.",
     "lastFeedback": "Seguimiento directo en el Dashboard CTO.",
     "next1on1Date": "2026-08-14",
     "topics": [
@@ -3215,18 +3215,99 @@ export const REAL_TEAM_TRACKING = [
     ]
   },
   {
+    "id": "dev-sabrina",
+    "name": "Sabrina (Soporte)",
+    "role": "Estructuraci\u00f3n de \u00c1rea Soporte",
+    "responsable": "Sabrina (Soporte)",
+    "avatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+    "activePRs": 2,
+    "prReviewTimeHours": 2.0,
+    "velocityScore": 92,
+    "codeQualityScore": 95,
+    "status": "2 Tarjetas en Notion",
+    "blockers": "Ninguno",
+    "weeklyGoal": "Gestionar las 2 tarjetas en Notion.",
+    "lastFeedback": "Seguimiento directo en el Dashboard CTO.",
+    "next1on1Date": "2026-08-14",
+    "topics": [
+      {
+        "id": "top-dev-sabrina-1",
+        "title": "Re-Estructuracion Area Soporte",
+        "status": "Abierto",
+        "priority": "P2 - ALTA",
+        "notionPageId": "34fce95d-6a9a-80a1-a468-cf54dd111e3d",
+        "log": "Registrado en Notion para Sabrina (Soporte).",
+        "comments": [
+          {
+            "author": "Diego Musach",
+            "date": "2026-08-09 12:00",
+            "text": "Seguimiento activo en Notion para Sabrina (Soporte)."
+          }
+        ]
+      },
+      {
+        "id": "top-dev-sabrina-2",
+        "title": "Soportes y Costos",
+        "status": "Abierto",
+        "priority": "P2 - ALTA",
+        "notionPageId": "34cce95d-6a9a-80b0-84bd-edeb30e30713",
+        "log": "Registrado en Notion para Sabrina (Soporte).",
+        "comments": [
+          {
+            "author": "Diego Musach",
+            "date": "2026-08-09 12:00",
+            "text": "Seguimiento activo en Notion para Sabrina (Soporte)."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "dev-martin",
+    "name": "Martin (Comercial)",
+    "role": "Alineamiento Comercial con Camilo",
+    "responsable": "Martin (Comercial)",
+    "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
+    "activePRs": 1,
+    "prReviewTimeHours": 2.0,
+    "velocityScore": 92,
+    "codeQualityScore": 95,
+    "status": "1 Tarjetas en Notion",
+    "blockers": "Ninguno",
+    "weeklyGoal": "Gestionar las 1 tarjetas en Notion.",
+    "lastFeedback": "Seguimiento directo en el Dashboard CTO.",
+    "next1on1Date": "2026-08-14",
+    "topics": [
+      {
+        "id": "top-dev-martin-1",
+        "title": "Entrenamiento en Profundidad con Camilo",
+        "status": "Abierto",
+        "priority": "P2 - ALTA",
+        "notionPageId": "351ce95d-6a9a-80a8-9266-ecced0e23d2e",
+        "log": "Registrado en Notion para Martin (Comercial).",
+        "comments": [
+          {
+            "author": "Diego Musach",
+            "date": "2026-08-09 12:00",
+            "text": "Seguimiento activo en Notion para Martin (Comercial)."
+          }
+        ]
+      }
+    ]
+  },
+  {
     "id": "dev-unassigned",
     "name": "Sin Asignar (Pendientes)",
-    "role": "Temas en Notion sin responsable definido",
+    "role": "12 Temas en Notion sin responsable asignado",
     "responsable": "Sin Asignar (Pendientes)",
     "avatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
     "activePRs": 12,
     "prReviewTimeHours": 2.0,
     "velocityScore": 92,
     "codeQualityScore": 95,
-    "status": "12 Temas en Notion",
-    "blockers": "Revisar asignaci\u00f3n",
-    "weeklyGoal": "Gestionar los 12 temas en Notion desde el tablero web.",
+    "status": "12 Tarjetas en Notion",
+    "blockers": "Revisar asignaci\u00f3n en reuni\u00f3n",
+    "weeklyGoal": "Gestionar las 12 tarjetas en Notion.",
     "lastFeedback": "Seguimiento directo en el Dashboard CTO.",
     "next1on1Date": "2026-08-14",
     "topics": [
@@ -3241,7 +3322,7 @@ export const REAL_TEAM_TRACKING = [
           {
             "author": "Diego Musach",
             "date": "2026-08-09 12:00",
-            "text": "Seguimiento activo en Notion para Sin Asignar."
+            "text": "Seguimiento activo en Notion para Sin Asignar (Pendientes)."
           }
         ]
       },
@@ -3256,7 +3337,7 @@ export const REAL_TEAM_TRACKING = [
           {
             "author": "Diego Musach",
             "date": "2026-08-09 12:00",
-            "text": "Seguimiento activo en Notion para Sin Asignar."
+            "text": "Seguimiento activo en Notion para Sin Asignar (Pendientes)."
           }
         ]
       },
@@ -3271,7 +3352,7 @@ export const REAL_TEAM_TRACKING = [
           {
             "author": "Diego Musach",
             "date": "2026-08-09 12:00",
-            "text": "Seguimiento activo en Notion para Sin Asignar."
+            "text": "Seguimiento activo en Notion para Sin Asignar (Pendientes)."
           }
         ]
       },
@@ -3286,7 +3367,7 @@ export const REAL_TEAM_TRACKING = [
           {
             "author": "Diego Musach",
             "date": "2026-08-09 12:00",
-            "text": "Seguimiento activo en Notion para Sin Asignar."
+            "text": "Seguimiento activo en Notion para Sin Asignar (Pendientes)."
           }
         ]
       },
@@ -3301,7 +3382,7 @@ export const REAL_TEAM_TRACKING = [
           {
             "author": "Diego Musach",
             "date": "2026-08-09 12:00",
-            "text": "Seguimiento activo en Notion para Sin Asignar."
+            "text": "Seguimiento activo en Notion para Sin Asignar (Pendientes)."
           }
         ]
       },
@@ -3316,7 +3397,7 @@ export const REAL_TEAM_TRACKING = [
           {
             "author": "Diego Musach",
             "date": "2026-08-09 12:00",
-            "text": "Seguimiento activo en Notion para Sin Asignar."
+            "text": "Seguimiento activo en Notion para Sin Asignar (Pendientes)."
           }
         ]
       },
@@ -3331,7 +3412,7 @@ export const REAL_TEAM_TRACKING = [
           {
             "author": "Diego Musach",
             "date": "2026-08-09 12:00",
-            "text": "Seguimiento activo en Notion para Sin Asignar."
+            "text": "Seguimiento activo en Notion para Sin Asignar (Pendientes)."
           }
         ]
       },
@@ -3346,7 +3427,7 @@ export const REAL_TEAM_TRACKING = [
           {
             "author": "Diego Musach",
             "date": "2026-08-09 12:00",
-            "text": "Seguimiento activo en Notion para Sin Asignar."
+            "text": "Seguimiento activo en Notion para Sin Asignar (Pendientes)."
           }
         ]
       },
@@ -3361,7 +3442,7 @@ export const REAL_TEAM_TRACKING = [
           {
             "author": "Diego Musach",
             "date": "2026-08-09 12:00",
-            "text": "Seguimiento activo en Notion para Sin Asignar."
+            "text": "Seguimiento activo en Notion para Sin Asignar (Pendientes)."
           }
         ]
       },
@@ -3376,7 +3457,7 @@ export const REAL_TEAM_TRACKING = [
           {
             "author": "Diego Musach",
             "date": "2026-08-09 12:00",
-            "text": "Seguimiento activo en Notion para Sin Asignar."
+            "text": "Seguimiento activo en Notion para Sin Asignar (Pendientes)."
           }
         ]
       },
@@ -3391,7 +3472,7 @@ export const REAL_TEAM_TRACKING = [
           {
             "author": "Diego Musach",
             "date": "2026-08-09 12:00",
-            "text": "Seguimiento activo en Notion para Sin Asignar."
+            "text": "Seguimiento activo en Notion para Sin Asignar (Pendientes)."
           }
         ]
       },
@@ -3406,7 +3487,7 @@ export const REAL_TEAM_TRACKING = [
           {
             "author": "Diego Musach",
             "date": "2026-08-09 12:00",
-            "text": "Seguimiento activo en Notion para Sin Asignar."
+            "text": "Seguimiento activo en Notion para Sin Asignar (Pendientes)."
           }
         ]
       }
@@ -3422,9 +3503,9 @@ export const REAL_TEAM_TRACKING = [
     "prReviewTimeHours": 2.0,
     "velocityScore": 92,
     "codeQualityScore": 95,
-    "status": "18 Temas en Notion",
+    "status": "18 Tarjetas en Notion",
     "blockers": "Ninguno",
-    "weeklyGoal": "Gestionar los 18 temas en Notion desde el tablero web.",
+    "weeklyGoal": "Gestionar las 18 tarjetas en Notion.",
     "lastFeedback": "Seguimiento directo en el Dashboard CTO.",
     "next1on1Date": "2026-08-14",
     "topics": [
