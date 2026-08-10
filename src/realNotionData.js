@@ -1649,6 +1649,11 @@ export const REAL_NOTION_CARDS = [
         "author": "Diego Musach (Notion)",
         "date": "2026-08-10 13:25",
         "text": "[Follow Up Diario Diego Musach - Proxy Test]: Verificacion de proxy Vite"
+      },
+      {
+        "author": "Diego Musach (Notion)",
+        "date": "2026-08-10 13:52",
+        "text": "Tema cerrado"
       }
     ]
   },
@@ -4771,6 +4776,11 @@ export const REAL_TEAM_TRACKING = [
             "author": "Diego Musach (Notion)",
             "date": "2026-08-10 13:25",
             "text": "[Follow Up Diario Diego Musach - Proxy Test]: Verificacion de proxy Vite"
+          },
+          {
+            "author": "Diego Musach (Notion)",
+            "date": "2026-08-10 13:52",
+            "text": "Tema cerrado"
           }
         ]
       },

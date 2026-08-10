@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, MessageSquare, ShieldAlert, CheckCircle2, Send, RefreshCw, Search, Layers, ExternalLink, Archive, CheckSquare } from 'lucide-react';
 import { postCommentToNotion, updateNotionPageStatus, fetchNotionComments } from '../services/notionService';
 
@@ -133,6 +133,7 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
     setIsFetchingNotionComments(true);
     const freshComments = await fetchNotionComments(credentials?.notionToken, notionPageId);
     if (freshComments && freshComments.length > 0) {
+      freshComments.sort((a, b) => a.date.localeCompare(b.date));
       setLocalCommentsMap(prev => ({
         ...prev,
         [topicId]: freshComments
@@ -159,6 +160,7 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
     const existingTopic = allCardsCross.find(c => c.id === topicId);
     const prevComments = localCommentsMap[topicId] || existingTopic?.comments || [];
     const updatedComments = [...prevComments, newCommentObj];
+    updatedComments.sort((a, b) => a.date.localeCompare(b.date));
 
     setLocalCommentsMap(prev => ({
       ...prev,
@@ -204,7 +206,7 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
       setTimeout(async () => {
         await handleFetchLiveCommentsForCard(topicId, targetNotionId);
         setSyncStatus(prev => ({ ...prev, [topicId]: null }));
-      }, 1200);
+      }, 1000);
     } else {
       setSyncStatus(prev => ({ ...prev, [topicId]: 'error' }));
     }
@@ -242,6 +244,31 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
     return 0;
   });
 
+  // AUTO-SYNC LIVE COMMENTS FROM NOTION API FOR VISIBLE CARDS ON MOUNT OR MEMBER CHANGE
+  useEffect(() => {
+    let isMounted = true;
+
+    async function syncVisibleNotionComments() {
+      const cardsToSync = sortedOpenCards.slice(0, 10);
+      for (const card of cardsToSync) {
+        if (!isMounted) break;
+        if (card.notionPageId) {
+          const fresh = await fetchNotionComments(credentials?.notionToken, card.notionPageId);
+          if (fresh && fresh.length > 0 && isMounted) {
+            fresh.sort((a, b) => a.date.localeCompare(b.date));
+            setLocalCommentsMap(prev => ({
+              ...prev,
+              [card.id]: fresh
+            }));
+          }
+        }
+      }
+    }
+
+    syncVisibleNotionComments();
+    return () => { isMounted = false; };
+  }, [activeMemberId]);
+
   return (
     <div className="daily-followup-container">
       
@@ -254,7 +281,7 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
               <span style={{ fontSize: '0.74rem', color: 'var(--accent-cyan)', fontWeight: 400 }}>• {currentDate}</span>
             </h2>
             <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: '0.1rem 0 0 0' }}>
-              Sincronización en vivo con la API oficial de Notion.
+              Ordenamiento cronológico estricto del último comentario e ingesta en vivo desde Notion API.
             </p>
           </div>
 
@@ -385,7 +412,11 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
             const status = syncStatus[topic.id];
             const isCommented = commentedTopicIds.includes(topic.id);
             const notionUrl = getNotionUrl(topic.notionPageId);
-            const lastComment = (topic.comments || []).length > 0 ? topic.comments[topic.comments.length - 1] : null;
+            
+            // STRICT CHRONOLOGICAL SORTING (NEWEST LAST)
+            const rawComments = topic.comments || [];
+            const sortedComments = [...rawComments].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+            const lastComment = sortedComments.length > 0 ? sortedComments[sortedComments.length - 1] : null;
 
             return (
               <div 
@@ -484,7 +515,7 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
                   </div>
                 </div>
 
-                {/* LATEST NOTION COMMENT DISPLAY WITH DATE */}
+                {/* LATEST NOTION COMMENT DISPLAY WITH DATE (STRICTLY NEWEST) */}
                 {lastComment ? (
                   <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.45rem 0.75rem', borderRadius: '6px', fontSize: '0.76rem', borderLeft: '3px solid var(--accent-cyan)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', fontSize: '0.7rem', marginBottom: '0.15rem' }}>
