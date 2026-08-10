@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Calendar, MessageSquare, ShieldAlert, CheckCircle2, Send, RefreshCw, Search, Layers, ExternalLink, Archive, CheckSquare } from 'lucide-react';
 import { postCommentToNotion, updateNotionPageStatus } from '../services/notionService';
 
-export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWithAgenda, onNavigate }) {
+export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamTracking, onOpenEmailWithAgenda, onNavigate }) {
   const [activeMemberId, setActiveMemberId] = useState('all');
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
   const [commentInputs, setCommentInputs] = useState({});
@@ -136,13 +136,33 @@ export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWi
     const nowFormatted = new Date().toISOString().replace('T', ' ').substring(0, 16);
     const newCommentObj = { author: 'Diego Musach (CTO)', date: nowFormatted, text: text.trim() };
 
-    // 1. Immediately update React state so the UI displays the comment instantly in 0ms!
+    // 1. Immediately update React local state (0ms UI feedback)
     const existingTopic = allCardsCross.find(c => c.id === topicId);
-    const prevComments = existingTopic?.comments || [];
+    const prevComments = localCommentsMap[topicId] || existingTopic?.comments || [];
+    const updatedComments = [...prevComments, newCommentObj];
+
     setLocalCommentsMap(prev => ({
       ...prev,
-      [topicId]: [...prevComments, newCommentObj]
+      [topicId]: updatedComments
     }));
+
+    // 2. Persist to parent teamTracking state (and localStorage so F5 retains it!)
+    if (onUpdateTeamTracking) {
+      onUpdateTeamTracking(prevTeam => {
+        return prevTeam.map(mem => ({
+          ...mem,
+          topics: (mem.topics || []).map(top => {
+            if (top.id === topicId) {
+              return {
+                ...top,
+                comments: updatedComments
+              };
+            }
+            return top;
+          })
+        }));
+      });
+    }
 
     setCommentInputs(prev => ({ ...prev, [topicId]: '' }));
 
@@ -150,7 +170,7 @@ export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWi
       setCommentedTopicIds(prev => [...prev, topicId]);
     }
 
-    // 2. Send live to Notion API EXACTLY AS TYPED (no prefixes!)
+    // 3. Send live to Notion API EXACTLY AS TYPED (no prefixes!)
     const targetNotionId = notionPageId || existingTopic?.notionPageId || existingTopic?.notionId;
     const result = await postCommentToNotion(
       credentials?.notionToken,
@@ -212,7 +232,7 @@ export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWi
               <span style={{ fontSize: '0.74rem', color: 'var(--accent-cyan)', fontWeight: 400 }}>• {currentDate}</span>
             </h2>
             <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: '0.1rem 0 0 0' }}>
-              Comentarios publicados a Notion API 100% literales tal cual los escribes.
+              Sincronización bidireccional en tiempo real con Notion API.
             </p>
           </div>
 

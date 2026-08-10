@@ -167,6 +167,7 @@ export default function App() {
           <DailyFollowUp
             teamTracking={teamTracking}
             credentials={credentials}
+            onUpdateTeamTracking={setTeamTracking}
             onOpenEmailWithAgenda={handleOpenEmailWithAgenda}
             onNavigate={handleTabChange}
           />
