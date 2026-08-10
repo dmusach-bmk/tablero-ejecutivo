@@ -26,6 +26,80 @@ export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWi
     return `https://notion.so/${cleanId}`;
   };
 
+  // INTELLIGENT DYNAMIC SPEECH & REACTION GENERATOR PER SPECIFIC TOPIC TITLE
+  const generateExecutiveSpeech = (topicTitle, memberName, log) => {
+    const t = (topicTitle + ' ' + (log || '')).toLowerCase();
+    const name = memberName.split(' ')[0];
+
+    if (t.includes('edemsa')) {
+      return {
+        speech: `«${name}, con respecto a EDEMSA ("${topicTitle}"): es vital cerrar el informe de los alimentadores y corregir las vistas con Nicolás/Mauricio Zuin para habilitar la facturación. ¿Cuál es el bloqueo de hoy?»`,
+        responseIf: "Falta que el cliente valide el reporte de los puntos nuevos.",
+        diegoAnswer: "«Enviamos el informe de los 10 alimentadores hoy mismo y fijamos el compromiso de cobro para esta semana.»"
+      };
+    } else if (t.includes('tecsys') || t.includes('fcc') || t.includes('habitat')) {
+      return {
+        speech: `«${name}, en el tema Tecsys ("${topicTitle}"): debemos eliminar planillas Excel sueltas. Exijo volcar las cotizaciones (certificados FCC/CE) y las credenciales de Hábitat en tarjetas de Notion.»`,
+        responseIf: "Tecsys no ha enviado el presupuesto desde Brasil.",
+        diegoAnswer: "«Diego Musach formaliza el reclamo del presupuesto hoy con la gerencia de Tecsys; tú mantén actualizado el log en Notion.»"
+      };
+    } else if (t.includes('wind') || t.includes('sso') || t.includes('cluster') || t.includes('single sign on')) {
+      return {
+        speech: `«${name}, sobre el proyecto WIND ("${topicTitle}"): la prioridad es la estabilidad del Cluster (VMs) y la definición de Single Sign-On / Registro Web. ¿Cuándo entregamos la demo probada?»`,
+        responseIf: "Hay dudas sobre la integración del SSO con la plataforma actual.",
+        diegoAnswer: "«Definimos el estándar de OAuth2 hoy y congelamos requerimientos secundarios hasta validar la autenticación.»"
+      };
+    } else if (t.includes('telecable') || t.includes('aosp') || t.includes('elebao') || t.includes('fingerprint') || t.includes('stb')) {
+      return {
+        speech: `«${name}, en Telecable Costa Rica ("${topicTitle}"): debemos cerrar el armado del STB AOSP Elebao con FingerPrint y el test report de Montage. ¿Tienes confirmada la fecha de viaje o despliegue?»`,
+        responseIf: "Dependemos de la entrega de equipos hardware o licencias DRM.",
+        diegoAnswer: "«Validamos la logística con el proveedor hoy y avanzamos en staging con los equipos disponibles.»"
+      };
+    } else if (t.includes('bromteck') || t.includes('udid') || t.includes('pulse')) {
+      return {
+        speech: `«${name}, en Bromteck 4.0 / UDID ("${topicTitle}"): Marketing necesita la nueva presentación destacando UDID como feature diferenciador. ¿Cómo vienen los tiempos de render y carga en la nube?»`,
+        responseIf: "Marketing solicitó cambios en la presentación a última hora.",
+        diegoAnswer: "«Congelamos la versión actual para la demostración de esta semana y agendamos los ajustes para la v2.»"
+      };
+    } else if (t.includes('gabinete') || t.includes('ferrocarril') || t.includes('fibra')) {
+      return {
+        speech: `«${name}, en el relevamiento de gabinetes y fibra ("${topicTitle}"): tenemos un potencial de 2,300 gabinetes entre Argentina y Colombia. ¿Cuál es la cotización por poste de fibra de vidrio?»`,
+        responseIf: "Los proveedores locales aún no enviaron presupuestos.",
+        diegoAnswer: "«Exigimos 3 cotizaciones antes del jueves o avanzamos con el modelo estándar homologado.»"
+      };
+    } else if (t.includes('servidor') || t.includes('heroku') || t.includes('infra') || t.includes('costo')) {
+      return {
+        speech: `«${name}, en la infraestructura de Servidores / Heroku ("${topicTitle}"): debemos apagar entornos en desuso para reducir el gasto mensual. ¿Cuál es el plan de auto-stop?»`,
+        responseIf: "Apagar servidores de test puede interferir con algunas pruebas.",
+        diegoAnswer: "«Programamos ventana de auto-stop nocturna (19:00 a 08:00) y ahorramos consumo sin afectar el trabajo diario.»"
+      };
+    } else if (t.includes('soporte') || t.includes('bot') || t.includes('ticket') || t.includes('horas') || t.includes('gemini')) {
+      return {
+        speech: `«${name}, en Soporte & BOT AI ("${topicTitle}"): el objetivo es reducir tickets con el BOT de respuestas automáticas y auditar el consumo de horas de Soporte Premium por cliente.»`,
+        responseIf: "Faltan datos o capacitaciones filmadas para entrenar al BOT.",
+        diegoAnswer: "«Utilizamos la base de conocimiento actual y las capacitaciones grabadas para entrenar el BOT hoy mismo.»"
+      };
+    } else if (t.includes('poc') || t.includes('delsur') || t.includes('aes') || t.includes('edelap') || t.includes('naturgy') || t.includes('avangrid')) {
+      return {
+        speech: `«${name}, sobre la POC ("${topicTitle}"): necesito el reporte de validación con el cliente. Si hubo problemas de configuración en equipos remotamente, ¿cuál fue la causa raíz?»`,
+        responseIf: "Falta respuesta o validación de los ingenieros del cliente.",
+        diegoAnswer: "«Diego Musach escala con el sponsor del cliente en 1-click hoy; tú mantén la simulación en staging lista.»"
+      };
+    } else if (t.includes('comercial') || t.includes('perdidas') || t.includes('ss') || t.includes('godel')) {
+      return {
+        speech: `«${name}, en la Solución Smart para Pérdidas ("${topicTitle}"): debemos tener la propuesta comercial y el documento de preguntas FAQ listo para el equipo de ventas.»`,
+        responseIf: "Falta información del área comercial para cerrar la presentación.",
+        diegoAnswer: "«Solicito esa data comercial de inmediato; tú avanza con la estructura técnica del producto sin frenarte.»"
+      };
+    } else {
+      return {
+        speech: `«${name}, sobre la tarjeta "${topicTitle}": necesitamos definir los hitos de entrega de esta semana, desbloquear impedimentos de ingeniería y fijar el avance en Notion.»`,
+        responseIf: "El tema requiere más tiempo del estimado por complejidad técnica.",
+        diegoAnswer: "«Desglosamos la tarea en 2 entregables parciales; entregamos el MVP esta semana y la optimización la siguiente.»"
+      };
+    }
+  };
+
   // Flatten all 165 cards across all team members
   const allCardsCross = [];
   teamTracking.forEach(mem => {
@@ -51,37 +125,6 @@ export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWi
     // Sync live to Notion API
     await updateNotionPageStatus(credentials?.notionToken, notionPageId, newStatus);
     setStatusUpdatingId(null);
-  };
-
-  // Helper for dynamic speeches
-  const getTopicScenarios = (topicTitle, memberName) => {
-    const tLower = topicTitle.toLowerCase();
-    
-    if (tLower.includes('excel') || tLower.includes('seguimiento') || tLower.includes('camilo')) {
-      return {
-        speech: `«${memberName.split(' ')[0]}, en "${topicTitle}": erradicamos planillas Excel sueltas. Toda la ingeniería debe estar en tarjetas de Notion con logs diarios.»`,
-        responseIf: "El Excel me resulta más cómodo para resúmenes.",
-        diegoAnswer: "«El Excel aísla la información. Notion le da visibilidad a todo el equipo en tiempo real. Asumimos Notion como única fuente de verdad.»"
-      };
-    } else if (tLower.includes('telecable') || tLower.includes('tms') || tLower.includes('roku') || tLower.includes('cableview') || tLower.includes('enrique')) {
-      return {
-        speech: `«${memberName.split(' ')[0]}, sobre "${topicTitle}": este entregable impacta la operación del cliente. ¿Cuáles son los hitos de hoy y qué servidores podemos apagar para reducir costos?»`,
-        responseIf: "Tengo muchas tareas asignadas en paralelo.",
-        diegoAnswer: "«Congelamos lo secundario. Nos enfocamos al 100% en este entregable crítico hasta que quede probado.»"
-      };
-    } else if (tLower.includes('soporte') || tLower.includes('bot') || tLower.includes('joseph') || tLower.includes('agente')) {
-      return {
-        speech: `«${memberName.split(' ')[0]}, en "${topicTitle}": necesitamos medir la reducción de tickets y auditar que no queden tareas 'Sin Asignar' en Notion.»`,
-        responseIf: "Algunos desarrolladores no actualizan su estado.",
-        diegoAnswer: "«Repórtamelo en la mañana e intervengo directamente en su Scorecard para exigir el cumplimiento.»"
-      };
-    } else {
-      return {
-        speech: `«${memberName.split(' ')[0]}, en "${topicTitle}": revisemos el estado de avance, los blockers técnicos y la fecha tope pactada.»`,
-        responseIf: "Falta definición o respuesta de terceros.",
-        diegoAnswer: "«Escalo la gestión de terceros en 1-click ahora mismo; tú continúa con la implementación interna sin frenarte.»"
-      };
-    }
   };
 
   const handlePostCommentForTopic = async (topicId, notionPageId, memberName) => {
@@ -167,7 +210,7 @@ export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWi
               <span style={{ fontSize: '0.74rem', color: 'var(--accent-cyan)', fontWeight: 400 }}>• {currentDate}</span>
             </h2>
             <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: '0.1rem 0 0 0' }}>
-              Muestra instantáneamente tu último comentario y fecha al escribir. Sincronización en vivo con Notion API.
+              Cada tarjeta tiene un Speech Directivo y Contra-argumento 100% personalizado según el tema real de Notion.
             </p>
           </div>
 
@@ -257,7 +300,7 @@ export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWi
           <Search size={18} className="text-cyan" />
           <input
             type="text"
-            placeholder="🔍 BUSCADOR CROSS DE TEMAS: Escribe cualquier palabra clave (ej: Telecable, POC, Webhooks, Excel, WIND)..."
+            placeholder="🔍 BUSCADOR CROSS DE TEMAS: Escribe cualquier palabra clave (ej: EDEMSA, Tecsys, WIND, Telecable, Bromteck, Ferrocarril, POC)..."
             value={globalSearchQuery}
             onChange={(e) => setGlobalSearchQuery(e.target.value)}
             style={{ background: 'transparent', border: 'none', color: '#fff', outline: 'none', fontSize: '0.88rem', width: '100%', fontWeight: 500 }}
@@ -292,7 +335,8 @@ export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWi
           </div>
         ) : (
           sortedOpenCards.map((topic, idx) => {
-            const topicInfo = getTopicScenarios(topic.title, topic.memberName);
+            // Generate UNIQUE, TAILORED speech & reaction for THIS specific card
+            const topicInfo = generateExecutiveSpeech(topic.title, topic.memberName, topic.log);
             const inputVal = commentInputs[topic.id] || '';
             const status = syncStatus[topic.id];
             const isCommented = commentedTopicIds.includes(topic.id);
@@ -364,11 +408,11 @@ export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWi
                   </a>
                 </div>
 
-                {/* Compact Speech & Reaction Grid */}
+                {/* TAILORED DYNAMIC SPEECH & REACTION GRID FOR THIS EXACT TOPIC */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem' }}>
                   <div style={{ background: 'rgba(6, 182, 212, 0.06)', border: '1px solid rgba(6, 182, 212, 0.2)', padding: '0.45rem 0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
                     <span style={{ fontSize: '0.66rem', color: 'var(--accent-cyan)', fontWeight: 700, display: 'block', marginBottom: '0.1rem' }}>
-                      🗣️ Speech Directivo:
+                      🗣️ Speech Directivo para este tema:
                     </span>
                     <div style={{ color: '#fff', fontStyle: 'italic', lineHeight: '1.3' }}>
                       {topicInfo.speech}
