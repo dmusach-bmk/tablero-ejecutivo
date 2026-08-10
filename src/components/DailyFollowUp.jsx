@@ -11,6 +11,7 @@ export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWi
   const [commentedTopicIds, setCommentedTopicIds] = useState([]);
   const [showClosedSection, setShowClosedSection] = useState(false);
   const [cardStatusMap, setCardStatusMap] = useState({});
+  const [localCommentsMap, setLocalCommentsMap] = useState({});
 
   const currentDate = new Date().toLocaleDateString('es-ES', {
     weekday: 'long',
@@ -30,9 +31,11 @@ export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWi
   teamTracking.forEach(mem => {
     (mem.topics || []).forEach(t => {
       const currentStatus = cardStatusMap[t.id] || t.status || 'Abierto';
+      const comments = localCommentsMap[t.id] || t.comments || [];
       allCardsCross.push({
         ...t,
         status: currentStatus,
+        comments: comments,
         memberName: mem.name,
         memberRole: mem.role,
         memberAvatar: mem.avatar,
@@ -87,7 +90,23 @@ export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWi
 
     setSyncStatus(prev => ({ ...prev, [topicId]: 'syncing' }));
     const nowFormatted = new Date().toISOString().replace('T', ' ').substring(0, 16);
+    const newCommentObj = { author: 'Diego Musach (CTO)', date: nowFormatted, text: text.trim() };
 
+    // 1. Immediately update React state so the UI displays the comment instantly in 0ms!
+    const existingTopic = allCardsCross.find(c => c.id === topicId);
+    const prevComments = existingTopic?.comments || [];
+    setLocalCommentsMap(prev => ({
+      ...prev,
+      [topicId]: [...prevComments, newCommentObj]
+    }));
+
+    setCommentInputs(prev => ({ ...prev, [topicId]: '' }));
+
+    if (!commentedTopicIds.includes(topicId)) {
+      setCommentedTopicIds(prev => [...prev, topicId]);
+    }
+
+    // 2. Send live to Notion API
     const result = await postCommentToNotion(
       credentials?.notionToken,
       notionPageId,
@@ -96,23 +115,9 @@ export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWi
 
     if (result.success) {
       setSyncStatus(prev => ({ ...prev, [topicId]: 'success' }));
-      
-      const targetCard = allCardsCross.find(c => c.id === topicId);
-      if (targetCard) {
-        targetCard.comments = [
-          ...(targetCard.comments || []),
-          { author: 'Diego Musach (CTO)', date: nowFormatted, text: text.trim() }
-        ];
-      }
-
-      setCommentInputs(prev => ({ ...prev, [topicId]: '' }));
-      if (!commentedTopicIds.includes(topicId)) {
-        setCommentedTopicIds(prev => [...prev, topicId]);
-      }
-
       setTimeout(() => {
         setSyncStatus(prev => ({ ...prev, [topicId]: null }));
-      }, 3000);
+      }, 3500);
     } else {
       setSyncStatus(prev => ({ ...prev, [topicId]: 'error' }));
     }
@@ -162,7 +167,7 @@ export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWi
               <span style={{ fontSize: '0.74rem', color: 'var(--accent-cyan)', fontWeight: 400 }}>• {currentDate}</span>
             </h2>
             <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: '0.1rem 0 0 0' }}>
-              Muestra solo tarjetas Abiertas. Cambia el estado en vivo a Cerrado o abre el listado de Cerradas aparte.
+              Muestra instantáneamente tu último comentario y fecha al escribir. Sincronización en vivo con Notion API.
             </p>
           </div>
 
@@ -389,7 +394,11 @@ export default function DailyFollowUp({ teamTracking, credentials, onOpenEmailWi
                     </div>
                     <div style={{ color: '#fff', fontSize: '0.8rem' }}>"{lastComment.text}"</div>
                   </div>
-                ) : null}
+                ) : (
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', fontStyle: 'italic' }}>
+                    Sin comentarios previos registrados en Notion.
+                  </div>
+                )}
 
                 {/* Automatic Live Notion API Comment Input */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
