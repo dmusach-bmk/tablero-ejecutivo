@@ -65,6 +65,42 @@ export async function postCommentToNotion(token, pageId, commentText) {
   }
 }
 
+export async function updateNotionPageStatus(token, pageId, newStatus) {
+  const authToken = token || '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';
+  if (!pageId) {
+    return { success: true, localOnly: true };
+  }
+
+  try {
+    const response = await fetch(`/api/notion/v1/pages/${pageId}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${authToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        properties: {
+          'Status 1': {
+            select: { name: newStatus }
+          }
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      console.error("Notion API Error updating status:", err);
+      return { success: false, error: err.message || response.statusText };
+    }
+
+    const data = await response.json();
+    return { success: true, data };
+  } catch (error) {
+    console.error("Failed to update status in Notion:", error);
+    return { success: false, error: error.message };
+  }
+}
+
 export async function createNotionPage(token, databaseId, pageData) {
   const cleanDbId = (databaseId || '34ace95d-6a9a-8054-b33b-cad2cbaf4c70').replace(/-/g, '');
   const authToken = token || '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';
