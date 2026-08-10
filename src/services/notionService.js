@@ -1,6 +1,15 @@
 // Service to handle live Notion API interaction (2-way sync)
 // Uses Vite proxy /api/notion -> https://api.notion.com
 
+function formatNotionUuid(id) {
+  if (!id) return id;
+  const clean = id.replace(/-/g, '');
+  if (clean.length === 32) {
+    return `${clean.slice(0,8)}-${clean.slice(8,12)}-${clean.slice(12,16)}-${clean.slice(16,20)}-${clean.slice(20)}`;
+  }
+  return id;
+}
+
 export async function fetchNotionDatabase(token, databaseId) {
   if (!token || !databaseId) {
     throw new Error("Token o Database ID no configurados");
@@ -27,7 +36,9 @@ export async function fetchNotionDatabase(token, databaseId) {
 
 export async function postCommentToNotion(token, pageId, commentText) {
   const authToken = token || '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';
-  if (!pageId) {
+  const targetPageId = formatNotionUuid(pageId);
+
+  if (!targetPageId) {
     console.warn("No pageId provided, saved locally only.");
     return { success: true, localOnly: true };
   }
@@ -40,7 +51,7 @@ export async function postCommentToNotion(token, pageId, commentText) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        parent: { page_id: pageId },
+        parent: { page_id: targetPageId },
         rich_text: [
           {
             text: {
@@ -67,12 +78,14 @@ export async function postCommentToNotion(token, pageId, commentText) {
 
 export async function updateNotionPageStatus(token, pageId, newStatus) {
   const authToken = token || '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';
-  if (!pageId) {
+  const targetPageId = formatNotionUuid(pageId);
+
+  if (!targetPageId) {
     return { success: true, localOnly: true };
   }
 
   try {
-    const response = await fetch(`/api/notion/v1/pages/${pageId}`, {
+    const response = await fetch(`/api/notion/v1/pages/${targetPageId}`, {
       method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${authToken}`,
