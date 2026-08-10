@@ -1,62 +1,53 @@
 // Service to handle Fathom Video Notetaker API & Transcript Processing
 // Official Fathom API endpoint: https://api.fathom.ai/external/v1/meetings
-// Headers: X-Api-Key and Authorization: Bearer
+// Header: X-Api-Key
 
 export async function fetchFathomMeetings(apiKey, startDate = '2026-07-01') {
-  if (!apiKey) return [];
-  
-  let allMeetings = [];
-  let nextCursor = null;
-  let hasMore = true;
-  let pageCount = 0;
+  const cleanKey = (apiKey || '').trim();
+  if (!cleanKey) {
+    return { success: false, error: 'Por favor ingresa tu API Key de Fathom.', meetings: [] };
+  }
+
+  const headers = {
+    'X-Api-Key': cleanKey,
+    'Authorization': `Bearer ${cleanKey}`,
+    'Content-Type': 'application/json'
+  };
 
   try {
-    while (hasMore && pageCount < 5) {
-      pageCount++;
-      const queryParams = new URLSearchParams();
-      if (startDate) queryParams.set('created_after', `${startDate}T00:00:00Z`);
-      queryParams.set('limit', '100');
-      queryParams.set('include_transcripts', 'true');
-      if (nextCursor) queryParams.set('cursor', nextCursor);
+    // Primary request to Fathom API via Vite proxy
+    let response = await fetch(`/api/fathom/external/v1/meetings?limit=100`, { headers });
 
-      const headers = {
-        'X-Api-Key': apiKey,
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      };
-
-      const response = await fetch(`/api/fathom/external/v1/meetings?${queryParams.toString()}`, {
-        headers
-      });
-
-      if (!response.ok) {
-        // Fallback without query params if strict params fail
-        if (pageCount === 1) {
-          const simpleResp = await fetch('/api/fathom/external/v1/meetings', { headers });
-          if (simpleResp.ok) {
-            const simpleData = await simpleResp.json();
-            const resList = simpleData.meetings || simpleData.results || (Array.isArray(simpleData) ? simpleData : []);
-            return resList;
-          }
-        }
-        break;
-      }
-
-      const data = await response.json();
-      const pageMeetings = data.meetings || data.results || (Array.isArray(data) ? data : []);
-      allMeetings = [...allMeetings, ...pageMeetings];
-
-      if (data.next_cursor || data.pagination?.next_cursor) {
-        nextCursor = data.next_cursor || data.pagination?.next_cursor;
-      } else {
-        hasMore = false;
-      }
+    if (!response.ok) {
+      // Alternative retry without limit param
+      response = await fetch(`/api/fathom/external/v1/meetings`, { headers });
     }
 
-    return allMeetings;
+    if (!response.ok) {
+      const errBody = await response.text().catch(() => '');
+      return {
+        success: false,
+        status: response.status,
+        error: `Fathom API Error (${response.status}): ${errBody || response.statusText || 'Verifica tu API Key'}`,
+        meetings: []
+      };
+    }
+
+    const data = await response.json();
+    const meetingsList = data.meetings || data.results || data.items || (Array.isArray(data) ? data : []);
+
+    return {
+      success: true,
+      meetings: Array.isArray(meetingsList) ? meetingsList : [],
+      count: meetingsList.length
+    };
   } catch (err) {
-    console.error("Fathom API Proxy Error:", err);
-    return allMeetings;
+    console.error("Fathom API Exception:", err);
+    return {
+      success: false,
+      error: `Error de conexión: ${err.message}`,
+      meetings: []
+    };
   }
 }
 

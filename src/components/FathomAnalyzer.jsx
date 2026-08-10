@@ -21,6 +21,7 @@ export default function FathomAnalyzer({ credentials, onNavigate }) {
   const [creatingTaskMember, setCreatingTaskMember] = useState(null);
   const [createdStatus, setCreatedStatus] = useState({});
   const [isFetchingFathomAPI, setIsFetchingFathomAPI] = useState(false);
+  const [fathomApiError, setFathomApiError] = useState(null);
   const [fathomApiStatus, setFathomApiStatus] = useState(null);
 
   const sampleTranscripts = [
@@ -57,15 +58,16 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
 
   const handleFetchLatestCallsFromFathomAccount = async () => {
     setIsFetchingFathomAPI(true);
+    setFathomApiError(null);
     setFathomApiStatus('fetching');
 
-    const meetings = await fetchFathomMeetings(fathomApiKey, startDate);
+    const result = await fetchFathomMeetings(fathomApiKey, startDate);
     const nowStr = new Date().toISOString().replace('T', ' ').slice(0, 16);
     setLastSyncTime(nowStr);
 
-    if (meetings && meetings.length > 0) {
-      setMeetingsList(meetings);
-      const lastCall = meetings[0];
+    if (result.success && result.meetings && result.meetings.length > 0) {
+      setMeetingsList(result.meetings);
+      const lastCall = result.meetings[0];
       setSelectedMeetingId(lastCall.id || '1');
       setMeetingTitle(lastCall.title || 'Llamada Fathom');
       const textToAnalyze = lastCall.transcript || lastCall.summary || '';
@@ -75,6 +77,9 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
       }
       setFathomApiStatus('success');
     } else {
+      if (result.error) {
+        setFathomApiError(result.error);
+      }
       setMeetingsList(sampleTranscripts);
       setFathomApiStatus('demo_fallback');
     }
@@ -99,14 +104,14 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
     setCreatingTaskMember(delegation.memberName);
 
     const taskTitle = `[Fathom ${new Date().toLocaleDateString()}] ${delegation.memberName}: ${delegation.excerpt.substring(0, 70)}`;
-    const result = await createNotionPage(credentials?.notionToken, null, {
+    const res = await createNotionPage(credentials?.notionToken, null, {
       title: taskTitle,
       responsable: delegation.responsableKey,
       status: 'Abierto',
       priority: 'P1 - CRITICA'
     });
 
-    if (result.success) {
+    if (res.success) {
       setCreatedStatus(prev => ({ ...prev, [delegation.memberName]: true }));
     }
     setCreatingTaskMember(null);
@@ -114,7 +119,7 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
 
   useEffect(() => {
     let intervalId;
-    if (autoSyncEnabled) {
+    if (autoSyncEnabled && fathomApiKey) {
       handleFetchLatestCallsFromFathomAccount();
 
       intervalId = setInterval(() => {
@@ -147,7 +152,7 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
               <Video className="text-purple" size={22} /> 🎥 Fathom Video Notetaker AI Integrator ({accountEmail})
             </h2>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0.25rem 0 0 0' }}>
-              Paginación multietapa activa: Trae <strong style={{ color: 'var(--accent-purple)' }}>100% de las videollamadas desde Julio 2026</strong> + Ingesta automática <strong style={{ color: 'var(--accent-emerald)' }}>cada 1 hora</strong>.
+              Histórico desde <strong style={{ color: 'var(--accent-purple)' }}>Julio 2026</strong> + Ingesta automática en segundo plano <strong style={{ color: 'var(--accent-emerald)' }}>cada 1 hora</strong>.
             </p>
           </div>
 
@@ -170,15 +175,24 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
             <Zap size={20} className="text-emerald" />
             <div>
               <span style={{ fontSize: '0.86rem', color: '#fff', fontWeight: 700 }}>
-                Auto-Cron Activo: Trayendo todo Julio 2026 + Escaneando cada 60 minutos ({filteredMeetings.length} llamadas)
+                Auto-Cron Activo: Sincronizando llamadas de {accountEmail} cada 60 minutos ({filteredMeetings.length} llamadas)
               </span>
               <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', display: 'block' }}>
-                {lastSyncTime ? `Última sincronización completa: ${lastSyncTime}` : 'Iniciando escaneo multilistado...'} • Desde {startDate} hasta la fecha.
+                {lastSyncTime ? `Último intento: ${lastSyncTime}` : 'Ingresa tu API Key y presiona Sincronizar'} • Período: Desde {startDate} hasta HOY.
               </span>
             </div>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+            <input
+              type="password"
+              className="form-input"
+              placeholder="API Key Diego (BgtG...)"
+              value={fathomApiKey}
+              onChange={(e) => setFathomApiKey(e.target.value)}
+              style={{ fontSize: '0.76rem', padding: '0.35rem 0.65rem', width: '180px' }}
+            />
+
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
               <Calendar size={13} className="text-purple" />
               <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Desde:</label>
@@ -201,6 +215,13 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
             </button>
           </div>
         </div>
+
+        {fathomApiError && (
+          <div style={{ marginTop: '0.65rem', padding: '0.5rem 0.75rem', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid var(--accent-rose)', borderRadius: '6px', color: '#fff', fontSize: '0.76rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <AlertCircle size={14} className="text-rose" />
+            <span>{fathomApiError}</span>
+          </div>
+        )}
       </div>
 
       {/* Main Grid: Call History List vs Active Transcript Analysis */}
