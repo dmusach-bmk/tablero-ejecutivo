@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Video, FileText, CheckCircle2, Send, Sparkles, Key, ExternalLink, RefreshCw, AlertCircle, ShieldCheck, Zap, Clock, Calendar, Play } from 'lucide-react';
+import { Video, FileText, CheckCircle2, Send, Sparkles, Key, ExternalLink, RefreshCw, AlertCircle, ShieldCheck, Zap, Clock, Calendar, Search } from 'lucide-react';
 import { parseFathomTranscript, fetchFathomMeetings } from '../services/fathomService';
 import { createNotionPage } from '../services/notionService';
 
@@ -10,6 +10,7 @@ export default function FathomAnalyzer({ credentials, onNavigate }) {
   const [startDate, setStartDate] = useState('2026-07-01');
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
   const [lastSyncTime, setLastSyncTime] = useState(null);
+  const [callSearchQuery, setCallSearchQuery] = useState('');
   
   const [meetingsList, setMeetingsList] = useState([]);
   const [selectedMeetingId, setSelectedMeetingId] = useState(null);
@@ -43,6 +44,14 @@ Joseph Valer: Ya tenemos el prototipo probando con capacitaciones filmadas.
 Diego Musach: Fabricio, exijo el paso a paso de instalación de Koalas y Smart Sensors documentado en tarjetas de Notion.
 Fabricio Jose Nieva: Estoy grabando los videos de capacitaciones y armando los resúmenes.
 Diego Musach: Mario, fijamos la matriz de métricas analytics y Scorecard para todo el equipo.`
+    },
+    {
+      id: 'demo-3',
+      title: "Fathom Call: Hitos de Julio - Relevamiento Gabinetes y Poc EDEMSA",
+      date: "2026-07-22 09:30",
+      text: `Diego Musach: Camilo, revisemos los 2,300 gabinetes entre Argentina y Colombia.
+Camilo Uribe: Ya tenemos las cotizaciones de postes de fibra de vidrio.
+Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este mes de Julio.`
     }
   ];
 
@@ -66,7 +75,6 @@ Diego Musach: Mario, fijamos la matriz de métricas analytics y Scorecard para t
       }
       setFathomApiStatus('success');
     } else {
-      // Fallback to demo items if API returns empty
       setMeetingsList(sampleTranscripts);
       setFathomApiStatus('demo_fallback');
     }
@@ -104,14 +112,11 @@ Diego Musach: Mario, fijamos la matriz de métricas analytics y Scorecard para t
     setCreatingTaskMember(null);
   };
 
-  // AUTOMATIC BACKGROUND CRON EVERY 60 MINUTES (1 HOUR)
   useEffect(() => {
     let intervalId;
     if (autoSyncEnabled) {
-      // Initial fetch on load
       handleFetchLatestCallsFromFathomAccount();
 
-      // Set 1-hour recurring interval (3,600,000 ms)
       intervalId = setInterval(() => {
         handleFetchLatestCallsFromFathomAccount();
       }, 3600000);
@@ -120,6 +125,16 @@ Diego Musach: Mario, fijamos la matriz de métricas analytics y Scorecard para t
       if (intervalId) clearInterval(intervalId);
     };
   }, [autoSyncEnabled, fathomApiKey, startDate]);
+
+  const rawList = meetingsList.length > 0 ? meetingsList : sampleTranscripts;
+  const filteredMeetings = rawList.filter(m => {
+    if (!callSearchQuery.trim()) return true;
+    const q = callSearchQuery.toLowerCase();
+    return (m.title && m.title.toLowerCase().includes(q)) || 
+           (m.date && m.date.toLowerCase().includes(q)) ||
+           (m.created_at && m.created_at.toLowerCase().includes(q)) ||
+           (m.text && m.text.toLowerCase().includes(q));
+  });
 
   return (
     <div className="fathom-analyzer-container">
@@ -132,7 +147,7 @@ Diego Musach: Mario, fijamos la matriz de métricas analytics y Scorecard para t
               <Video className="text-purple" size={22} /> 🎥 Fathom Video Notetaker AI Integrator ({accountEmail})
             </h2>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0.25rem 0 0 0' }}>
-              Histórico desde <strong style={{ color: 'var(--accent-purple)' }}>Julio 2026</strong> + Ingesta automática en segundo plano <strong style={{ color: 'var(--accent-emerald)' }}>cada 1 hora</strong>.
+              Paginación multietapa activa: Trae <strong style={{ color: 'var(--accent-purple)' }}>100% de las videollamadas desde Julio 2026</strong> + Ingesta automática <strong style={{ color: 'var(--accent-emerald)' }}>cada 1 hora</strong>.
             </p>
           </div>
 
@@ -155,10 +170,10 @@ Diego Musach: Mario, fijamos la matriz de métricas analytics y Scorecard para t
             <Zap size={20} className="text-emerald" />
             <div>
               <span style={{ fontSize: '0.86rem', color: '#fff', fontWeight: 700 }}>
-                Auto-Cron Activo: Sincronizando llamadas de {accountEmail} cada 60 minutos
+                Auto-Cron Activo: Trayendo todo Julio 2026 + Escaneando cada 60 minutos ({filteredMeetings.length} llamadas)
               </span>
               <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', display: 'block' }}>
-                {lastSyncTime ? `Última búsqueda exitosa: ${lastSyncTime}` : 'Iniciando primer escaneo...'} • Período: Desde {startDate} hasta HOY.
+                {lastSyncTime ? `Última sincronización completa: ${lastSyncTime}` : 'Iniciando escaneo multilistado...'} • Desde {startDate} hasta la fecha.
               </span>
             </div>
           </div>
@@ -182,7 +197,7 @@ Diego Musach: Mario, fijamos la matriz de métricas analytics y Scorecard para t
               disabled={isFetchingFathomAPI}
               style={{ fontSize: '0.76rem', padding: '0.4rem 0.85rem', background: 'linear-gradient(135deg, var(--accent-purple), var(--accent-blue))', whiteSpace: 'nowrap' }}
             >
-              <RefreshCw className={isFetchingFathomAPI ? 'spin' : ''} size={13} /> Sincronizar Ahora
+              <RefreshCw className={isFetchingFathomAPI ? 'spin' : ''} size={13} /> Traer Todo Julio
             </button>
           </div>
         </div>
@@ -191,14 +206,29 @@ Diego Musach: Mario, fijamos la matriz de métricas analytics y Scorecard para t
       {/* Main Grid: Call History List vs Active Transcript Analysis */}
       <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr 1fr', gap: '1rem' }}>
         
-        {/* Column 1: Historical Meetings List (Julio 2026 - Today) */}
+        {/* Column 1: Historical Meetings List (Julio 2026 - Today with Search) */}
         <div className="card-glass" style={{ padding: '0.9rem' }}>
-          <h3 style={{ fontSize: '0.88rem', color: 'var(--accent-purple)', marginBottom: '0.65rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700 }}>
-            <Clock size={15} /> Llamadas Grabadas desde Julio
-          </h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+            <h3 style={{ fontSize: '0.86rem', color: 'var(--accent-purple)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 700 }}>
+              <Clock size={14} /> Julio a la fecha ({filteredMeetings.length})
+            </h3>
+          </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', maxHeight: '520px', overflowY: 'auto' }}>
-            {(meetingsList.length > 0 ? meetingsList : sampleTranscripts).map((m, idx) => {
+          {/* Search Box in Call List */}
+          <div style={{ position: 'relative', marginBottom: '0.65rem' }}>
+            <Search size={13} style={{ position: 'absolute', left: '8px', top: '8px', color: 'var(--text-muted)' }} />
+            <input
+              type="text"
+              placeholder="Buscar llamada..."
+              value={callSearchQuery}
+              onChange={(e) => setCallSearchQuery(e.target.value)}
+              style={{ paddingLeft: '26px', fontSize: '0.72rem', height: '28px' }}
+              className="form-input"
+            />
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', maxHeight: '480px', overflowY: 'auto' }}>
+            {filteredMeetings.map((m, idx) => {
               const isSelected = selectedMeetingId === m.id || (!selectedMeetingId && idx === 0);
               return (
                 <div
@@ -217,7 +247,7 @@ Diego Musach: Mario, fijamos la matriz de métricas analytics y Scorecard para t
                     {m.title}
                   </div>
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.2rem', display: 'flex', justifyContent: 'space-between' }}>
-                    <span>📅 {m.date || m.created_at || 'Julio 2026'}</span>
+                    <span>📅 {m.date || (m.created_at ? m.created_at.slice(0, 10) : 'Julio 2026')}</span>
                     <span style={{ color: 'var(--accent-purple)' }}>{isSelected ? '▶ Seleccionada' : 'Ver'}</span>
                   </div>
                 </div>

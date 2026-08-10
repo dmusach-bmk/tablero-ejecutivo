@@ -3,26 +3,58 @@
 
 export async function fetchFathomMeetings(apiKey, startDate = '2026-07-01') {
   if (!apiKey) return [];
-  try {
-    const query = startDate ? `?created_after=${startDate}T00:00:00Z` : '';
-    const response = await fetch(`/api/fathom/v1/meetings${query}`, {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      }
-    });
+  
+  let allMeetings = [];
+  let nextCursor = null;
+  let hasMore = true;
+  let pageCount = 0;
 
-    if (!response.ok) {
-      console.warn("Fathom API proxy response status:", response.status);
-      return [];
+  try {
+    while (hasMore && pageCount < 5) { // Up to 500 meetings across pages
+      pageCount++;
+      const queryParams = new URLSearchParams();
+      if (startDate) queryParams.set('created_after', `${startDate}T00:00:00Z`);
+      queryParams.set('limit', '100');
+      queryParams.set('include_transcripts', 'true');
+      if (nextCursor) queryParams.set('cursor', nextCursor);
+
+      const response = await fetch(`/api/fathom/v1/meetings?${queryParams.toString()}`, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        // Fallback simple fetch if query params restricted
+        if (pageCount === 1) {
+          const simpleResp = await fetch('/api/fathom/v1/meetings', {
+            headers: { 'Authorization': `Bearer ${apiKey}` }
+          });
+          if (simpleResp.ok) {
+            const simpleData = await simpleResp.json();
+            const resList = simpleData.meetings || simpleData.results || (Array.isArray(simpleData) ? simpleData : []);
+            return resList;
+          }
+        }
+        break;
+      }
+
+      const data = await response.json();
+      const pageMeetings = data.meetings || data.results || (Array.isArray(data) ? data : []);
+      allMeetings = [...allMeetings, ...pageMeetings];
+
+      if (data.next_cursor || data.pagination?.next_cursor) {
+        nextCursor = data.next_cursor || data.pagination?.next_cursor;
+      } else {
+        hasMore = false;
+      }
     }
 
-    const data = await response.json();
-    const meetings = data.meetings || data.results || data || [];
-    return Array.isArray(meetings) ? meetings : [];
+    return allMeetings;
   } catch (err) {
     console.error("Fathom API Proxy Error:", err);
-    return [];
+    return allMeetings;
   }
 }
 
