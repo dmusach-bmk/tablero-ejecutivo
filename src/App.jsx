@@ -27,7 +27,7 @@ export default function App() {
   
   // Use REAL_NOTION_CARDS from Notion API
   const [notionCards, setNotionCards] = useState(() => {
-    const saved = localStorage.getItem('dm_notion_cards_v3');
+    const saved = localStorage.getItem('dm_notion_cards_v4');
     if (saved) {
       const parsed = JSON.parse(saved);
       if (parsed.length >= 160 && parsed[0].notionPageId) return parsed;
@@ -40,9 +40,9 @@ export default function App() {
     return saved ? JSON.parse(saved) : INITIAL_EXCEL_DATA;
   });
 
-  // Use REAL_TEAM_TRACKING with valid notionPageId bound
+  // Use REAL_TEAM_TRACKING with 374 real Notion comments + valid notionPageId bound
   const [teamTracking, setTeamTracking] = useState(() => {
-    const saved = localStorage.getItem('dm_team_tracking_v3');
+    const saved = localStorage.getItem('dm_team_tracking_v4');
     if (saved) {
       const parsed = JSON.parse(saved);
       if (parsed.length >= 10 && parsed[0].topics[0]?.notionPageId) return parsed;
@@ -73,7 +73,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('dm_notion_cards_v3', JSON.stringify(notionCards));
+    localStorage.setItem('dm_notion_cards_v4', JSON.stringify(notionCards));
   }, [notionCards]);
 
   useEffect(() => {
@@ -81,7 +81,7 @@ export default function App() {
   }, [excelData]);
 
   useEffect(() => {
-    localStorage.setItem('dm_team_tracking_v3', JSON.stringify(teamTracking));
+    localStorage.setItem('dm_team_tracking_v4', JSON.stringify(teamTracking));
   }, [teamTracking]);
 
   useEffect(() => {
