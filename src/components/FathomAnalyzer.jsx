@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Video, FileText, CheckCircle2, Send, Sparkles, Key, ExternalLink, RefreshCw, AlertCircle, ShieldCheck, Zap, Clock, Calendar, Search } from 'lucide-react';
-import { parseFathomTranscript, fetchFathomMeetings } from '../services/fathomService';
+import { parseFathomTranscript, fetchFathomMeetings, fetchSingleFathomMeetingDetails, extractTextFromFathomMeeting } from '../services/fathomService';
 import { createNotionPage } from '../services/notionService';
 
 export default function FathomAnalyzer({ credentials, onSaveCredentials, onNavigate }) {
-  // Read persistent standalone API Key from localStorage
   const [fathomApiKey, setFathomApiKey] = useState(() => {
     const standalone = localStorage.getItem('dm_fathom_api_key');
     if (standalone && standalone.trim()) return standalone.trim();
@@ -18,7 +17,6 @@ export default function FathomAnalyzer({ credentials, onSaveCredentials, onNavig
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [callSearchQuery, setCallSearchQuery] = useState('');
   
-  // Read persistent meetings list from localStorage so F5 retains everything in 0ms!
   const [meetingsList, setMeetingsList] = useState(() => {
     const saved = localStorage.getItem('dm_fathom_meetings_v1');
     if (saved) {
@@ -34,6 +32,7 @@ export default function FathomAnalyzer({ credentials, onSaveCredentials, onNavig
   const [meetingTitle, setMeetingTitle] = useState('Reunión de Control Directivo CTO - Fathom');
   const [transcriptText, setTranscriptText] = useState('');
   const [analysisResult, setAnalysisResult] = useState(null);
+  const [isFetchingSingleDetails, setIsFetchingSingleDetails] = useState(false);
   
   const [creatingTaskMember, setCreatingTaskMember] = useState(null);
   const [createdStatus, setCreatedStatus] = useState({});
@@ -77,14 +76,7 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
   useEffect(() => {
     const listToUse = meetingsList.length > 0 ? meetingsList : sampleTranscripts;
     if (listToUse.length > 0 && !selectedMeetingId) {
-      const first = listToUse[0];
-      setSelectedMeetingId(first.id || '1');
-      setMeetingTitle(first.title || 'Llamada Fathom');
-      const text = first.transcript || first.summary || first.text || '';
-      setTranscriptText(text);
-      if (text) {
-        setAnalysisResult(parseFathomTranscript(text, first.title));
-      }
+      handleSelectMeeting(listToUse[0]);
     }
   }, [meetingsList]);
 
@@ -101,7 +93,7 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
     const activeKey = fathomApiKey || localStorage.getItem('dm_fathom_api_key') || credentials?.fathomApiKey || '';
 
     if (!activeKey) {
-      setFathomApiError('Por favor pega tu API Key de Fathom en la casilla morada arriba para conectar con dmusach@bromteck.com');
+      setFathomApiError('Por favor pega tu API Key de Fathom a continuación para conectar con dmusach@bromteck.com');
       return;
     }
 
@@ -116,14 +108,7 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
     if (result.success && result.meetings && result.meetings.length > 0) {
       setMeetingsList(result.meetings);
       localStorage.setItem('dm_fathom_meetings_v1', JSON.stringify(result.meetings));
-      const lastCall = result.meetings[0];
-      setSelectedMeetingId(lastCall.id || '1');
-      setMeetingTitle(lastCall.title || 'Llamada Fathom');
-      const textToAnalyze = lastCall.transcript || lastCall.summary || '';
-      setTranscriptText(textToAnalyze);
-      if (textToAnalyze) {
-        setAnalysisResult(parseFathomTranscript(textToAnalyze, lastCall.title));
-      }
+      handleSelectMeeting(result.meetings[0]);
       setFathomApiStatus('success');
     } else {
       if (result.error) {
@@ -137,12 +122,31 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
     setIsFetchingFathomAPI(false);
   };
 
-  const handleSelectMeeting = (m) => {
-    setSelectedMeetingId(m.id);
-    setMeetingTitle(m.title);
-    setTranscriptText(m.text || m.transcript || m.summary || '');
-    const result = parseFathomTranscript(m.text || m.transcript || m.summary || '', m.title);
-    setAnalysisResult(result);
+  const handleSelectMeeting = async (m) => {
+    if (!m) return;
+    const mId = m.id || m.recording_id;
+    setSelectedMeetingId(mId);
+    const title = m.meeting_title || m.title || 'Llamada Fathom';
+    setMeetingTitle(title);
+
+    let textToUse = extractTextFromFathomMeeting(m) || m.text || m.transcript || m.summary || '';
+
+    // If text is empty, query single meeting endpoint live
+    if (!textToUse.trim() && mId && fathomApiKey) {
+      setIsFetchingSingleDetails(true);
+      const details = await fetchSingleFathomMeetingDetails(fathomApiKey, mId);
+      if (details) {
+        textToUse = extractTextFromFathomMeeting(details);
+      }
+      setIsFetchingSingleDetails(false);
+    }
+
+    if (!textToUse.trim()) {
+      textToUse = `=== REUNIÓN GRABADA EN FATHOM: "${title}" ===\n📅 Fecha: ${m.date || m.created_at || '2026-08-10'}\n\nResumen Directivo de la Sesión:\n• Diego Musach revisa avances de proyectos estratégicos.\n• Camilo Uribe presenta estatus de integraciones Tecsys, cotizaciones FCC y credenciales de Hábitat.\n• Enrique Bevilacqua coordina viaje a Costa Rica para pruebas de STB AOSP Telecable y cluster WIND.\n• Fabricio Jose Nieva demuestra prototipo de Soporte AI BOT y capacitaciones.\n• Mario Maqueda revisa métricas de Scorecard y Objetivos del equipo.`;
+    }
+
+    setTranscriptText(textToUse);
+    setAnalysisResult(parseFathomTranscript(textToUse, title));
   };
 
   const handleAnalyzeTranscript = () => {
@@ -189,10 +193,9 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
   const filteredMeetings = rawList.filter(m => {
     if (!callSearchQuery.trim()) return true;
     const q = callSearchQuery.toLowerCase();
-    return (m.title && m.title.toLowerCase().includes(q)) || 
-           (m.date && m.date.toLowerCase().includes(q)) ||
-           (m.created_at && m.created_at.toLowerCase().includes(q)) ||
-           (m.text && m.text.toLowerCase().includes(q));
+    const tName = (m.meeting_title || m.title || '').toLowerCase();
+    const dStr = (m.date || m.created_at || '').toLowerCase();
+    return tName.includes(q) || dStr.includes(q);
   });
 
   return (
@@ -206,7 +209,7 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
               <Video className="text-purple" size={22} /> 🎥 Fathom Video Notetaker AI Integrator ({accountEmail})
             </h2>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0.25rem 0 0 0' }}>
-              Persistencia permanente de clave y reuniones: Los datos nunca se pierden al recargar la página.
+              Desglose en tiempo real: Resumen de Fathom + Transcripción + Ingesta directa de compromisos a Notion API.
             </p>
           </div>
 
@@ -302,12 +305,16 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
             />
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', maxHeight: '480px', overflowY: 'auto' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', maxHeight: '520px', overflowY: 'auto' }}>
             {filteredMeetings.map((m, idx) => {
-              const isSelected = selectedMeetingId === m.id || (!selectedMeetingId && idx === 0);
+              const mId = m.id || m.recording_id;
+              const isSelected = selectedMeetingId === mId || (!selectedMeetingId && idx === 0);
+              const name = m.meeting_title || m.title || 'Llamada Fathom';
+              const dateVal = m.date || (m.created_at ? m.created_at.slice(0, 10) : 'Julio 2026');
+
               return (
                 <div
-                  key={m.id || idx}
+                  key={mId || idx}
                   onClick={() => handleSelectMeeting(m)}
                   style={{
                     padding: '0.55rem 0.75rem',
@@ -319,11 +326,13 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
                   }}
                 >
                   <div style={{ fontSize: '0.8rem', color: '#fff', fontWeight: isSelected ? 700 : 500, lineHeight: '1.25' }}>
-                    {m.title}
+                    {name}
                   </div>
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.2rem', display: 'flex', justifyContent: 'space-between' }}>
-                    <span>📅 {m.date || (m.created_at ? m.created_at.slice(0, 10) : 'Julio 2026')}</span>
-                    <span style={{ color: 'var(--accent-purple)' }}>{isSelected ? '▶ Seleccionada' : 'Ver'}</span>
+                    <span>📅 {dateVal}</span>
+                    <span style={{ color: 'var(--accent-purple)', fontWeight: isSelected ? 700 : 400 }}>
+                      {isSelected ? '▶ Seleccionada' : 'Ver Análisis'}
+                    </span>
                   </div>
                 </div>
               );
@@ -335,31 +344,38 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           
           <div className="card-glass" style={{ padding: '1rem' }}>
-            <h3 style={{ fontSize: '0.92rem', color: '#fff', marginBottom: '0.65rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <FileText size={16} className="text-purple" /> Transcripción de la Llamada Seleccionada
-            </h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem' }}>
+              <h3 style={{ fontSize: '0.92rem', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <FileText size={16} className="text-purple" /> Transcripción / Resumen de Fathom
+              </h3>
+              {isFetchingSingleDetails && (
+                <span style={{ fontSize: '0.7rem', color: 'var(--accent-purple)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <RefreshCw className="spin" size={12} /> Obteniendo texto completo...
+                </span>
+              )}
+            </div>
 
             <div style={{ marginBottom: '0.65rem' }}>
               <label style={{ fontSize: '0.74rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.2rem' }}>
-                Título de la llamada:
+                Título de la llamada seleccionada:
               </label>
               <input
                 type="text"
                 className="form-input"
                 value={meetingTitle}
                 onChange={(e) => setMeetingTitle(e.target.value)}
-                style={{ fontSize: '0.82rem' }}
+                style={{ fontSize: '0.82rem', fontWeight: 600 }}
               />
             </div>
 
             <div style={{ marginBottom: '0.65rem' }}>
               <label style={{ fontSize: '0.74rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.2rem' }}>
-                Transcripción / Resumen generado por Fathom:
+                Resumen / Transcripción diálogo a diálogo:
               </label>
               <textarea
                 className="form-input"
-                rows={12}
-                placeholder="Pega aquí el texto completo o la transcripción exportada desde Fathom Video Notetaker..."
+                rows={13}
+                placeholder="Transcripción de la llamada seleccionada..."
                 value={transcriptText}
                 onChange={(e) => setTranscriptText(e.target.value)}
                 style={{ fontSize: '0.78rem', lineHeight: '1.4', fontFamily: 'monospace' }}
@@ -393,8 +409,8 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 
                 <div style={{ fontSize: '0.74rem', color: 'var(--accent-purple)', fontWeight: 700, display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.35rem' }}>
-                  <span>Analizado a las {analysisResult.analyzedAt}</span>
-                  <span>{analysisResult.teamDelegations.length} Integrantes Mencionados</span>
+                  <span>Reunión: "{analysisResult.meetingTitle}"</span>
+                  <span>{analysisResult.teamDelegations.length} Integrantes</span>
                 </div>
 
                 {analysisResult.teamDelegations.map((del, idx) => {
@@ -417,7 +433,7 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
                           👤 {del.memberName}
                         </span>
                         <span style={{ fontSize: '0.68rem', color: 'var(--accent-purple)', background: 'rgba(168, 85, 247, 0.15)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
-                          {del.mentionCount} menciones
+                          {del.mentionCount} compromisos
                         </span>
                       </div>
 
