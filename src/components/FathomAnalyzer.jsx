@@ -3,16 +3,11 @@ import { Video, FileText, CheckCircle2, Send, Sparkles, Key, ExternalLink, Refre
 import { parseFathomTranscript, fetchFathomMeetings } from '../services/fathomService';
 import { createNotionPage } from '../services/notionService';
 
-export default function FathomAnalyzer({ credentials, onNavigate }) {
-  // Read persistent API Key directly from localStorage on initial render
+export default function FathomAnalyzer({ credentials, onSaveCredentials, onNavigate }) {
+  // Read persistent standalone API Key from localStorage
   const [fathomApiKey, setFathomApiKey] = useState(() => {
-    const saved = localStorage.getItem('dm_credentials');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed.fathomApiKey) return parsed.fathomApiKey;
-      } catch (e) {}
-    }
+    const standalone = localStorage.getItem('dm_fathom_api_key');
+    if (standalone && standalone.trim()) return standalone.trim();
     return credentials?.fathomApiKey || '';
   });
 
@@ -93,17 +88,20 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
     }
   }, [meetingsList]);
 
+  const handleApiKeyChange = (val) => {
+    const cleanVal = val.trim();
+    setFathomApiKey(cleanVal);
+    localStorage.setItem('dm_fathom_api_key', cleanVal);
+    if (onSaveCredentials) {
+      onSaveCredentials({ ...credentials, fathomApiKey: cleanVal });
+    }
+  };
+
   const handleFetchLatestCallsFromFathomAccount = async () => {
-    const activeKey = fathomApiKey || credentials?.fathomApiKey || (() => {
-      const saved = localStorage.getItem('dm_credentials');
-      if (saved) {
-        try { return JSON.parse(saved).fathomApiKey || ''; } catch(e){}
-      }
-      return '';
-    })();
+    const activeKey = fathomApiKey || localStorage.getItem('dm_fathom_api_key') || credentials?.fathomApiKey || '';
 
     if (!activeKey) {
-      setFathomApiError('Por favor pega tu API Key de Fathom a continuación para conectar con dmusach@bromteck.com');
+      setFathomApiError('Por favor pega tu API Key de Fathom en la casilla morada arriba para conectar con dmusach@bromteck.com');
       return;
     }
 
@@ -172,12 +170,15 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
 
   useEffect(() => {
     let intervalId;
-    handleFetchLatestCallsFromFathomAccount();
+    const activeKey = fathomApiKey || localStorage.getItem('dm_fathom_api_key');
+    if (activeKey) {
+      handleFetchLatestCallsFromFathomAccount();
 
-    if (autoSyncEnabled) {
-      intervalId = setInterval(() => {
-        handleFetchLatestCallsFromFathomAccount();
-      }, 3600000);
+      if (autoSyncEnabled) {
+        intervalId = setInterval(() => {
+          handleFetchLatestCallsFromFathomAccount();
+        }, 3600000);
+      }
     }
     return () => {
       if (intervalId) clearInterval(intervalId);
@@ -205,7 +206,7 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
               <Video className="text-purple" size={22} /> 🎥 Fathom Video Notetaker AI Integrator ({accountEmail})
             </h2>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0.25rem 0 0 0' }}>
-              Almacenamiento persistente local activo: Tus reuniones nunca desaparecen al recargar la página.
+              Persistencia permanente de clave y reuniones: Los datos nunca se pierden al recargar la página.
             </p>
           </div>
 
@@ -242,14 +243,7 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
               className="form-input"
               placeholder="API Key Diego..."
               value={fathomApiKey}
-              onChange={(e) => {
-                const val = e.target.value;
-                setFathomApiKey(val);
-                try {
-                  const savedCreds = JSON.parse(localStorage.getItem('dm_credentials') || '{}');
-                  localStorage.setItem('dm_credentials', JSON.stringify({ ...savedCreds, fathomApiKey: val }));
-                } catch (err) {}
-              }}
+              onChange={(e) => handleApiKeyChange(e.target.value)}
               style={{ fontSize: '0.76rem', padding: '0.35rem 0.65rem', width: '180px' }}
             />
 
