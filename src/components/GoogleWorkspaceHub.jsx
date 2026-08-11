@@ -5,7 +5,7 @@ import { createNotionPage, postCommentToNotion } from '../services/notionService
 
 export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
   const [googleAccessToken, setGoogleAccessToken] = useState(() => {
-    return localStorage.getItem('dm_google_oauth_token') || 'ya29.a0ARGnu0ZfTi6VTF6zYcfLFI_iaLXQJ9i4_qTEwXnatnIQCEuyeOkfkKV5sLRgQTwmfAawA395rPJEIyBhv_T2r-fWKCR-HJlBpZfnaeQeN3tKnlTSaLBqmi1aVQBL7CXqOcsyFlMNpdTkPhpncLpacIR94lQEP_IKuOgzddDwHsFMrsoE9eN5nkYT6VqrlngN3HwL0twaCgYKAQ4SARMSFQHGX2MiLswUv8wVvj7s1nCd8jAX1A0206';
+    return localStorage.getItem('dm_google_oauth_token') || '';
   });
 
   const [accountEmail, setAccountEmail] = useState('dmusach@bromteck.com');
@@ -16,7 +16,6 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
   const [isFetchingGoogleAPI, setIsFetchingGoogleAPI] = useState(false);
   const [googleApiError, setGoogleApiError] = useState(null);
   const [listeningTargetId, setListeningTargetId] = useState(null);
-  const [showAuthGuide, setShowAuthGuide] = useState(false);
 
   const [prioritySpreadsheets, setPrioritySpreadsheets] = useState(() => {
     const saved = localStorage.getItem('dm_priority_spreadsheets');
@@ -31,18 +30,28 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
   });
 
   const [newSheetInput, setNewSheetInput] = useState('');
-  const [gmailMessages, setGmailMessages] = useState([]);
+  const [gmailMessages, setGmailMessages] = useState(getCorporateGmailSampleData());
   const [driveFiles, setDriveFiles] = useState(getCorporateDriveSampleData());
   const [actionSuccessStatus, setActionSuccessStatus] = useState({});
   const [processingId, setProcessingId] = useState(null);
 
+  // Helper to extract clean file basename if user inputs a full Google Sheets URL
+  const formatSheetDisplayName = (rawInput) => {
+    if (!rawInput) return 'Planilla de Trabajo';
+    if (rawInput.includes('docs.google.com') || rawInput.includes('http')) {
+      return '📄 Planilla_Google_Drive_Importada.xlsx';
+    }
+    return rawInput.length > 45 ? `${rawInput.substring(0, 42)}...` : rawInput;
+  };
+
   const handleAddPrioritySpreadsheet = () => {
     if (!newSheetInput.trim()) return;
+    const cleanName = formatSheetDisplayName(newSheetInput.trim());
     const newSheet = {
       id: `sheet-${Date.now()}`,
-      name: newSheetInput.trim(),
+      name: cleanName,
       targetProject: 'Análisis Solicitado por Diego',
-      status: 'Análisis IA Pendiente...',
+      status: 'Análisis IA Pendiente',
       insight: 'Auditando celdas, valores de cotización y tareas a derivar a Notion.'
     };
     const updated = [newSheet, ...prioritySpreadsheets];
@@ -54,7 +63,7 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
   const handleStartVoiceDictation = (targetId, onSpeechText) => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert("🎙️ Dictado por voz: Te recomendamos abrir el tablero en Google Chrome para usar el micrófono.");
+      alert("🎙️ Dictado por voz: Te recomendamos abrir el tablero en Google Chrome.");
       return;
     }
     setListeningTargetId(targetId);
@@ -107,7 +116,7 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
       return {
         member: 'Diego Musach (CTO)',
         priority: 'P2 - ALTA',
-        action: 'Auditar correo y derivar acción o respuesta directiva a Notion.'
+        action: 'Auditar correo corporativo y derivar acción directiva a Notion.'
       };
     }
   };
@@ -120,6 +129,7 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
     if (activeToken.trim()) {
       localStorage.setItem('dm_google_oauth_token', activeToken.trim());
       const gResult = await fetchCorporateGmailMessages(activeToken.trim(), startDate);
+      
       if (gResult.success && gResult.messages.length > 0) {
         const enriched = gResult.messages.map(item => {
           const info = generateExecutiveActionForEmail(item.subject, item.from, item.snippet);
@@ -158,11 +168,11 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
     const matchedCard = notionCards.find(c => {
       const cTitle = (c.title || '').toLowerCase();
       const sTitle = mailItem.subject.toLowerCase();
-      return mailItem.relatedMember && c.memberName.includes(mailItem.relatedMember.split(' ')[0]) && (sTitle.includes(cTitle) || cTitle.includes('tecsys') || cTitle.includes('edemsa') || cTitle.includes('wind'));
+      return mailItem.relatedMember && c.memberName && c.memberName.includes(mailItem.relatedMember.split(' ')[0]) && (sTitle.includes(cTitle) || cTitle.includes('tecsys') || cTitle.includes('edemsa') || cTitle.includes('wind'));
     });
 
     if (matchedCard) {
-      const commentContent = `[Gmail EN VIVO ${mailItem.date} - De: ${mailItem.from}]: "${mailItem.subject}" • ${mailItem.snippet}`;
+      const commentContent = `[Gmail ${mailItem.date} - De: ${mailItem.from}]: "${mailItem.subject}" • ${mailItem.snippet}`;
       const res = await postCommentToNotion(credentials?.notionToken, matchedCard.notionPageId || matchedCard.id, commentContent);
       if (res.success) {
         setActionSuccessStatus(prev => ({ ...prev, [mailItem.id]: 'commented' }));
@@ -185,10 +195,6 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
 
   useEffect(() => {
     handleFetchGoogleWorkspaceData();
-    const interval = setInterval(() => {
-      handleFetchGoogleWorkspaceData();
-    }, 3600000);
-    return () => clearInterval(interval);
   }, [startDate]);
 
   const rawEmails = gmailMessages.length > 0 ? gmailMessages : getCorporateGmailSampleData();
@@ -218,13 +224,13 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
               <Mail className="text-rose" size={22} /> 📧 Gmail & 📁 Google Drive Corporativo ({accountEmail})
             </h2>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0.25rem 0 0 0' }}>
-              Conexión en vivo activa: Auditoría proactiva de correos y documentos desde <strong>Mayo de 2026</strong> a la fecha.
+              Bandeja de entrada corporativa e Inteligencia Artificial documental desde <strong>Mayo de 2026</strong> a la fecha.
             </p>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '0.74rem', color: 'var(--accent-emerald)', background: 'rgba(16, 185, 129, 0.15)', padding: '0.25rem 0.6rem', borderRadius: '6px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-              <Check size={14} /> Gmail Conectado en Vivo
+            <span style={{ fontSize: '0.74rem', color: 'var(--accent-emerald)', background: 'rgba(16, 185, 129, 0.15)', padding: '0.3rem 0.75rem', borderRadius: '6px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+              <Check size={14} /> {filteredEmails.length} Correos Indexados
             </span>
           </div>
         </div>
@@ -237,10 +243,10 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
             <Zap size={20} className="text-rose" />
             <div>
               <span style={{ fontSize: '0.86rem', color: '#fff', fontWeight: 700 }}>
-                Escaneando Gmail & Drive ({filteredEmails.length} Correos Reales + {driveFiles.length} Archivos)
+                Escaneando Gmail & Drive ({filteredEmails.length} Correos Corporativos + {driveFiles.length} Archivos)
               </span>
               <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', display: 'block' }}>
-                {lastSyncTime ? `Última sincronización exitosa: ${lastSyncTime}` : 'Leyendo emails de dmusach@bromteck.com...'} • Desde {startDate} hasta HOY.
+                {lastSyncTime ? `Última sincronización: ${lastSyncTime}` : 'Lectura de correos activa'} • Desde {startDate} hasta HOY.
               </span>
             </div>
           </div>
@@ -249,27 +255,15 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
             <input
               type="password"
               className="form-input"
-              placeholder="Access Token de Google..."
+              placeholder="Token de Google OAuth..."
               value={googleAccessToken}
               onChange={(e) => {
                 const val = e.target.value;
                 setGoogleAccessToken(val);
                 localStorage.setItem('dm_google_oauth_token', val.trim());
               }}
-              style={{ fontSize: '0.76rem', padding: '0.35rem 0.65rem', width: '220px' }}
+              style={{ fontSize: '0.76rem', padding: '0.35rem 0.65rem', width: '200px' }}
             />
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-              <Calendar size={13} className="text-rose" />
-              <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Desde:</label>
-              <input
-                type="date"
-                className="form-input"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                style={{ fontSize: '0.74rem', padding: '0.25rem 0.5rem', width: '130px' }}
-              />
-            </div>
 
             <button
               className="btn-primary"
@@ -277,26 +271,37 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
               disabled={isFetchingGoogleAPI}
               style={{ fontSize: '0.76rem', padding: '0.4rem 0.85rem', background: 'linear-gradient(135deg, var(--accent-rose), var(--accent-purple))', whiteSpace: 'nowrap' }}
             >
-              <RefreshCw className={isFetchingGoogleAPI ? 'spin' : ''} size={13} /> Sincronizar Correos Reales
+              <RefreshCw className={isFetchingGoogleAPI ? 'spin' : ''} size={13} /> Sincronizar Correos
             </button>
           </div>
         </div>
 
         {googleApiError && (
-          <div style={{ marginTop: '0.65rem', padding: '0.5rem 0.75rem', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid var(--accent-rose)', borderRadius: '6px', color: '#fff', fontSize: '0.76rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <AlertCircle size={14} className="text-rose" />
-            <span>{googleApiError}</span>
+          <div style={{ marginTop: '0.65rem', padding: '0.6rem 0.85rem', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid var(--accent-rose)', borderRadius: '8px', color: '#fff', fontSize: '0.78rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <AlertCircle size={16} className="text-rose" />
+              <span>{googleApiError}</span>
+            </div>
+            <a
+              href="https://developers.google.com/oauthplayground"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-secondary"
+              style={{ fontSize: '0.72rem', padding: '0.25rem 0.6rem', border: '1px solid var(--accent-rose)', color: 'var(--accent-rose)', textDecoration: 'none' }}
+            >
+              🔑 Renovar Token en OAuth Playground
+            </a>
           </div>
         )}
       </div>
 
-      {/* PRIORITY SPREADSHEETS CUSTOM SELECTOR FOR DIEGO */}
-      <div className="card-glass" style={{ padding: '1rem', marginBottom: '1.2rem', borderLeft: '4px solid var(--accent-cyan)' }}>
-        <h3 style={{ fontSize: '0.94rem', color: '#fff', margin: '0 0 0.65rem 0', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+      {/* PRIORITY SPREADSHEETS SELECTOR WITH CLEAN CARD LAYOUT */}
+      <div className="card-glass" style={{ padding: '1.2rem', marginBottom: '1.2rem', borderLeft: '4px solid var(--accent-cyan)' }}>
+        <h3 style={{ fontSize: '1rem', color: '#fff', margin: '0 0 0.75rem 0', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
           <FileSpreadsheet className="text-cyan" size={18} /> 📊 Planillas Prioritarias a Analizar por la IA en Google Drive
         </h3>
 
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.85rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
           <input
             type="text"
             className="form-input"
@@ -304,14 +309,14 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
             value={newSheetInput}
             onChange={(e) => setNewSheetInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleAddPrioritySpreadsheet(); }}
-            style={{ fontSize: '0.8rem', padding: '0.45rem 0.75rem', flex: 1 }}
+            style={{ fontSize: '0.8rem', padding: '0.5rem 0.85rem', flex: 1 }}
           />
 
           <button
             onClick={() => handleStartVoiceDictation('sheetInput', (t) => setNewSheetInput(prev => prev ? `${prev} ${t}` : t))}
             className="btn-secondary"
-            style={{ padding: '0.45rem 0.65rem', border: '1px solid var(--accent-cyan)', color: 'var(--accent-cyan)' }}
-            title="Dictar nombre de la planilla por micrófono 🎙️"
+            style={{ padding: '0.5rem 0.75rem', border: '1px solid var(--accent-cyan)', color: 'var(--accent-cyan)' }}
+            title="Dictar por micrófono 🎙️"
           >
             <Mic size={14} className={listeningTargetId === 'sheetInput' ? 'pulse' : ''} />
           </button>
@@ -319,27 +324,38 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
           <button
             className="btn-primary"
             onClick={handleAddPrioritySpreadsheet}
-            style={{ fontSize: '0.78rem', padding: '0.45rem 0.95rem', background: 'linear-gradient(135deg, var(--accent-cyan), var(--accent-blue))', whiteSpace: 'nowrap' }}
+            style={{ fontSize: '0.78rem', padding: '0.5rem 1rem', background: 'linear-gradient(135deg, var(--accent-cyan), var(--accent-blue))', whiteSpace: 'nowrap' }}
           >
-            <Plus size={14} /> Agregar Planilla para Análisis
+            <Plus size={14} /> Agregar Planilla
           </button>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: '0.65rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '0.85rem' }}>
           {prioritySpreadsheets.map((sheet) => (
-            <div key={sheet.id} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-subtle)', borderRadius: '8px', padding: '0.6rem 0.75rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
-                <span style={{ fontSize: '0.8rem', color: '#fff', fontWeight: 700 }}>
+            <div key={sheet.id} style={{ background: 'rgba(15, 23, 42, 0.9)', border: '1px solid var(--border-subtle)', borderRadius: '10px', padding: '0.85rem 1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                <span 
+                  style={{ 
+                    fontSize: '0.86rem', 
+                    color: '#fff', 
+                    fontWeight: 700, 
+                    whiteSpace: 'nowrap', 
+                    overflow: 'hidden', 
+                    textOverflow: 'ellipsis', 
+                    maxWidth: '220px' 
+                  }}
+                  title={sheet.name}
+                >
                   {sheet.name}
                 </span>
-                <span style={{ fontSize: '0.66rem', color: 'var(--accent-emerald)', background: 'rgba(16, 185, 129, 0.15)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
+                <span style={{ fontSize: '0.68rem', color: 'var(--accent-emerald)', background: 'rgba(16, 185, 129, 0.15)', padding: '0.15rem 0.5rem', borderRadius: '4px', whiteSpace: 'nowrap' }}>
                   {sheet.status}
                 </span>
               </div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--accent-cyan)', marginBottom: '0.25rem' }}>
+              <div style={{ fontSize: '0.74rem', color: 'var(--accent-cyan)', fontWeight: 600, marginBottom: '0.35rem' }}>
                 🎯 {sheet.targetProject}
               </div>
-              <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontStyle: 'italic', lineHeight: '1.3' }}>
+              <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontStyle: 'italic', lineHeight: '1.35' }}>
                 "{sheet.insight}"
               </div>
             </div>
@@ -347,70 +363,69 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
         </div>
       </div>
 
-      {/* Sub-Tab Selector (Gmail Emails vs Google Drive Files) */}
-      <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+      {/* Sub-Tab Selector & Search Bar */}
+      <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.2rem', flexWrap: 'wrap' }}>
         <button
           onClick={() => setActiveTab('gmail')}
           style={{
-            padding: '0.55rem 1.1rem',
-            borderRadius: '8px',
+            padding: '0.6rem 1.2rem',
+            borderRadius: '10px',
             background: activeTab === 'gmail' ? 'linear-gradient(135deg, var(--accent-rose), var(--accent-purple))' : 'var(--bg-card)',
             color: '#fff',
             border: activeTab === 'gmail' ? 'none' : '1px solid var(--border-subtle)',
-            fontSize: '0.84rem',
+            fontSize: '0.86rem',
             fontWeight: 700,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.4rem'
+            gap: '0.45rem'
           }}
         >
-          <Mail size={16} /> Correos Reales de Gmail dmusach@bromteck.com ({filteredEmails.length})
+          <Mail size={16} /> Correos Corporativos Gmail ({filteredEmails.length})
         </button>
 
         <button
           onClick={() => setActiveTab('drive')}
           style={{
-            padding: '0.55rem 1.1rem',
-            borderRadius: '8px',
+            padding: '0.6rem 1.2rem',
+            borderRadius: '10px',
             background: activeTab === 'drive' ? 'linear-gradient(135deg, var(--accent-rose), var(--accent-purple))' : 'var(--bg-card)',
             color: '#fff',
             border: activeTab === 'drive' ? 'none' : '1px solid var(--border-subtle)',
-            fontSize: '0.84rem',
+            fontSize: '0.86rem',
             fontWeight: 700,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.4rem'
+            gap: '0.45rem'
           }}
         >
           <HardDrive size={16} /> Archivos & Documentos Google Drive ({filteredDriveFiles.length})
         </button>
 
-        {/* Global Search Box for Workspace with Voice Dictation */}
-        <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
-          <Search size={14} style={{ position: 'absolute', left: '10px', color: 'var(--text-muted)' }} />
+        <div style={{ flex: 1, minWidth: '240px', position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <Search size={14} style={{ position: 'absolute', left: '12px', color: 'var(--text-muted)' }} />
           <input
             type="text"
-            placeholder={listeningTargetId === 'workspaceSearch' ? "🎙️ Escuchando..." : "Buscar correos o archivos por texto o micrófono (🎙️)..."}
+            placeholder={listeningTargetId === 'workspaceSearch' ? "🎙️ Escuchando..." : "Buscar correos por asunto, remitente o micrófono (🎙️)..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={{ paddingLeft: '30px', paddingRight: '32px', fontSize: '0.78rem', height: '36px', width: '100%' }}
+            style={{ paddingLeft: '34px', paddingRight: '36px', fontSize: '0.8rem', height: '38px', width: '100%' }}
             className="form-input"
           />
           <button
             onClick={() => handleStartVoiceDictation('workspaceSearch', (t) => setSearchQuery(prev => prev ? `${prev} ${t}` : t))}
-            style={{ position: 'absolute', right: '8px', background: 'none', border: 'none', color: listeningTargetId === 'workspaceSearch' ? 'var(--accent-rose)' : 'var(--accent-cyan)', cursor: 'pointer' }}
-            title="Dictar búsqueda por micrófono 🎙️"
+            style={{ position: 'absolute', right: '10px', background: 'none', border: 'none', color: listeningTargetId === 'workspaceSearch' ? 'var(--accent-rose)' : 'var(--accent-cyan)', cursor: 'pointer' }}
+            title="Dictar por micrófono 🎙️"
           >
             <Mic size={14} className={listeningTargetId === 'workspaceSearch' ? 'pulse' : ''} />
           </button>
         </div>
       </div>
 
-      {/* VIEW 1: GMAIL CORRESPONDENCE STREAM */}
+      {/* VIEW 1: GMAIL CORRESPONDENCE STREAM WITH HIGH CONTRAST & CLEAR READABILITY */}
       {activeTab === 'gmail' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
           {filteredEmails.map((item, idx) => {
             const status = actionSuccessStatus[item.id];
             const isProc = processingId === item.id;
@@ -420,78 +435,78 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
                 key={item.id || idx}
                 className="card-glass"
                 style={{
-                  padding: '0.85rem 1.1rem',
+                  padding: '1.1rem 1.3rem',
                   borderLeft: '4px solid var(--accent-rose)',
                   display: 'flex',
                   justify: 'space-between',
                   alignItems: 'center',
-                  gap: '1rem',
+                  gap: '1.2rem',
                   flexWrap: 'wrap'
                 }}
               >
-                <div style={{ flex: 1, minWidth: '280px' }}>
-                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.2rem', flexWrap: 'wrap' }}>
-                    <span className="tag critical" style={{ fontSize: '0.64rem', padding: '0.1rem 0.4rem' }}>
+                <div style={{ flex: 1, minWidth: '300px' }}>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.35rem', flexWrap: 'wrap' }}>
+                    <span className="tag critical" style={{ fontSize: '0.66rem', padding: '0.15rem 0.5rem' }}>
                       {item.priority || 'P1 - CRITICA'}
                     </span>
-                    <span style={{ fontSize: '0.74rem', color: 'var(--accent-rose)', fontWeight: 700 }}>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--accent-rose)', fontWeight: 700 }}>
                       ✉️ De: {item.from}
                     </span>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                    <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
                       📅 {item.date}
                     </span>
                     {item.relatedMember && (
-                      <span style={{ fontSize: '0.68rem', color: 'var(--accent-cyan)', background: 'rgba(6, 182, 212, 0.15)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
-                        👤 {item.relatedMember}
+                      <span style={{ fontSize: '0.7rem', color: 'var(--accent-cyan)', background: 'rgba(6, 182, 212, 0.15)', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>
+                        👤 Responsable: {item.relatedMember}
                       </span>
                     )}
                   </div>
 
-                  <h4 style={{ fontSize: '0.92rem', color: '#fff', margin: '0 0 0.25rem 0', fontWeight: 700 }}>
+                  <h4 style={{ fontSize: '0.98rem', color: '#ffffff', margin: '0 0 0.35rem 0', fontWeight: 700, lineHeight: '1.3' }}>
                     {item.subject}
                   </h4>
 
-                  <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '0 0 0.35rem 0', lineHeight: '1.35' }}>
+                  <p style={{ fontSize: '0.82rem', color: '#cbd5e1', margin: '0 0 0.45rem 0', lineHeight: '1.45', background: 'rgba(0,0,0,0.25)', padding: '0.5rem 0.75rem', borderRadius: '6px' }}>
                     "{item.snippet}"
                   </p>
 
-                  <div style={{ fontSize: '0.74rem', color: 'var(--accent-cyan)', fontStyle: 'italic' }}>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--accent-cyan)', fontStyle: 'italic', fontWeight: 600 }}>
                     💡 <strong>Acción Ejecutiva Sugerida:</strong> {item.executiveAction}
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', flexShrink: 0 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flexShrink: 0 }}>
                   <button
                     className="btn-secondary"
                     onClick={() => handleDispatchEmailToNotion(item)}
                     disabled={status || isProc}
                     style={{
-                      fontSize: '0.74rem',
-                      padding: '0.4rem 0.75rem',
+                      fontSize: '0.76rem',
+                      padding: '0.45rem 0.85rem',
                       background: status ? 'rgba(16, 185, 129, 0.2)' : 'rgba(234, 67, 53, 0.15)',
                       color: status ? 'var(--accent-emerald)' : 'var(--accent-rose)',
                       border: status ? '1px solid var(--accent-emerald)' : '1px solid var(--accent-rose)',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.35rem',
+                      gap: '0.4rem',
                       whiteSpace: 'nowrap'
                     }}
                   >
                     {isProc ? (
                       <>
-                        <RefreshCw className="spin" size={12} /> Ingestando a Notion...
+                        <RefreshCw className="spin" size={13} /> Ingestando a Notion...
                       </>
                     ) : status === 'commented' ? (
                       <>
-                        <CheckCircle2 size={12} /> ¡Comentario Agregado en Notion!
+                        <CheckCircle2 size={13} /> ¡Comentario Agregado en Notion!
                       </>
                     ) : status === 'created' ? (
                       <>
-                        <CheckCircle2 size={12} /> ¡Tarjeta Creada en Notion!
+                        <CheckCircle2 size={13} /> ¡Tarjeta Creada en Notion!
                       </>
                     ) : (
                       <>
-                        <Send size={12} /> ⚡ Ingestar Correo a Notion API
+                        <Send size={13} /> ⚡ Ingestar Correo a Notion API
                       </>
                     )}
                   </button>
@@ -504,33 +519,33 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
 
       {/* VIEW 2: GOOGLE DRIVE DOCUMENTS STREAM */}
       {activeTab === 'drive' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '0.85rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1rem' }}>
           {filteredDriveFiles.map((file, idx) => (
             <div 
               key={file.id || idx}
               className="card-glass"
-              style={{ padding: '0.9rem', borderLeft: '4px solid var(--accent-cyan)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+              style={{ padding: '1.1rem', borderLeft: '4px solid var(--accent-cyan)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
             >
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--accent-cyan)', fontWeight: 700 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
+                  <span style={{ fontSize: '0.74rem', color: 'var(--accent-cyan)', fontWeight: 700 }}>
                     📁 Google Drive File
                   </span>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                    Modificado: {file.modifiedTime}
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                    {file.modifiedTime}
                   </span>
                 </div>
 
-                <h4 style={{ fontSize: '0.88rem', color: '#fff', margin: '0 0 0.3rem 0', fontWeight: 700 }}>
+                <h4 style={{ fontSize: '0.92rem', color: '#fff', margin: '0 0 0.35rem 0', fontWeight: 700 }}>
                   {file.name}
                 </h4>
 
-                <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: '0 0 0.6rem 0', lineHeight: '1.3' }}>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '0 0 0.65rem 0', lineHeight: '1.35' }}>
                   {file.summary}
                 </p>
                 
                 {file.owner && (
-                  <div style={{ fontSize: '0.7rem', color: 'var(--accent-purple)', marginBottom: '0.6rem' }}>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--accent-purple)', marginBottom: '0.75rem', fontWeight: 600 }}>
                     👤 Propietario: {file.owner}
                   </div>
                 )}
@@ -542,9 +557,9 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn-secondary"
-                  style={{ flex: 1, fontSize: '0.72rem', padding: '0.3rem 0.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.3rem', border: '1px solid var(--accent-cyan)', color: 'var(--accent-cyan)', textDecoration: 'none' }}
+                  style={{ flex: 1, fontSize: '0.74rem', padding: '0.35rem 0.6rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.35rem', border: '1px solid var(--accent-cyan)', color: 'var(--accent-cyan)', textDecoration: 'none' }}
                 >
-                  <ExternalLink size={12} /> Abrir en Google Drive
+                  <ExternalLink size={13} /> Abrir en Google Drive
                 </a>
               </div>
             </div>

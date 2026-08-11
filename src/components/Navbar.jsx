@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck, Bell, Settings, LayoutDashboard, FileText, BarChart3, Users, Calendar, Mail, Compass, Bot, Award, AlertCircle, Crown, Video, DollarSign } from 'lucide-react';
+import { LayoutDashboard, Crown, AlertCircle, Video, Mail, DollarSign, Calendar, Bot, Award, Users, FileText, BarChart3, Compass, Bell, Settings } from 'lucide-react';
 
 export default function Navbar({ activeTab, setActiveTab, missingDeadlinesCount, onOpenDeadlineModal, onOpenSettings }) {
   const navTabs = [
@@ -14,10 +14,10 @@ export default function Navbar({ activeTab, setActiveTab, missingDeadlinesCount,
     { id: 'scorecards', label: '📊 Scorecard Equipo', icon: Award, inDevelopment: false },
     
     // Secondary items marked as (En desarrollo)
-    { id: 'micromanagement', label: 'Equipo Real & Temas (En desarrollo)', icon: Users, inDevelopment: true },
-    { id: 'notion', label: 'Notion & Transcripts (En desarrollo)', icon: FileText, inDevelopment: true },
-    { id: 'excel', label: 'Excel Analytics (En desarrollo)', icon: BarChart3, inDevelopment: true },
-    { id: 'leadership', label: 'Liderazgo & Eng (En desarrollo)', icon: Compass, inDevelopment: true },
+    { id: 'micromanagement', label: 'Equipo Real (En desarrollo)', icon: Users, inDevelopment: true },
+    { id: 'notion', label: 'Notion (En desarrollo)', icon: FileText, inDevelopment: true },
+    { id: 'excel', label: 'Excel (En desarrollo)', icon: BarChart3, inDevelopment: true },
+    { id: 'leadership', label: 'Liderazgo (En desarrollo)', icon: Compass, inDevelopment: true },
   ];
 
   return (
@@ -44,7 +44,7 @@ export default function Navbar({ activeTab, setActiveTab, missingDeadlinesCount,
             title="Alertas de Fechas Límite"
             onClick={onOpenDeadlineModal}
           >
-            <Bell size={18} />
+            <Bell size={16} />
             {missingDeadlinesCount > 0 && (
               <span className="badge-count">{missingDeadlinesCount}</span>
             )}
@@ -55,12 +55,13 @@ export default function Navbar({ activeTab, setActiveTab, missingDeadlinesCount,
             title="Configuración & Credenciales"
             onClick={onOpenSettings}
           >
-            <Settings size={18} />
+            <Settings size={16} />
           </button>
         </div>
       </nav>
 
-      <div className="nav-tabs-bar">
+      {/* ALL TABS VISIBLE ON SCREEN WITHOUT HORIZONTAL SCROLL */}
+      <div className="nav-tabs-bar" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', padding: '0.45rem 1.5rem' }}>
         {navTabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -75,13 +76,15 @@ export default function Navbar({ activeTab, setActiveTab, missingDeadlinesCount,
               }}
               disabled={isDisabled}
               style={{
-                opacity: isDisabled ? 0.45 : 1,
+                fontSize: '0.74rem',
+                padding: '0.35rem 0.65rem',
+                opacity: isDisabled ? 0.4 : 1,
                 cursor: isDisabled ? 'not-allowed' : 'pointer',
-                filter: isDisabled ? 'grayscale(0.6)' : 'none'
+                filter: isDisabled ? 'grayscale(0.8)' : 'none'
               }}
               title={isDisabled ? 'Módulo en desarrollo (No interactivo)' : tab.label}
             >
-              <Icon size={16} />
+              <Icon size={14} />
               <span>{tab.label}</span>
             </button>
           );
