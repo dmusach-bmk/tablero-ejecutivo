@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileText, CheckCircle2, Copy, Send, Sparkles, Clock, Layers, ExternalLink, Video, Award, Target, ChevronRight, MessageSquare, Mic, Plus, Check, Zap, RefreshCw, User, ShieldCheck, PlusCircle, CheckSquare, DollarSign, Activity, Edit3, SendHorizontal, History, X, Cloud, Server, Eye } from 'lucide-react';
+import { FileText, CheckCircle2, Copy, Send, Sparkles, Clock, Layers, ExternalLink, Video, Award, Target, ChevronRight, MessageSquare, Mic, Plus, Check, Zap, RefreshCw, User, ShieldCheck, PlusCircle, CheckSquare, DollarSign, Activity, Edit3, SendHorizontal, History, X, Cloud, Server, Eye, Calendar } from 'lucide-react';
 import { postCommentToNotion, createNotionPage, updateNotionPageStatus } from '../services/notionService';
 
 export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCards = [], credentials }) {
@@ -9,9 +9,13 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
   const [syncingTopicId, setSyncingTopicId] = useState(null);
   const [actionStatusMap, setActionStatusMap] = useState({});
 
+  // Today's Live Meeting Date String (Formatted for Fathom Matching)
+  const todayMeetingDateObj = new Date();
+  const todayFormattedDate = todayMeetingDateObj.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const todayShortDate = todayMeetingDateObj.toLocaleDateString('es-ES'); // e.g. 11/08/2026
+
   // MODAL INSPECTOR STATE FOR CLICKABLE CARDS
-  const [activeModalType, setActiveModalType] = useState(null); // 'cloud_savings', 'calls', 'topics', 'projects', 'topic_detail'
-  const [selectedInspectItem, setSelectedInspectItem] = useState(null);
+  const [activeModalType, setActiveModalType] = useState(null);
 
   // LIVE SCRATCHPAD STATE
   const [scratchpadText, setScratchpadText] = useState(() => {
@@ -26,10 +30,10 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     return [
       {
         id: 'hist-1',
-        date: '10 de Agosto, 2026',
+        date: `Martes, 11 de Agosto de 2026 (${todayShortDate})`,
         rawText: '• EDEMSA: Sergio Palmucci confirmó 10 alimentadores, autorizar factura USD 50k\n• Tecsys: Camilo traspasa celdas de homologación a Notion\n• Heroku: Leonard programa ventana de mantenimiento',
         processedItemsCount: 3,
-        status: '✅ Ingestado & Matcheado con Fathom'
+        status: '✅ Ingestado & Matcheado con Transcripción Fathom'
       }
     ];
   });
@@ -90,11 +94,11 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
       });
 
       if (matchedCard) {
-        const comment = `[Bloc de Notas Call CEO ${new Date().toLocaleDateString()}]: "${line}"`;
+        const comment = `[Bloc de Notas Call CEO ${todayShortDate}]: "${line}"`;
         await postCommentToNotion(credentials?.notionToken, matchedCard.notionPageId || matchedCard.id, comment);
       } else {
         await createNotionPage(credentials?.notionToken, null, {
-          title: `[Call CEO] ${line.substring(0, 120)}`,
+          title: `[Call CEO ${todayShortDate}] ${line.substring(0, 120)}`,
           responsable: 'Diego Musach (CTO)',
           status: 'Abierto',
           priority: 'P1 - CRITICA'
@@ -105,10 +109,10 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
 
     const newRecord = {
       id: `hist-${Date.now()}`,
-      date: new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+      date: `${todayFormattedDate} (${todayShortDate})`,
       rawText: scratchpadText,
       processedItemsCount: processedCount,
-      status: '✅ Ingestado a Notion & Registrado p/ Match Fathom'
+      status: '✅ Ingestado a Notion & Matcheado con Fathom'
     };
 
     const updatedHistory = [newRecord, ...scratchpadHistory];
@@ -118,15 +122,15 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     setScratchpadText('');
 
     setIsProcessingScratchpad(false);
-    setScratchpadSuccessMessage(`¡Éxito! El Asistente IA procesó ${processedCount} temas de tu bloc de notas, gestionó las tarjetas en Notion y los registró para matchear con la grabación Fathom.`);
+    setScratchpadSuccessMessage(`¡Éxito! El Asistente IA procesó ${processedCount} temas de tu bloc de notas del ${todayShortDate}, gestionó las tarjetas en Notion y los vinculó para matchear con la transcripción de Fathom.`);
   };
 
   // Exhaustive July-August Fathom Topics
   const exhaustiveJulyAugustCallTopics = [
     {
       id: 'top-10aug-1',
-      meetingDate: '10/08/2026',
-      meetingName: 'Meet Seguimiento Video: Desarrollo + QT + Servicios',
+      meetingDate: todayShortDate,
+      meetingName: `Meet Seguimiento Video (${todayShortDate})`,
       title: '1. STB Elebao AOSP & Procesadores Montage (Telecable Costa Rica)',
       lead: 'Enrique Bevilacqua',
       keyword: 'telecable',
@@ -136,8 +140,8 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     },
     {
       id: 'top-10aug-2',
-      meetingDate: '10/08/2026',
-      meetingName: 'Meet Seguimiento Video: Desarrollo + QT + Servicios',
+      meetingDate: todayShortDate,
+      meetingName: `Meet Seguimiento Video (${todayShortDate})`,
       title: '2. Marca de Agua Digital FingerPrint sobre Streaming de Video',
       lead: 'Enrique Bevilacqua',
       keyword: 'fingerprint',
@@ -147,8 +151,8 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     },
     {
       id: 'top-10aug-3',
-      meetingDate: '10/08/2026',
-      meetingName: 'Meet Seguimiento Video: Desarrollo + QT + Servicios',
+      meetingDate: todayShortDate,
+      meetingName: `Meet Seguimiento Video (${todayShortDate})`,
       title: '3. Desmantelamiento Heroku & Migración CableView (USD 14,400/año)',
       lead: 'Leonard Amaya',
       keyword: 'heroku',
@@ -158,8 +162,8 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     },
     {
       id: 'top-10aug-4',
-      meetingDate: '10/08/2026',
-      meetingName: 'Meet Seguimiento Video: Desarrollo + QT + Servicios',
+      meetingDate: todayShortDate,
+      meetingName: `Meet Seguimiento Video (${todayShortDate})`,
       title: '4. Vega OS & Hardware Amazon Fire TV Stick 4K Select',
       lead: 'Mario Maqueda',
       keyword: 'vega',
@@ -169,8 +173,8 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     },
     {
       id: 'top-10aug-5',
-      meetingDate: '10/08/2026',
-      meetingName: 'Meet Seguimiento Video: Desarrollo + QT + Servicios',
+      meetingDate: todayShortDate,
+      meetingName: `Meet Seguimiento Video (${todayShortDate})`,
       title: '5. Auditoría de Métricas de Soporte Nivel 1 (Sabrina & Kenyi)',
       lead: 'Fabricio Nieva / Joseph Valer',
       keyword: 'soporte',
@@ -298,7 +302,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
   const handleCreateNewNotionCardForTopic = async (topic) => {
     setSyncingTopicId(topic.id);
     const userNote = callCommentsMap[topic.id] || '';
-    const titleText = `${topic.title} ${userNote ? `• Nota Call: "${userNote}"` : ''}`;
+    const titleText = `${topic.title} ${userNote ? `• Nota Call ${todayShortDate}: "${userNote}"` : ''}`;
 
     const res = await createNotionPage(credentials?.notionToken, null, {
       title: titleText.substring(0, 150),
@@ -351,7 +355,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     }
 
     setSyncingTopicId(topic.id);
-    const formattedComment = `[Call CEO ${topic.meetingDate}]: "${topic.title}" • Estado: ${topic.defaultStatus}\n💬 Comentario Diego: "${comment.trim()}"`;
+    const formattedComment = `[Call CEO ${todayShortDate}]: "${topic.title}" • Estado: ${topic.defaultStatus}\n💬 Comentario Diego: "${comment.trim()}"`;
 
     const res = await postCommentToNotion(credentials?.notionToken, targetPageId, formattedComment);
     if (res.success) {
@@ -361,12 +365,11 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
   };
 
   const generateFullCallSummaryText = () => {
-    const nowStr = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     let summary = `======================================================================\n`;
     summary += `📊 REPORTE SEMANAL EJECUTIVO CTO PARA ALEJANDRO CUBINO (CEO)\n`;
-    summary += `Fecha de Emisión: ${nowStr}\n`;
+    summary += `📅 FECHA REUNIÓN DE HOY: ${todayFormattedDate} (${todayShortDate})\n`;
     summary += `Director & Head of Engineering: Diego Paolo Musach (CTO)\n`;
-    summary += `Fuente: 5 Videollamadas Fathom API "Follow Up Tecnología" (Julio - Agosto 2026)\n`;
+    summary += `Fuente: Fathom Video Notetaker & Ingesta de Notas Directivas\n`;
     summary += `======================================================================\n\n`;
 
     exhaustiveJulyAugustCallTopics.forEach((t) => {
@@ -391,7 +394,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
   };
 
   const handleSendCEOEmail = () => {
-    const subject = encodeURIComponent(`[REPORTE SEMANAL CEO] Follow Up Tecnología Fathom (Julio-Agosto 2026) - Alejandro Cubino`);
+    const subject = encodeURIComponent(`[REPORTE SEMANAL CEO ${todayShortDate}] Follow Up Tecnología Fathom - Alejandro Cubino`);
     const body = encodeURIComponent(generateFullCallSummaryText());
     window.open(`mailto:acubino@bromteck.com?subject=${subject}&body=${body}`, '_blank');
   };
@@ -399,15 +402,21 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
   return (
     <div className="executive-roadmap-container">
       
-      {/* Executive Header Banner */}
+      {/* Executive Header Banner with MANDATORY LIVE MEETING DATE */}
       <div className="card-glass" style={{ padding: '1.25rem 1.5rem', marginBottom: '1.2rem', background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98))', borderLeft: '4px solid var(--accent-purple)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <h2 style={{ fontSize: '1.25rem', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <FileText className="text-purple" size={22} /> 📊 Reporte Semanal CEO (Alejandro Cubino)
-            </h2>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0.25rem 0 0 0' }}>
-              Bloc de Notas Directivo en Vivo + Análisis e Ingesta de la IA "Diego Paolo Musach" para matchear con grabaciones de Fathom.
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+              <h2 style={{ fontSize: '1.25rem', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <FileText className="text-purple" size={22} /> 📊 Reporte Semanal CEO (Alejandro Cubino)
+              </h2>
+              <span style={{ fontSize: '0.78rem', color: 'var(--accent-emerald)', background: 'rgba(52, 211, 153, 0.15)', border: '1px solid var(--accent-emerald)', padding: '0.2rem 0.65rem', borderRadius: '6px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <Calendar size={13} /> REUNIÓN HOY: {todayFormattedDate} ({todayShortDate})
+              </span>
+            </div>
+
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0 }}>
+              Bloc de Notas Directivo en Vivo + Análisis e Ingesta de la IA "Diego Paolo Musach" etiquetado con fecha <strong>{todayShortDate}</strong> para matchear con Fathom.
             </p>
           </div>
 
@@ -431,11 +440,11 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
         </div>
       </div>
 
-      {/* NEW FEATURE: LIVE SCRATCHPAD & AI ASSISTANT ENGINE "BLOC DE NOTAS DIRECTIVO DE DIEGO MUSACH" */}
+      {/* LIVE SCRATCHPAD ENGINE WITH MANDATORY MEETING DATE HEADER */}
       <div className="card-glass" style={{ padding: '1.3rem', marginBottom: '1.5rem', borderLeft: '4px solid var(--accent-cyan)', background: 'rgba(15, 23, 42, 0.9)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem', flexWrap: 'wrap', gap: '0.5rem' }}>
           <h3 style={{ fontSize: '1.05rem', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <Edit3 className="text-cyan" size={18} /> 📝 Bloc de Notas Directivo de la Call con Alejandro (Diego Paolo Musach)
+            <Edit3 className="text-cyan" size={18} /> 📝 Bloc de Notas Directivo de la Call con Alejandro (Diego Paolo Musach) • <span style={{ color: 'var(--accent-cyan)' }}>📅 {todayShortDate}</span>
           </h3>
 
           <button
@@ -449,7 +458,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
         </div>
 
         <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
-          Escribe un tema o compromiso por línea (Enter por tema). Al finalizar la call con el CEO, presiona el botón para que el Asistente IA cree/actualice las tarjetas en Notion API y guarde el registro para matchear con la grabación Fathom:
+          Escribe un tema o compromiso por línea (Enter por tema). Al finalizar la call del <strong>{todayFormattedDate}</strong>, presiona el botón para procesar en Notion y guardar el registro etiquetado con fecha <strong>{todayShortDate}</strong> para matchear con la grabación Fathom:
         </p>
 
         <textarea
@@ -476,7 +485,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
             style={{ fontSize: '0.82rem', padding: '0.55rem 1.2rem', background: 'linear-gradient(135deg, var(--accent-cyan), var(--accent-purple))', fontWeight: 700 }}
           >
             <SendHorizontal size={15} className={isProcessingScratchpad ? 'spin' : ''} />
-            {isProcessingScratchpad ? '🤖 Procesando Notas con Asistente IA...' : '🤖 Submit a Asistente Diego Paolo Musach'}
+            {isProcessingScratchpad ? '🤖 Procesando Notas con Asistente IA...' : `🤖 Submit a Asistente Diego Paolo Musach (${todayShortDate})`}
           </button>
         </div>
 
@@ -491,7 +500,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
       {scratchpadHistory.length > 0 && (
         <div className="card-glass" style={{ padding: '1rem 1.2rem', marginBottom: '1.5rem', borderLeft: '4px solid var(--accent-emerald)', background: 'rgba(15, 23, 42, 0.7)' }}>
           <span style={{ fontSize: '0.8rem', color: '#fff', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.65rem' }}>
-            <History className="text-emerald" size={16} /> 📜 Historial de Notas de Calls Procesadas (Matcheable con Transcripciones de Fathom)
+            <History className="text-emerald" size={16} /> 📜 Historial de Notas de Calls Procesadas (Matcheable por Fecha con Fathom)
           </span>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
@@ -785,7 +794,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1rem' }}>
               <div style={{ background: 'rgba(30, 41, 59, 0.9)', padding: '0.75rem 1rem', borderRadius: '8px' }}>
-                <strong>10/08/2026:</strong> Meet Seguimiento Video: Desarrollo + QT + Servicios (STB Elebao, FingerPrint, Heroku)
+                <strong>{todayShortDate}:</strong> Meet Seguimiento Video: Desarrollo + QT + Servicios (STB Elebao, FingerPrint, Heroku)
               </div>
               <div style={{ background: 'rgba(30, 41, 59, 0.9)', padding: '0.75rem 1rem', borderRadius: '8px' }}>
                 <strong>03/08/2026:</strong> Weekly Follow Up Tecnología - Cluster VMs WIND & SSO OAuth2 (Tecsys, Telemetría)
