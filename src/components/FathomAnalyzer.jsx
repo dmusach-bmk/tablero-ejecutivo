@@ -278,7 +278,7 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
                 Auto-Cron Activo: Sincronizando llamadas de {accountEmail} ({filteredMeetings.length} llamadas en memoria)
               </span>
               <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', display: 'block' }}>
-                {lastSyncTime ? `Última sincronización exitosa: ${lastSyncTime}` : 'Leyendo caché de reuniones guardadas...'} • Período: Desde {startDate} hasta HOY.
+                {lastSyncTime ? `Última sincronización exitosa: ${lastSyncTime}` : 'Leyendo caché de reuniones guardadas...'} • Follow Up Tecnología desde <strong>Enero 2026</strong> | Demás desde <strong>Julio 2026</strong>.
               </span>
             </div>
           </div>
