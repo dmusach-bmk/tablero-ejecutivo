@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { FileText, CheckCircle2, Copy, Send, Sparkles, Clock, Layers, ExternalLink, Video, Award, Target, ChevronRight, MessageSquare, Mic, Plus, Check, Zap, RefreshCw, User, ShieldCheck, PlusCircle, CheckSquare, DollarSign, Activity } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { FileText, CheckCircle2, Copy, Send, Sparkles, Clock, Layers, ExternalLink, Video, Award, Target, ChevronRight, MessageSquare, Mic, Plus, Check, Zap, RefreshCw, User, ShieldCheck, PlusCircle, CheckSquare, DollarSign, Activity, Edit3, SendHorizontal, History } from 'lucide-react';
 import { postCommentToNotion, createNotionPage, updateNotionPageStatus } from '../services/notionService';
 
 export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCards = [], credentials }) {
@@ -8,6 +8,30 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
   const [listeningTargetId, setListeningTargetId] = useState(null);
   const [syncingTopicId, setSyncingTopicId] = useState(null);
   const [actionStatusMap, setActionStatusMap] = useState({});
+
+  // LIVE SCRATCHPAD & AI ASSISTANT ENGINE STATE
+  const [scratchpadText, setScratchpadText] = useState(() => {
+    return localStorage.getItem('dm_ceo_scratchpad_draft') || '';
+  });
+
+  const [scratchpadHistory, setScratchpadHistory] = useState(() => {
+    const saved = localStorage.getItem('dm_ceo_scratchpad_history');
+    if (saved) {
+      try { return JSON.parse(saved); } catch(e){}
+    }
+    return [
+      {
+        id: 'hist-1',
+        date: '10 de Agosto, 2026',
+        rawText: '• EDEMSA: Sergio Palmucci confirmó 10 alimentadores, autorizar factura USD 50k\n• Tecsys: Camilo traspasa celdas de homologación a Notion\n• Heroku: Leonard programa ventana de mantenimiento',
+        processedItemsCount: 3,
+        status: '✅ Ingestado & Matcheado con Fathom'
+      }
+    ];
+  });
+
+  const [isProcessingScratchpad, setIsProcessingScratchpad] = useState(false);
+  const [scratchpadSuccessMessage, setScratchpadSuccessMessage] = useState('');
 
   const handleStartVoiceDictation = (targetId, onSpeechText) => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -35,9 +59,70 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     recognition.start();
   };
 
-  // Exhaustive List of ALL 16 Technical Topics from July 1st, 2026 to Present (August 2026) in Fathom API
+  // SUBMIT SCRATCHPAD TO AI ASSISTANT DIEGO PAOLO MUSACH
+  const handleSubmitScratchpadToAI = async () => {
+    if (!scratchpadText.trim()) {
+      alert('Por favor escribe al menos un tema o nota en tu bloc de notas antes de presionar Submit.');
+      return;
+    }
+
+    setIsProcessingScratchpad(true);
+    setScratchpadSuccessMessage('');
+
+    // Split text into individual lines (Enter per topic)
+    const lines = scratchpadText
+      .split('\n')
+      .map(l => l.trim().replace(/^[-•*]\s*/, ''))
+      .filter(l => l.length > 3);
+
+    let processedCount = 0;
+
+    for (const line of lines) {
+      const lineLower = line.toLowerCase();
+      
+      // Match against Notion cards
+      const matchedCard = notionCards.find(c => {
+        const cTitle = (c.title || '').toLowerCase();
+        return lineLower.includes(cTitle) || (lineLower.includes('edemsa') && cTitle.includes('edemsa')) || (lineLower.includes('tecsys') && cTitle.includes('tecsys')) || (lineLower.includes('heroku') && cTitle.includes('heroku')) || (lineLower.includes('wind') && cTitle.includes('wind'));
+      });
+
+      if (matchedCard) {
+        // Comment on existing matched card
+        const comment = `[Bloc de Notas Call CEO ${new Date().toLocaleDateString()}]: "${line}"`;
+        await postCommentToNotion(credentials?.notionToken, matchedCard.notionPageId || matchedCard.id, comment);
+      } else {
+        // Create new card in Notion
+        await createNotionPage(credentials?.notionToken, null, {
+          title: `[Call CEO] ${line.substring(0, 120)}`,
+          responsable: 'Diego Musach (CTO)',
+          status: 'Abierto',
+          priority: 'P1 - CRITICA'
+        });
+      }
+      processedCount++;
+    }
+
+    // Save to historical record for Fathom matching
+    const newRecord = {
+      id: `hist-${Date.now()}`,
+      date: new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+      rawText: scratchpadText,
+      processedItemsCount: processedCount,
+      status: '✅ Ingestado a Notion & Registrado p/ Match Fathom'
+    };
+
+    const updatedHistory = [newRecord, ...scratchpadHistory];
+    setScratchpadHistory(updatedHistory);
+    localStorage.setItem('dm_ceo_scratchpad_history', JSON.stringify(updatedHistory));
+    localStorage.removeItem('dm_ceo_scratchpad_draft');
+    setScratchpadText('');
+
+    setIsProcessingScratchpad(false);
+    setScratchpadSuccessMessage(`¡Éxito! El Asistente IA procesó ${processedCount} temas de tu bloc de notas, gestionó las tarjetas en Notion y los registró para matchear con la grabación Fathom.`);
+  };
+
+  // Exhaustive List of ALL 15 Technical Topics
   const exhaustiveJulyAugustCallTopics = [
-    // REUNIÓN 1: 10 DE AGOSTO DE 2026
     {
       id: 'top-10aug-1',
       meetingDate: '10/08/2026',
@@ -93,8 +178,6 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
       fathomSummary: 'Tiempo medio de respuesta reducido a 14 minutos. Conciliación de horas semanales de atención por Sabrina y Kenyi.',
       defaultStatus: 'Métricas OK'
     },
-
-    // REUNIÓN 2: 03 DE AGOSTO DE 2026
     {
       id: 'top-03aug-1',
       meetingDate: '03/08/2026',
@@ -139,8 +222,6 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
       fathomSummary: 'Confirmada presencia de variables cosf y pact en reconectadores. Ingesta de parámetros en base de datos coordinada con Fernando.',
       defaultStatus: 'En Integración'
     },
-
-    // REUNIÓN 3: 27 DE JULIO DE 2026
     {
       id: 'top-27jul-1',
       meetingDate: '27/07/2026',
@@ -163,8 +244,6 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
       fathomSummary: 'Informe de costes unitarios de montaje de gabinetes de fibra de vidrio consolidado en Notion.',
       defaultStatus: 'Completado'
     },
-
-    // REUNIÓN 4: 13 DE JULIO DE 2026
     {
       id: 'top-13jul-1',
       meetingDate: '13/07/2026',
@@ -187,8 +266,6 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
       fathomSummary: 'Visita técnica a Honduras y evaluación de servidores Supermicro para el despliegue de streaming OTT.',
       defaultStatus: 'En Instalación'
     },
-
-    // REUNIÓN 5: 06 DE JULIO DE 2026
     {
       id: 'top-06jul-1',
       meetingDate: '06/07/2026',
@@ -330,7 +407,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
               <FileText className="text-purple" size={22} /> 📊 Reporte Semanal CEO (Alejandro Cubino)
             </h2>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0.25rem 0 0 0' }}>
-              Relevamiento ejecutivo de <strong>15 temas técnicos auditados en 5 videollamadas "Follow Up Tecnología" (Julio y Agosto de 2026)</strong>.
+              Bloc de Notas Directivo en Vivo + Análisis e Ingesta de la IA "Diego Paolo Musach" para matchear con grabaciones de Fathom.
             </p>
           </div>
 
@@ -354,6 +431,89 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
         </div>
       </div>
 
+      {/* NEW FEATURE: LIVE SCRATCHPAD & AI ASSISTANT ENGINE "BLOC DE NOTAS DIRECTIVO DE DIEGO MUSACH" */}
+      <div className="card-glass" style={{ padding: '1.3rem', marginBottom: '1.5rem', borderLeft: '4px solid var(--accent-cyan)', background: 'rgba(15, 23, 42, 0.9)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem' }}>
+          <h3 style={{ fontSize: '1.05rem', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Edit3 className="text-cyan" size={18} /> 📝 Bloc de Notas Directivo de la Call con Alejandro (Diego Paolo Musach)
+          </h3>
+
+          <button
+            onClick={() => handleStartVoiceDictation('scratchpad', (txt) => setScratchpadText(prev => prev ? `${prev}\n• ${txt}` : `• ${txt}`))}
+            className="btn-secondary"
+            style={{ fontSize: '0.74rem', padding: '0.35rem 0.75rem', border: '1px solid var(--accent-cyan)', color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+            title="Dictar nota por micrófono 🎙️"
+          >
+            <Mic size={14} className={listeningTargetId === 'scratchpad' ? 'pulse' : ''} /> Dictar Nota por Voz 🎙️
+          </button>
+        </div>
+
+        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
+          Escribe un tema o compromiso por línea (Enter por tema). Al finalizar la call con el CEO, presiona el botón para que el Asistente IA cree/actualice las tarjetas en Notion API y guarde el registro para matchear con la grabación Fathom:
+        </p>
+
+        <textarea
+          className="form-input"
+          rows={6}
+          placeholder={`• EDEMSA: Sergio Palmucci confirmó los 10 alimentadores, emitiendo factura de USD 50k...\n• Tecsys Brasil: Camilo traspasando homologación de certificados FCC/CE a tarjetas Notion...\n• Heroku Migration: Leonard programa ventana de mantenimiento para auto-stop de servidores...`}
+          value={scratchpadText}
+          onChange={(e) => {
+            setScratchpadText(e.target.value);
+            localStorage.setItem('dm_ceo_scratchpad_draft', e.target.value);
+          }}
+          style={{ fontSize: '0.84rem', lineHeight: '1.5', padding: '0.75rem', fontFamily: 'sans-serif', background: 'rgba(11, 16, 28, 0.95)', color: '#fff', borderRadius: '8px', marginBottom: '0.85rem' }}
+        />
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <span style={{ fontSize: '0.74rem', color: 'var(--accent-cyan)' }}>
+            💡 Presiona <strong>Enter</strong> por cada tema para que la IA los procese en forma independiente.
+          </span>
+
+          <button
+            className="btn-primary"
+            onClick={handleSubmitScratchpadToAI}
+            disabled={isProcessingScratchpad || !scratchpadText.trim()}
+            style={{ fontSize: '0.82rem', padding: '0.55rem 1.2rem', background: 'linear-gradient(135deg, var(--accent-cyan), var(--accent-purple))', fontWeight: 700 }}
+          >
+            <SendHorizontal size={15} className={isProcessingScratchpad ? 'spin' : ''} />
+            {isProcessingScratchpad ? '🤖 Procesando Notas con Asistente IA...' : '🤖 Submit a Asistente Diego Paolo Musach'}
+          </button>
+        </div>
+
+        {scratchpadSuccessMessage && (
+          <div style={{ marginTop: '0.85rem', padding: '0.75rem 1rem', background: 'rgba(52, 211, 153, 0.15)', border: '1px solid var(--accent-emerald)', borderRadius: '8px', color: 'var(--accent-emerald)', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <CheckCircle2 size={16} /> {scratchpadSuccessMessage}
+          </div>
+        )}
+      </div>
+
+      {/* HISTORICAL LOG OF SUBMITTED SCRATCHPAD SESSIONS (MATCHABLE WITH FATHOM) */}
+      {scratchpadHistory.length > 0 && (
+        <div className="card-glass" style={{ padding: '1rem 1.2rem', marginBottom: '1.5rem', borderLeft: '4px solid var(--accent-emerald)', background: 'rgba(15, 23, 42, 0.7)' }}>
+          <span style={{ fontSize: '0.8rem', color: '#fff', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.65rem' }}>
+            <History className="text-emerald" size={16} /> 📜 Historial de Notas de Calls Procesadas (Matcheable con Transcripciones de Fathom)
+          </span>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+            {scratchpadHistory.map((hist) => (
+              <div key={hist.id} style={{ background: 'rgba(30, 41, 59, 0.8)', border: '1px solid var(--border-subtle)', borderRadius: '8px', padding: '0.65rem 0.85rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--accent-cyan)', fontWeight: 700 }}>
+                    📅 {hist.date} ({hist.processedItemsCount} Temas Ingestados)
+                  </span>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--accent-emerald)', background: 'rgba(52, 211, 153, 0.15)', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: 700 }}>
+                    {hist.status}
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', whiteSpace: 'pre-line', fontStyle: 'italic' }}>
+                  {hist.rawText}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* EXECUTIVE KPI SUMMARY CARDS */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
         <div className="card-glass" style={{ padding: '1rem', borderLeft: '4px solid var(--accent-purple)' }}>
@@ -376,8 +536,8 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
 
         <div className="card-glass" style={{ padding: '1rem', borderLeft: '4px solid var(--accent-amber)' }}>
           <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600 }}>🌱 AHORRO CLOUD ANUAL</div>
-          <div style={{ fontSize: '1.4rem', color: '#fff', fontWeight: 800, margin: '0.2rem 0' }}>USD 14,400 / año</div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--accent-amber)' }}>Desmantelamiento Heroku</div>
+          <div style={{ fontSize: '1.4rem', color: '#fff', fontWeight: 800, margin: '0.2rem 0' }}>USD 26,880 / año</div>
+          <div style={{ fontSize: '0.72rem', color: 'var(--accent-amber)' }}>AWS + Huawei + Heroku</div>
         </div>
       </div>
 
