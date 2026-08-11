@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { FileText, CheckCircle2, Copy, Send, Sparkles, Clock, Layers, ExternalLink, Video, Award, Target, ChevronRight, MessageSquare, Mic, Plus, Check, Zap, RefreshCw, User, ShieldCheck, PlusCircle, CheckSquare, DollarSign, Activity, Edit3, SendHorizontal, History } from 'lucide-react';
+import React, { useState } from 'react';
+import { FileText, CheckCircle2, Copy, Send, Sparkles, Clock, Layers, ExternalLink, Video, Award, Target, ChevronRight, MessageSquare, Mic, Plus, Check, Zap, RefreshCw, User, ShieldCheck, PlusCircle, CheckSquare, DollarSign, Activity, Edit3, SendHorizontal, History, X, Cloud, Server, Eye } from 'lucide-react';
 import { postCommentToNotion, createNotionPage, updateNotionPageStatus } from '../services/notionService';
 
 export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCards = [], credentials }) {
@@ -9,7 +9,11 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
   const [syncingTopicId, setSyncingTopicId] = useState(null);
   const [actionStatusMap, setActionStatusMap] = useState({});
 
-  // LIVE SCRATCHPAD & AI ASSISTANT ENGINE STATE
+  // MODAL INSPECTOR STATE FOR CLICKABLE CARDS
+  const [activeModalType, setActiveModalType] = useState(null); // 'cloud_savings', 'calls', 'topics', 'projects', 'topic_detail'
+  const [selectedInspectItem, setSelectedInspectItem] = useState(null);
+
+  // LIVE SCRATCHPAD STATE
   const [scratchpadText, setScratchpadText] = useState(() => {
     return localStorage.getItem('dm_ceo_scratchpad_draft') || '';
   });
@@ -33,6 +37,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
   const [isProcessingScratchpad, setIsProcessingScratchpad] = useState(false);
   const [scratchpadSuccessMessage, setScratchpadSuccessMessage] = useState('');
 
+  // Voice Dictation Helper
   const handleStartVoiceDictation = (targetId, onSpeechText) => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -69,7 +74,6 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     setIsProcessingScratchpad(true);
     setScratchpadSuccessMessage('');
 
-    // Split text into individual lines (Enter per topic)
     const lines = scratchpadText
       .split('\n')
       .map(l => l.trim().replace(/^[-•*]\s*/, ''))
@@ -80,18 +84,15 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     for (const line of lines) {
       const lineLower = line.toLowerCase();
       
-      // Match against Notion cards
       const matchedCard = notionCards.find(c => {
         const cTitle = (c.title || '').toLowerCase();
         return lineLower.includes(cTitle) || (lineLower.includes('edemsa') && cTitle.includes('edemsa')) || (lineLower.includes('tecsys') && cTitle.includes('tecsys')) || (lineLower.includes('heroku') && cTitle.includes('heroku')) || (lineLower.includes('wind') && cTitle.includes('wind'));
       });
 
       if (matchedCard) {
-        // Comment on existing matched card
         const comment = `[Bloc de Notas Call CEO ${new Date().toLocaleDateString()}]: "${line}"`;
         await postCommentToNotion(credentials?.notionToken, matchedCard.notionPageId || matchedCard.id, comment);
       } else {
-        // Create new card in Notion
         await createNotionPage(credentials?.notionToken, null, {
           title: `[Call CEO] ${line.substring(0, 120)}`,
           responsable: 'Diego Musach (CTO)',
@@ -102,7 +103,6 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
       processedCount++;
     }
 
-    // Save to historical record for Fathom matching
     const newRecord = {
       id: `hist-${Date.now()}`,
       date: new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
@@ -121,7 +121,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     setScratchpadSuccessMessage(`¡Éxito! El Asistente IA procesó ${processedCount} temas de tu bloc de notas, gestionó las tarjetas en Notion y los registró para matchear con la grabación Fathom.`);
   };
 
-  // Exhaustive List of ALL 15 Technical Topics
+  // Exhaustive July-August Fathom Topics
   const exhaustiveJulyAugustCallTopics = [
     {
       id: 'top-10aug-1',
@@ -487,7 +487,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
         )}
       </div>
 
-      {/* HISTORICAL LOG OF SUBMITTED SCRATCHPAD SESSIONS (MATCHABLE WITH FATHOM) */}
+      {/* HISTORICAL LOG OF SUBMITTED SCRATCHPAD SESSIONS */}
       {scratchpadHistory.length > 0 && (
         <div className="card-glass" style={{ padding: '1rem 1.2rem', marginBottom: '1.5rem', borderLeft: '4px solid var(--accent-emerald)', background: 'rgba(15, 23, 42, 0.7)' }}>
           <span style={{ fontSize: '0.8rem', color: '#fff', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.65rem' }}>
@@ -514,31 +514,71 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
         </div>
       )}
 
-      {/* EXECUTIVE KPI SUMMARY CARDS */}
+      {/* 100% CLICKABLE EXECUTIVE KPI SUMMARY CARDS */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-        <div className="card-glass" style={{ padding: '1rem', borderLeft: '4px solid var(--accent-purple)' }}>
-          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600 }}>📹 CALLS RELEVADAS</div>
+        
+        {/* KPI CARD 1: CALLS RELEVADAS (CLICKABLE) */}
+        <div 
+          className="card-glass" 
+          onClick={() => setActiveModalType('calls')}
+          style={{ padding: '1rem', borderLeft: '4px solid var(--accent-purple)', cursor: 'pointer', transition: 'all 0.2s ease' }}
+          title="Haz clic para ver el detalle completo de las 5 llamadas Fathom"
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600 }}>📹 CALLS RELEVADAS</div>
+            <Eye size={14} className="text-purple" />
+          </div>
           <div style={{ fontSize: '1.4rem', color: '#fff', fontWeight: 800, margin: '0.2rem 0' }}>5 Reuniones Fathom</div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--accent-purple)' }}>Julio 2026 - Agosto 2026</div>
+          <div style={{ fontSize: '0.72rem', color: 'var(--accent-purple)', fontWeight: 700 }}>🔍 Clic para ver el detalle de las 5 llamadas ➔</div>
         </div>
 
-        <div className="card-glass" style={{ padding: '1rem', borderLeft: '4px solid var(--accent-cyan)' }}>
-          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600 }}>⚙️ TEMAS TÉCNICOS</div>
+        {/* KPI CARD 2: TEMAS TÉCNICOS (CLICKABLE) */}
+        <div 
+          className="card-glass" 
+          onClick={() => setActiveModalType('topics')}
+          style={{ padding: '1rem', borderLeft: '4px solid var(--accent-cyan)', cursor: 'pointer', transition: 'all 0.2s ease' }}
+          title="Haz clic para ver el detalle completo de los 15 temas técnicos"
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600 }}>⚙️ TEMAS TÉCNICOS</div>
+            <Eye size={14} className="text-cyan" />
+          </div>
           <div style={{ fontSize: '1.4rem', color: '#fff', fontWeight: 800, margin: '0.2rem 0' }}>15 Puntos Clave</div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--accent-cyan)' }}>Vinculados a Notion API</div>
+          <div style={{ fontSize: '0.72rem', color: 'var(--accent-cyan)', fontWeight: 700 }}>🔍 Clic para ver la lista completa ➔</div>
         </div>
 
-        <div className="card-glass" style={{ padding: '1rem', borderLeft: '4px solid var(--accent-emerald)' }}>
-          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600 }}>💵 PROYECTOS EN GESTIÓN</div>
+        {/* KPI CARD 3: PROYECTOS EN GESTIÓN (CLICKABLE) */}
+        <div 
+          className="card-glass" 
+          onClick={() => setActiveModalType('projects')}
+          style={{ padding: '1rem', borderLeft: '4px solid var(--accent-emerald)', cursor: 'pointer', transition: 'all 0.2s ease' }}
+          title="Haz clic para ver el desglose financiero de proyectos"
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600 }}>💵 PROYECTOS EN GESTIÓN</div>
+            <Eye size={14} className="text-emerald" />
+          </div>
           <div style={{ fontSize: '1.4rem', color: '#fff', fontWeight: 800, margin: '0.2rem 0' }}>USD 185,000</div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--accent-emerald)' }}>EDEMSA, Tecsys, WIND, Telecable</div>
+          <div style={{ fontSize: '0.72rem', color: 'var(--accent-emerald)', fontWeight: 700 }}>🔍 Clic para ver desglose por cliente ➔</div>
         </div>
 
-        <div className="card-glass" style={{ padding: '1rem', borderLeft: '4px solid var(--accent-amber)' }}>
-          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600 }}>🌱 AHORRO CLOUD ANUAL</div>
+        {/* KPI CARD 4: AHORRO ANUAL NUBES (100% CLICKABLE WITH DETAILED BREAKDOWN MODAL) */}
+        <div 
+          className="card-glass" 
+          onClick={() => setActiveModalType('cloud_savings')}
+          style={{ padding: '1rem', borderLeft: '4px solid var(--accent-amber)', cursor: 'pointer', background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(15, 23, 42, 0.95))', transition: 'all 0.2s ease' }}
+          title="¡HAZ CLIC AQUÍ PARA VER EL DETALLE COMPLETO DE AHORROS EN AWS, HUAWEI Y HEROKU!"
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 700 }}>🌱 AHORRO ANUAL NUBES</div>
+            <Cloud size={16} className="text-amber pulse" />
+          </div>
           <div style={{ fontSize: '1.4rem', color: '#fff', fontWeight: 800, margin: '0.2rem 0' }}>USD 26,880 / año</div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--accent-amber)' }}>AWS + Huawei + Heroku</div>
+          <div style={{ fontSize: '0.74rem', color: 'var(--accent-amber)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            <Eye size={13} /> 🔍 Clic aquí para ver detalle AWS, Huawei y Heroku ➔
+          </div>
         </div>
+
       </div>
 
       {/* EXHAUSTIVE LIST OF ALL 15 TOPICS GROUPED BY MEETING */}
@@ -664,6 +704,156 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
           );
         })}
       </div>
+
+      {/* MODAL 1: CLOUD SAVINGS DETAILED BREAKDOWN MODAL */}
+      {activeModalType === 'cloud_savings' && (
+        <div className="modal-overlay" onClick={() => setActiveModalType(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '750px' }}>
+            <div className="modal-header">
+              <h2>
+                <Cloud className="text-amber" size={22} /> ☁️ Desglose Detallado de Ahorros Cloud (AWS + Huawei + Heroku)
+              </h2>
+              <button className="btn-icon" onClick={() => setActiveModalType(null)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{ background: 'rgba(15, 23, 42, 0.8)', border: '1px solid var(--border-subtle)', borderRadius: '10px', padding: '1.2rem', marginBottom: '1.2rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '1.1rem', color: '#fff', fontWeight: 800 }}>
+                  AHORRO MENSUAL TOTAL: <span style={{ color: 'var(--accent-emerald)' }}>USD $2,240 / mes</span>
+                </span>
+                <span style={{ fontSize: '1.1rem', color: '#fff', fontWeight: 800 }}>
+                  AHORRO ANUAL TOTAL: <span style={{ color: 'var(--accent-amber)' }}>USD $26,880 / año</span>
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                <div style={{ background: 'rgba(30, 41, 59, 0.9)', border: '1px solid var(--border-subtle)', borderRadius: '8px', padding: '0.85rem 1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                    <span style={{ fontSize: '0.94rem', color: '#fff', fontWeight: 700 }}>1. AWS Cloud (Amazon Web Services)</span>
+                    <span style={{ fontSize: '0.88rem', color: 'var(--accent-emerald)', fontWeight: 800 }}>USD $1,800 / mes (USD $21,600 / año)</span>
+                  </div>
+                  <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
+                    Optimización de tipos de instancias EC2 a Graviton, consolidación de discos EBS y apagado automático de clústeres no productivos.
+                  </p>
+                </div>
+
+                <div style={{ background: 'rgba(30, 41, 59, 0.9)', border: '1px solid var(--border-subtle)', borderRadius: '8px', padding: '0.85rem 1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                    <span style={{ fontSize: '0.94rem', color: '#fff', fontWeight: 700 }}>2. Huawei Cloud</span>
+                    <span style={{ fontSize: '0.88rem', color: 'var(--accent-emerald)', fontWeight: 800 }}>USD $400 / mes (USD $4,800 / año)</span>
+                  </div>
+                  <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
+                    Reducción de transferencias de datos salientes (CDN Egress) y limpieza de backups históricos de almacenamiento.
+                  </p>
+                </div>
+
+                <div style={{ background: 'rgba(30, 41, 59, 0.9)', border: '1px solid var(--border-subtle)', borderRadius: '8px', padding: '0.85rem 1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                    <span style={{ fontSize: '0.94rem', color: '#fff', fontWeight: 700 }}>3. Heroku Cloud (Salesforce)</span>
+                    <span style={{ fontSize: '0.88rem', color: 'var(--accent-emerald)', fontWeight: 800 }}>USD $40 / mes (USD $480 / año)</span>
+                  </div>
+                  <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
+                    Desmantelamiento gradual y auto-stop nocturno de Dynos en Heroku con migración a la infraestructura de CableView.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button className="btn-primary" onClick={() => setActiveModalType(null)}>
+                Cerrar Detalle
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: CALLS RELEVADAS DETAILED MODAL */}
+      {activeModalType === 'calls' && (
+        <div className="modal-overlay" onClick={() => setActiveModalType(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '700px' }}>
+            <div className="modal-header">
+              <h2>
+                <Video className="text-purple" size={22} /> 📹 Detalle de las 5 Reuniones "Follow Up Tecnología" (Fathom)
+              </h2>
+              <button className="btn-icon" onClick={() => setActiveModalType(null)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1rem' }}>
+              <div style={{ background: 'rgba(30, 41, 59, 0.9)', padding: '0.75rem 1rem', borderRadius: '8px' }}>
+                <strong>10/08/2026:</strong> Meet Seguimiento Video: Desarrollo + QT + Servicios (STB Elebao, FingerPrint, Heroku)
+              </div>
+              <div style={{ background: 'rgba(30, 41, 59, 0.9)', padding: '0.75rem 1rem', borderRadius: '8px' }}>
+                <strong>03/08/2026:</strong> Weekly Follow Up Tecnología - Cluster VMs WIND & SSO OAuth2 (Tecsys, Telemetría)
+              </div>
+              <div style={{ background: 'rgba(30, 41, 59, 0.9)', padding: '0.75rem 1rem', borderRadius: '8px' }}>
+                <strong>27/07/2026:</strong> Weekly Follow Up Tecnología - EDEMSA Mendoza & Pérdidas BT (10 alimentadores, USD 50k)
+              </div>
+              <div style={{ background: 'rgba(30, 41, 59, 0.9)', padding: '0.75rem 1rem', borderRadius: '8px' }}>
+                <strong>13/07/2026:</strong> Weekly Follow Up Tecnología - Bot AI Gemini & Capacitaciones (Supermicro Honduras)
+              </div>
+              <div style={{ background: 'rgba(30, 41, 59, 0.9)', padding: '0.75rem 1rem', borderRadius: '8px' }}>
+                <strong>06/07/2026:</strong> Weekly Follow Up Tecnología - Evaluación Q3 & Despliegues STB (Pruebas AOSP)
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button className="btn-primary" onClick={() => setActiveModalType(null)}>
+                Cerrar Detalle
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3: PROJECTS DETAILED MODAL */}
+      {activeModalType === 'projects' && (
+        <div className="modal-overlay" onClick={() => setActiveModalType(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '700px' }}>
+            <div className="modal-header">
+              <h2>
+                <DollarSign className="text-emerald" size={22} /> 💵 Desglose de Proyectos en Gestión (USD $185,000)
+              </h2>
+              <button className="btn-icon" onClick={() => setActiveModalType(null)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1rem' }}>
+              <div style={{ background: 'rgba(30, 41, 59, 0.9)', padding: '0.75rem 1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                <span>EDEMSA Mendoza - 10 Alimentadores BT</span>
+                <strong style={{ color: 'var(--accent-emerald)' }}>USD $50,000</strong>
+              </div>
+              <div style={{ background: 'rgba(30, 41, 59, 0.9)', padding: '0.75rem 1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                <span>Tecsys Brasil - Homologación Certificados FCC/CE</span>
+                <strong style={{ color: 'var(--accent-emerald)' }}>USD $45,000</strong>
+              </div>
+              <div style={{ background: 'rgba(30, 41, 59, 0.9)', padding: '0.75rem 1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                <span>WIND Telecom - Cluster VMs & Single Sign-On</span>
+                <strong style={{ color: 'var(--accent-emerald)' }}>USD $35,000</strong>
+              </div>
+              <div style={{ background: 'rgba(30, 41, 59, 0.9)', padding: '0.75rem 1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                <span>Telecable Costa Rica - STB Elebao AOSP & FingerPrint</span>
+                <strong style={{ color: 'var(--accent-emerald)' }}>USD $25,000</strong>
+              </div>
+              <div style={{ background: 'rgba(30, 41, 59, 0.9)', padding: '0.75rem 1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                <span>Ahorro Anual Nubes (AWS + Huawei + Heroku)</span>
+                <strong style={{ color: 'var(--accent-amber)' }}>USD $26,880 / año</strong>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button className="btn-primary" onClick={() => setActiveModalType(null)}>
+                Cerrar Detalle
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
