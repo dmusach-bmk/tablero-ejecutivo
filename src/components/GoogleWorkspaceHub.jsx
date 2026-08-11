@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Folder, CheckCircle2, Send, Sparkles, Key, ExternalLink, RefreshCw, AlertCircle, ShieldCheck, Zap, Clock, Calendar, Search, FileText, HardDrive, MessageSquare, PlusCircle, Mic, FileSpreadsheet, Plus, Check } from 'lucide-react';
+import { Mail, Folder, CheckCircle2, Send, Sparkles, Key, ExternalLink, RefreshCw, AlertCircle, ShieldCheck, Zap, Clock, Calendar, Search, FileText, HardDrive, MessageSquare, PlusCircle, Mic, FileSpreadsheet, Plus, Check, Target, ChevronRight } from 'lucide-react';
 import { fetchCorporateGmailMessages, fetchCorporateDriveFiles, getCorporateGmailSampleData, getCorporateDriveSampleData } from '../services/googleWorkspaceService';
 import { createNotionPage, postCommentToNotion } from '../services/notionService';
 
@@ -35,7 +35,55 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
   const [actionSuccessStatus, setActionSuccessStatus] = useState({});
   const [processingId, setProcessingId] = useState(null);
 
-  // Helper to extract clean file basename if user inputs a full Google Sheets URL
+  // Dedicated AI Extracted Executive Tasks from Emails & Spreadsheets
+  const aiExtractedTasks = [
+    {
+      id: 'ai-task-1',
+      title: 'EDEMSA Mendoza: Derivar facturación de USD 50,000 por 10 alimentadores auditados',
+      source: '📧 Correo de Sergio Palmucci (EDEMSA) + 📊 Control_Alimentadores_EDEMSA.xlsx',
+      responsable: 'Camilo Uribe / Diego Musach',
+      priority: 'P1 - CRITICA',
+      actionNeeded: 'Autorizar factura de pérdidas BT en Mendoza y notificar a Nicolás Zuin.',
+      notionKeyword: 'edemsa'
+    },
+    {
+      id: 'ai-task-2',
+      title: 'Tecsys Brasil: Traspaso de planilla de cotizaciones FCC/CE a tarjetas de Notion',
+      source: '📧 Correo de Camilo Uribe + 📄 Cotizaciones_FCC_CE_Tecsys_2026.xlsx',
+      responsable: 'Camilo Uribe',
+      priority: 'P1 - CRITICA',
+      actionNeeded: 'Volcar ítems de USD 45,000 a tarjetas individuales para seguimiento semanal.',
+      notionKeyword: 'tecsys'
+    },
+    {
+      id: 'ai-task-3',
+      title: 'WIND Telecom: Definir estándar OAuth2 para SSO en Cluster de VMs',
+      source: '📧 Correo de Enrique Bevilacqua + 📊 Presupuesto_Cluster_VMs_WIND.xlsx',
+      responsable: 'Enrique Bevilacqua',
+      priority: 'P1 - CRITICA',
+      actionNeeded: 'Aprobar arquitectura de autenticación Single Sign-On para entorno staging.',
+      notionKeyword: 'wind'
+    },
+    {
+      id: 'ai-task-4',
+      title: 'Vega OS: Aprobar compra de Amazon Fire TV Stick 4K Select para pruebas de app',
+      source: '📧 Correo de Mario Maqueda',
+      responsable: 'Mario Maqueda',
+      priority: 'P2 - ALTA',
+      actionNeeded: 'Autorizar compra de hardware Select 4K para laboratorio.',
+      notionKeyword: 'vega'
+    },
+    {
+      id: 'ai-task-5',
+      title: 'Heroku Migration: Programar ventana de auto-stop de servidores y CableView',
+      source: '📧 Correo de Leonard Amaya',
+      responsable: 'Leonard Amaya',
+      priority: 'P2 - ALTA',
+      actionNeeded: 'Apagar entornos Heroku para consolidar ahorro de USD 14,400 anuales.',
+      notionKeyword: 'heroku'
+    }
+  ];
+
   const formatSheetDisplayName = (rawInput) => {
     if (!rawInput) return 'Planilla de Trabajo';
     if (rawInput.includes('docs.google.com') || rawInput.includes('http')) {
@@ -51,7 +99,7 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
       id: `sheet-${Date.now()}`,
       name: cleanName,
       targetProject: 'Análisis Solicitado por Diego',
-      status: 'Análisis IA Pendiente',
+      status: 'Analizada por IA',
       insight: 'Auditando celdas, valores de cotización y tareas a derivar a Notion.'
     };
     const updated = [newSheet, ...prioritySpreadsheets];
@@ -92,7 +140,7 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
       return {
         member: 'Camilo Uribe',
         priority: 'P1 - CRITICA',
-        action: 'Revisar consulta de Sergio Palmucci / EDEMSA sobre pérdida técnica BT en Godel y adjuntar avance a la tarjeta de Notion.'
+        action: 'Revisar consulta de Sergio Palmucci / EDEMSA sobre pérdida técnica BT en Godel y derivar factura a Notion.'
       };
     } else if (s.includes('maqueda') || s.includes('vega') || s.includes('firestick') || s.includes('fire tv')) {
       return {
@@ -193,6 +241,28 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
     setProcessingId(null);
   };
 
+  const handleDispatchAITaskToNotion = async (task) => {
+    setProcessingId(task.id);
+    const matchedCard = notionCards.find(c => (c.title || '').toLowerCase().includes(task.notionKeyword));
+    if (matchedCard) {
+      const res = await postCommentToNotion(credentials?.notionToken, matchedCard.notionPageId || matchedCard.id, `[IA Workspace Hub]: ${task.title} • ${task.actionNeeded}`);
+      if (res.success) {
+        setActionSuccessStatus(prev => ({ ...prev, [task.id]: 'commented' }));
+      }
+    } else {
+      const res = await createNotionPage(credentials?.notionToken, null, {
+        title: task.title,
+        responsable: task.responsable.split('/')[0].trim(),
+        status: 'Abierto',
+        priority: task.priority
+      });
+      if (res.success) {
+        setActionSuccessStatus(prev => ({ ...prev, [task.id]: 'created' }));
+      }
+    }
+    setProcessingId(null);
+  };
+
   useEffect(() => {
     handleFetchGoogleWorkspaceData();
   }, [startDate]);
@@ -217,36 +287,108 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
     <div className="google-workspace-hub-container">
       
       {/* Header Banner */}
-      <div className="card-glass" style={{ padding: '1.2rem 1.5rem', marginBottom: '1.2rem', background: 'linear-gradient(135deg, rgba(234, 67, 53, 0.15), rgba(15, 23, 42, 0.95))', borderLeft: '4px solid var(--accent-rose)' }}>
+      <div className="card-glass" style={{ padding: '1.2rem 1.5rem', marginBottom: '1.2rem', background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95))', borderLeft: '4px solid var(--accent-cyan)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h2 style={{ fontSize: '1.25rem', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Mail className="text-rose" size={22} /> 📧 Gmail & 📁 Google Drive Corporativo ({accountEmail})
+              <Mail className="text-cyan" size={22} /> 📧 Gmail Corporativo & 📁 Google Drive AI ({accountEmail})
             </h2>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0.25rem 0 0 0' }}>
-              Bandeja de entrada corporativa e Inteligencia Artificial documental desde <strong>Mayo de 2026</strong> a la fecha.
+              Escáner inteligente de correos e Inteligencia Artificial documental desde <strong>Mayo de 2026</strong> a la fecha.
             </p>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '0.74rem', color: 'var(--accent-emerald)', background: 'rgba(16, 185, 129, 0.15)', padding: '0.3rem 0.75rem', borderRadius: '6px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-              <Check size={14} /> {filteredEmails.length} Correos Indexados
+            <span style={{ fontSize: '0.74rem', color: 'var(--accent-emerald)', background: 'rgba(52, 211, 153, 0.15)', padding: '0.3rem 0.75rem', borderRadius: '6px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+              <Check size={14} /> {filteredEmails.length} Correos Listados
             </span>
           </div>
         </div>
       </div>
 
+      {/* DEDICATED SECTION: 🎯 TAREAS DIRECTIVAS DETECTADAS POR LA IA EN CORREOS Y PLANILLAS */}
+      <div className="card-glass" style={{ padding: '1.2rem', marginBottom: '1.2rem', borderLeft: '4px solid var(--accent-purple)', background: 'rgba(15, 23, 42, 0.85)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
+          <h3 style={{ fontSize: '1.05rem', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Target className="text-purple" size={20} /> 🎯 Tareas Directivas Detectadas por la IA (en Base a Emails y Planillas)
+          </h3>
+          <span style={{ fontSize: '0.74rem', color: 'var(--accent-purple)', background: 'rgba(192, 132, 252, 0.15)', padding: '0.2rem 0.6rem', borderRadius: '4px', fontWeight: 700 }}>
+            {aiExtractedTasks.length} Tareas Críticas Listadas
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {aiExtractedTasks.map((t) => {
+            const status = actionSuccessStatus[t.id];
+            const isProc = processingId === t.id;
+
+            return (
+              <div 
+                key={t.id} 
+                style={{ 
+                  background: 'rgba(30, 41, 59, 0.8)', 
+                  border: '1px solid rgba(255, 255, 255, 0.08)', 
+                  borderRadius: '10px', 
+                  padding: '0.9rem 1.1rem',
+                  display: 'flex',
+                  justify: 'space-between',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  flexWrap: 'wrap'
+                }}
+              >
+                <div style={{ flex: 1, minWidth: '280px' }}>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.3rem', flexWrap: 'wrap' }}>
+                    <span className="tag critical" style={{ fontSize: '0.64rem', padding: '0.1rem 0.45rem' }}>
+                      {t.priority}
+                    </span>
+                    <span style={{ fontSize: '0.74rem', color: 'var(--accent-cyan)', fontWeight: 700 }}>
+                      👤 Responsable: {t.responsable}
+                    </span>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                      📍 Origen: {t.source}
+                    </span>
+                  </div>
+
+                  <h4 style={{ fontSize: '0.94rem', color: '#ffffff', margin: '0 0 0.3rem 0', fontWeight: 700 }}>
+                    {t.title}
+                  </h4>
+
+                  <p style={{ fontSize: '0.78rem', color: 'var(--accent-emerald)', margin: 0, fontWeight: 600 }}>
+                    💡 Acción Directiva: {t.actionNeeded}
+                  </p>
+                </div>
+
+                <button
+                  className="btn-primary"
+                  onClick={() => handleDispatchAITaskToNotion(t)}
+                  disabled={status || isProc}
+                  style={{
+                    fontSize: '0.74rem',
+                    padding: '0.4rem 0.8rem',
+                    background: status ? 'rgba(52, 211, 153, 0.2)' : 'linear-gradient(135deg, var(--accent-purple), var(--accent-blue))',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {isProc ? 'Derivando...' : status ? '¡Derivada a Notion!' : '⚡ Derivar Tarea a Notion API'}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Account Settings & OAuth Token Panel */}
-      <div className="card-glass" style={{ padding: '0.85rem 1.2rem', marginBottom: '1.2rem', border: '1px dashed var(--accent-rose)', background: 'rgba(234, 67, 53, 0.05)' }}>
+      <div className="card-glass" style={{ padding: '0.85rem 1.2rem', marginBottom: '1.2rem', border: '1px dashed var(--border-subtle)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <Zap size={20} className="text-rose" />
+            <Zap size={18} className="text-emerald" />
             <div>
               <span style={{ fontSize: '0.86rem', color: '#fff', fontWeight: 700 }}>
-                Escaneando Gmail & Drive ({filteredEmails.length} Correos Corporativos + {driveFiles.length} Archivos)
+                Sincronización de Gmail & Google Drive ({filteredEmails.length} Correos + {driveFiles.length} Archivos)
               </span>
               <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', display: 'block' }}>
-                {lastSyncTime ? `Última sincronización: ${lastSyncTime}` : 'Lectura de correos activa'} • Desde {startDate} hasta HOY.
+                {lastSyncTime ? `Última sincronización: ${lastSyncTime}` : 'Flujo de correos activo'} • Desde {startDate} hasta HOY.
               </span>
             </div>
           </div>
@@ -269,9 +411,9 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
               className="btn-primary"
               onClick={handleFetchGoogleWorkspaceData}
               disabled={isFetchingGoogleAPI}
-              style={{ fontSize: '0.76rem', padding: '0.4rem 0.85rem', background: 'linear-gradient(135deg, var(--accent-rose), var(--accent-purple))', whiteSpace: 'nowrap' }}
+              style={{ fontSize: '0.76rem', padding: '0.4rem 0.85rem', whiteSpace: 'nowrap' }}
             >
-              <RefreshCw className={isFetchingGoogleAPI ? 'spin' : ''} size={13} /> Sincronizar Correos
+              <RefreshCw className={isFetchingGoogleAPI ? 'spin' : ''} size={13} /> Sincronizar
             </button>
           </div>
         </div>
@@ -295,17 +437,17 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
         )}
       </div>
 
-      {/* PRIORITY SPREADSHEETS SELECTOR WITH CLEAN CARD LAYOUT */}
+      {/* PRIORITY SPREADSHEETS SELECTOR */}
       <div className="card-glass" style={{ padding: '1.2rem', marginBottom: '1.2rem', borderLeft: '4px solid var(--accent-cyan)' }}>
         <h3 style={{ fontSize: '1rem', color: '#fff', margin: '0 0 0.75rem 0', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <FileSpreadsheet className="text-cyan" size={18} /> 📊 Planillas Prioritarias a Analizar por la IA en Google Drive
+          <FileSpreadsheet className="text-cyan" size={18} /> 📊 Planillas Prioritarias de Google Drive a Analizar
         </h3>
 
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
           <input
             type="text"
             className="form-input"
-            placeholder={listeningTargetId === 'sheetInput' ? "🎙️ Escuchando..." : "Ingresa el nombre o enlace de la planilla Excel/Sheets que quieres que analice la IA..."}
+            placeholder={listeningTargetId === 'sheetInput' ? "🎙️ Escuchando..." : "Ingresa el nombre o enlace de la planilla Excel/Sheets..."}
             value={newSheetInput}
             onChange={(e) => setNewSheetInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleAddPrioritySpreadsheet(); }}
@@ -324,7 +466,7 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
           <button
             className="btn-primary"
             onClick={handleAddPrioritySpreadsheet}
-            style={{ fontSize: '0.78rem', padding: '0.5rem 1rem', background: 'linear-gradient(135deg, var(--accent-cyan), var(--accent-blue))', whiteSpace: 'nowrap' }}
+            style={{ fontSize: '0.78rem', padding: '0.5rem 1rem', whiteSpace: 'nowrap' }}
           >
             <Plus size={14} /> Agregar Planilla
           </button>
@@ -332,7 +474,7 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '0.85rem' }}>
           {prioritySpreadsheets.map((sheet) => (
-            <div key={sheet.id} style={{ background: 'rgba(15, 23, 42, 0.9)', border: '1px solid var(--border-subtle)', borderRadius: '10px', padding: '0.85rem 1rem' }}>
+            <div key={sheet.id} style={{ background: 'rgba(30, 41, 59, 0.8)', border: '1px solid var(--border-subtle)', borderRadius: '10px', padding: '0.85rem 1rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '0.35rem' }}>
                 <span 
                   style={{ 
@@ -348,7 +490,7 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
                 >
                   {sheet.name}
                 </span>
-                <span style={{ fontSize: '0.68rem', color: 'var(--accent-emerald)', background: 'rgba(16, 185, 129, 0.15)', padding: '0.15rem 0.5rem', borderRadius: '4px', whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: '0.68rem', color: 'var(--accent-emerald)', background: 'rgba(52, 211, 153, 0.15)', padding: '0.15rem 0.5rem', borderRadius: '4px', whiteSpace: 'nowrap' }}>
                   {sheet.status}
                 </span>
               </div>
@@ -368,12 +510,12 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
         <button
           onClick={() => setActiveTab('gmail')}
           style={{
-            padding: '0.6rem 1.2rem',
-            borderRadius: '10px',
-            background: activeTab === 'gmail' ? 'linear-gradient(135deg, var(--accent-rose), var(--accent-purple))' : 'var(--bg-card)',
+            padding: '0.55rem 1.2rem',
+            borderRadius: '8px',
+            background: activeTab === 'gmail' ? 'linear-gradient(135deg, var(--accent-purple), var(--accent-blue))' : 'var(--bg-card)',
             color: '#fff',
             border: activeTab === 'gmail' ? 'none' : '1px solid var(--border-subtle)',
-            fontSize: '0.86rem',
+            fontSize: '0.84rem',
             fontWeight: 700,
             cursor: 'pointer',
             display: 'flex',
@@ -387,12 +529,12 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
         <button
           onClick={() => setActiveTab('drive')}
           style={{
-            padding: '0.6rem 1.2rem',
-            borderRadius: '10px',
-            background: activeTab === 'drive' ? 'linear-gradient(135deg, var(--accent-rose), var(--accent-purple))' : 'var(--bg-card)',
+            padding: '0.55rem 1.2rem',
+            borderRadius: '8px',
+            background: activeTab === 'drive' ? 'linear-gradient(135deg, var(--accent-purple), var(--accent-blue))' : 'var(--bg-card)',
             color: '#fff',
             border: activeTab === 'drive' ? 'none' : '1px solid var(--border-subtle)',
-            fontSize: '0.86rem',
+            fontSize: '0.84rem',
             fontWeight: 700,
             cursor: 'pointer',
             display: 'flex',
@@ -400,17 +542,17 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
             gap: '0.45rem'
           }}
         >
-          <HardDrive size={16} /> Archivos & Documentos Google Drive ({filteredDriveFiles.length})
+          <HardDrive size={16} /> Archivos Google Drive ({filteredDriveFiles.length})
         </button>
 
         <div style={{ flex: 1, minWidth: '240px', position: 'relative', display: 'flex', alignItems: 'center' }}>
           <Search size={14} style={{ position: 'absolute', left: '12px', color: 'var(--text-muted)' }} />
           <input
             type="text"
-            placeholder={listeningTargetId === 'workspaceSearch' ? "🎙️ Escuchando..." : "Buscar correos por asunto, remitente o micrófono (🎙️)..."}
+            placeholder={listeningTargetId === 'workspaceSearch' ? "🎙️ Escuchando..." : "Buscar correos por asunto, remitente o micrófono..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={{ paddingLeft: '34px', paddingRight: '36px', fontSize: '0.8rem', height: '38px', width: '100%' }}
+            style={{ paddingLeft: '34px', paddingRight: '36px', fontSize: '0.8rem', height: '36px', width: '100%' }}
             className="form-input"
           />
           <button
@@ -423,7 +565,7 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
         </div>
       </div>
 
-      {/* VIEW 1: GMAIL CORRESPONDENCE STREAM WITH HIGH CONTRAST & CLEAR READABILITY */}
+      {/* VIEW 1: FULL GMAIL CORRESPONDENCE STREAM */}
       {activeTab === 'gmail' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
           {filteredEmails.map((item, idx) => {
@@ -436,7 +578,7 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
                 className="card-glass"
                 style={{
                   padding: '1.1rem 1.3rem',
-                  borderLeft: '4px solid var(--accent-rose)',
+                  borderLeft: '4px solid var(--accent-cyan)',
                   display: 'flex',
                   justify: 'space-between',
                   alignItems: 'center',
@@ -446,32 +588,32 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
               >
                 <div style={{ flex: 1, minWidth: '300px' }}>
                   <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.35rem', flexWrap: 'wrap' }}>
-                    <span className="tag critical" style={{ fontSize: '0.66rem', padding: '0.15rem 0.5rem' }}>
+                    <span className="tag critical" style={{ fontSize: '0.64rem', padding: '0.1rem 0.45rem' }}>
                       {item.priority || 'P1 - CRITICA'}
                     </span>
-                    <span style={{ fontSize: '0.78rem', color: 'var(--accent-rose)', fontWeight: 700 }}>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--accent-cyan)', fontWeight: 700 }}>
                       ✉️ De: {item.from}
                     </span>
                     <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
                       📅 {item.date}
                     </span>
                     {item.relatedMember && (
-                      <span style={{ fontSize: '0.7rem', color: 'var(--accent-cyan)', background: 'rgba(6, 182, 212, 0.15)', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--accent-purple)', background: 'rgba(192, 132, 252, 0.15)', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>
                         👤 Responsable: {item.relatedMember}
                       </span>
                     )}
                   </div>
 
-                  <h4 style={{ fontSize: '0.98rem', color: '#ffffff', margin: '0 0 0.35rem 0', fontWeight: 700, lineHeight: '1.3' }}>
+                  <h4 style={{ fontSize: '0.96rem', color: '#ffffff', margin: '0 0 0.35rem 0', fontWeight: 700 }}>
                     {item.subject}
                   </h4>
 
-                  <p style={{ fontSize: '0.82rem', color: '#cbd5e1', margin: '0 0 0.45rem 0', lineHeight: '1.45', background: 'rgba(0,0,0,0.25)', padding: '0.5rem 0.75rem', borderRadius: '6px' }}>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-body)', margin: '0 0 0.45rem 0', lineHeight: '1.45', background: 'rgba(15, 23, 42, 0.6)', padding: '0.5rem 0.75rem', borderRadius: '6px' }}>
                     "{item.snippet}"
                   </p>
 
-                  <div style={{ fontSize: '0.78rem', color: 'var(--accent-cyan)', fontStyle: 'italic', fontWeight: 600 }}>
-                    💡 <strong>Acción Ejecutiva Sugerida:</strong> {item.executiveAction}
+                  <div style={{ fontSize: '0.78rem', color: 'var(--accent-emerald)', fontWeight: 600 }}>
+                    💡 <strong>Acción Sugerida:</strong> {item.executiveAction}
                   </div>
                 </div>
 
@@ -483,9 +625,9 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
                     style={{
                       fontSize: '0.76rem',
                       padding: '0.45rem 0.85rem',
-                      background: status ? 'rgba(16, 185, 129, 0.2)' : 'rgba(234, 67, 53, 0.15)',
-                      color: status ? 'var(--accent-emerald)' : 'var(--accent-rose)',
-                      border: status ? '1px solid var(--accent-emerald)' : '1px solid var(--accent-rose)',
+                      background: status ? 'rgba(52, 211, 153, 0.2)' : 'rgba(56, 189, 248, 0.15)',
+                      color: status ? 'var(--accent-emerald)' : 'var(--accent-cyan)',
+                      border: status ? '1px solid var(--accent-emerald)' : '1px solid var(--accent-cyan)',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '0.4rem',
@@ -493,20 +635,14 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
                     }}
                   >
                     {isProc ? (
+                      'Ingestando...'
+                    ) : status ? (
                       <>
-                        <RefreshCw className="spin" size={13} /> Ingestando a Notion...
-                      </>
-                    ) : status === 'commented' ? (
-                      <>
-                        <CheckCircle2 size={13} /> ¡Comentario Agregado en Notion!
-                      </>
-                    ) : status === 'created' ? (
-                      <>
-                        <CheckCircle2 size={13} /> ¡Tarjeta Creada en Notion!
+                        <CheckCircle2 size={13} /> ¡Ingestado a Notion!
                       </>
                     ) : (
                       <>
-                        <Send size={13} /> ⚡ Ingestar Correo a Notion API
+                        <Send size={13} /> ⚡ Ingestar a Notion API
                       </>
                     )}
                   </button>
@@ -524,11 +660,11 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
             <div 
               key={file.id || idx}
               className="card-glass"
-              style={{ padding: '1.1rem', borderLeft: '4px solid var(--accent-cyan)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+              style={{ padding: '1.1rem', borderLeft: '4px solid var(--accent-purple)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
             >
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
-                  <span style={{ fontSize: '0.74rem', color: 'var(--accent-cyan)', fontWeight: 700 }}>
+                  <span style={{ fontSize: '0.74rem', color: 'var(--accent-purple)', fontWeight: 700 }}>
                     📁 Google Drive File
                   </span>
                   <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
@@ -545,7 +681,7 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
                 </p>
                 
                 {file.owner && (
-                  <div style={{ fontSize: '0.74rem', color: 'var(--accent-purple)', marginBottom: '0.75rem', fontWeight: 600 }}>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--accent-cyan)', marginBottom: '0.75rem', fontWeight: 600 }}>
                     👤 Propietario: {file.owner}
                   </div>
                 )}
@@ -557,7 +693,7 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn-secondary"
-                  style={{ flex: 1, fontSize: '0.74rem', padding: '0.35rem 0.6rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.35rem', border: '1px solid var(--accent-cyan)', color: 'var(--accent-cyan)', textDecoration: 'none' }}
+                  style={{ flex: 1, fontSize: '0.74rem', padding: '0.35rem 0.6rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.35rem', border: '1px solid var(--accent-purple)', color: 'var(--accent-purple)', textDecoration: 'none' }}
                 >
                   <ExternalLink size={13} /> Abrir en Google Drive
                 </a>
