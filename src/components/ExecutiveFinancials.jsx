@@ -1,10 +1,23 @@
 import React, { useState } from 'react';
-import { DollarSign, TrendingUp, ShieldCheck, AlertCircle, Send, CheckCircle2, FileText, Calendar, ExternalLink, MessageCircle, Mail, Sparkles } from 'lucide-react';
+import { DollarSign, TrendingUp, ShieldCheck, AlertCircle, Send, CheckCircle2, FileText, Calendar, ExternalLink, MessageCircle, Mail, Sparkles, Cloud, Server, ArrowDown } from 'lucide-react';
 import { postCommentToNotion, createNotionPage } from '../services/notionService';
 
 export default function ExecutiveFinancials({ credentials, notionCards = [] }) {
   const [activeCurrency, setActiveCurrency] = useState('USD');
   const [actionSuccessMap, setActionSuccessMap] = useState({});
+
+  // Exact Cloud Savings Breakdown provided by Diego:
+  // - AWS: USD $1,800 / mes ($21,600 / año)
+  // - Huawei Cloud: USD $400 / mes ($4,800 / año)
+  // - Heroku: USD $40 / mes ($480 / año)
+  const cloudSavingsItems = [
+    { provider: 'AWS Cloud', monthlyUSD: 1800, annualUSD: 21600, detail: 'Optimización de instancias EC2, EBS y nodos de procesamiento.' },
+    { provider: 'Huawei Cloud', monthlyUSD: 400, annualUSD: 4800, detail: 'Reducción de almacenamiento y ancho de banda en CDN.' },
+    { provider: 'Heroku Cloud', monthlyUSD: 40, annualUSD: 480, detail: 'Desmantelamiento y auto-stop deDynos nocturnos.' }
+  ];
+
+  const totalMonthlyCloudSavings = cloudSavingsItems.reduce((acc, c) => acc + c.monthlyUSD, 0); // USD 2,240 / mes
+  const totalAnnualCloudSavings = cloudSavingsItems.reduce((acc, c) => acc + c.annualUSD, 0);   // USD 26,880 / año
 
   const financialItems = [
     {
@@ -49,71 +62,28 @@ export default function ExecutiveFinancials({ credentials, notionCards = [] }) {
     },
     {
       id: 'fin-5',
-      project: 'Desmantelamiento Heroku & Migración CableView',
-      lead: 'Leonard Amaya',
-      amountUSD: 14400,
+      project: 'Optimización Completa de Nubes (AWS + Huawei + Heroku)',
+      lead: 'Leonard Amaya / Diego Musach',
+      amountUSD: totalAnnualCloudSavings,
       status: 'Ahorro Anual Proyectado',
       category: 'Optimización de Costos',
-      detail: 'Apagado de servidores Heroku y consolidación de vistas frontend.',
+      detail: `AWS (USD 1,800/mes) + Huawei (USD 400/mes) + Heroku (USD 40/mes) = USD 2,240/mes (USD 26,880/año).`,
       notionKeyword: 'heroku'
-    },
-    {
-      id: 'fin-6',
-      project: 'Soporte AI BOT Gemini & Reducción de Tickets',
-      lead: 'Fabricio Jose Nieva / Joseph Valer',
-      amountUSD: 15600,
-      status: 'Ahorro Operativo Nivel 1',
-      category: 'Inteligencia Artificial',
-      detail: 'Reducción del 35% de tickets mediante entrenamiento con capacitaciones filmadas.',
-      notionKeyword: 'soporte'
     }
   ];
 
   const totalUSD = financialItems.reduce((acc, curr) => acc + curr.amountUSD, 0);
   const pendingBillingUSD = financialItems.filter(i => i.status.includes('Cobro')).reduce((acc, curr) => acc + curr.amountUSD, 0);
-  const totalSavingsUSD = financialItems.filter(i => i.category.includes('Optimización')).reduce((acc, curr) => acc + curr.amountUSD, 0);
 
   const handleSendWhatsAppAlert = (item) => {
-    const leadPhoneMap = {
-      'Camilo Uribe': '5491100000001',
-      'Enrique Bevilacqua': '5491100000002',
-      'Leonard Amaya': '5491100000003',
-      'Fabricio Jose Nieva': '5491100000004'
-    };
-
-    const leadFirst = item.lead.split(' ')[0];
-    const text = `Hola ${leadFirst}, desde la Dirección CTO te recordamos el hito financiero de "${item.project}" (${item.status}). Monto: USD ${item.amountUSD.toLocaleString()}. Por favor actualizar avance en Notion.`;
-    const encoded = encodeURIComponent(text);
-    window.open(`https://wa.me/?text=${encoded}`, '_blank');
+    const message = encodeURIComponent(`Hola ${item.lead}, requerimos actualización urgente de la partida financiera "${item.project}" (USD $${item.amountUSD.toLocaleString()}). Estado actual: ${item.status}. CC: Diego Musach (CTO).`);
+    window.open(`https://wa.me/?text=${message}`, '_blank');
   };
 
   const handleSendEmailAlert = (item) => {
-    const subject = encodeURIComponent(`[ALERTA CTO] Hito Financiero: ${item.project}`);
-    const body = encodeURIComponent(`Estimado equipo,\n\nRevisión directiva del proyecto "${item.project}".\nEstado: ${item.status}\nMonto involucrado: USD ${item.amountUSD.toLocaleString()}\n\nDetalle: ${item.detail}\n\nPor favor confirmar actualización en Notion API.\n\nAtentamente,\nDiego Paolo Musach\nDirector & Head of Engineering`);
-    window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
-  };
-
-  const handleDispatchFinancialToNotion = async (item) => {
-    setActionSuccessMap(prev => ({ ...prev, [item.id]: 'syncing' }));
-
-    const matchedCard = notionCards.find(c => (c.title || '').toLowerCase().includes(item.notionKeyword));
-    if (matchedCard) {
-      const commentContent = `[AUDITORÍA FINANCIERA CTO]: ${item.project} • Monto: USD ${item.amountUSD.toLocaleString()} • Estado: ${item.status}`;
-      const res = await postCommentToNotion(credentials?.notionToken, matchedCard.notionPageId || matchedCard.id, commentContent);
-      if (res.success) {
-        setActionSuccessMap(prev => ({ ...prev, [item.id]: 'success' }));
-      }
-    } else {
-      const res = await createNotionPage(credentials?.notionToken, null, {
-        title: `[Finanzas CTO] ${item.project} - USD ${item.amountUSD.toLocaleString()}`,
-        responsable: item.lead.split('/')[0].trim(),
-        status: 'Abierto',
-        priority: 'P1 - CRITICA'
-      });
-      if (res.success) {
-        setActionSuccessMap(prev => ({ ...prev, [item.id]: 'success' }));
-      }
-    }
+    const subject = encodeURIComponent(`[ALERTA FINANCIERA CTO] Seguimiento Presupuestario: ${item.project}`);
+    const body = encodeURIComponent(`Hola ${item.lead},\n\nTe solicito por favor el reporte actualizado de la partida presupuestaria del proyecto "${item.project}" por un monto de USD $${item.amountUSD.toLocaleString()}.\n\nCategoría: ${item.category}\nEstado: ${item.status}\nDetalle: ${item.detail}\n\nQuedo a la espera de tu confirmación para Notion.\n\nSaludos,\nDiego Paolo Musach\nDirector & Head of Engineering`);
+    window.open(`mailto:dmusach@bromteck.com?subject=${subject}&body=${body}`, '_blank');
   };
 
   return (
@@ -124,150 +94,167 @@ export default function ExecutiveFinancials({ credentials, notionCards = [] }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h2 style={{ fontSize: '1.25rem', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <DollarSign className="text-emerald" size={22} /> 📊 Control Financiero & Presupuestos de Ingeniería
+              <DollarSign className="text-emerald" size={22} /> 💵 Control Financiero & Presupuestario (USD / ARS)
             </h2>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0.25rem 0 0 0' }}>
-              Consolidado de montos negociados, cobranzas pendientes, licencias y ahorros de infraestructura.
+              Auditoría financiera ejecutiva de cobros pendientes y desglose exacto de ahorros cloud (AWS, Huawei Cloud y Heroku).
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.4rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             <button
+              className="btn-secondary"
               onClick={() => setActiveCurrency('USD')}
-              className={`btn-secondary ${activeCurrency === 'USD' ? 'active' : ''}`}
-              style={{ fontSize: '0.76rem', padding: '0.35rem 0.7rem' }}
+              style={{
+                fontSize: '0.78rem',
+                padding: '0.35rem 0.75rem',
+                background: activeCurrency === 'USD' ? 'var(--accent-emerald)' : 'rgba(255, 255, 255, 0.05)',
+                color: activeCurrency === 'USD' ? '#000' : '#fff',
+                fontWeight: 700
+              }}
             >
-              💵 Dólares (USD)
+              USD ($)
+            </button>
+            <button
+              className="btn-secondary"
+              onClick={() => setActiveCurrency('ARS')}
+              style={{
+                fontSize: '0.78rem',
+                padding: '0.35rem 0.75rem',
+                background: activeCurrency === 'ARS' ? 'var(--accent-emerald)' : 'rgba(255, 255, 255, 0.05)',
+                color: activeCurrency === 'ARS' ? '#000' : '#fff',
+                fontWeight: 700
+              }}
+            >
+              ARS ($ 1,350)
             </button>
           </div>
         </div>
       </div>
 
-      {/* KPI Cards Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1.2rem' }}>
+      {/* KPI Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
         <div className="card-glass" style={{ padding: '1rem', borderLeft: '4px solid var(--accent-emerald)' }}>
-          <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.2rem' }}>
-            VOLUMEN TOTAL GESTIONADO
-          </span>
-          <div style={{ fontSize: '1.6rem', color: 'var(--accent-emerald)', fontWeight: 800 }}>
-            USD ${totalUSD.toLocaleString()}
+          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600 }}>VOLUMEN TOTAL GESTIONADO</div>
+          <div style={{ fontSize: '1.4rem', color: '#fff', fontWeight: 800, margin: '0.2rem 0' }}>
+            {activeCurrency === 'USD' ? `USD $${totalUSD.toLocaleString()}` : `ARS $${(totalUSD * 1350).toLocaleString()}`}
           </div>
-          <span style={{ fontSize: '0.7rem', color: 'var(--accent-emerald)', marginTop: '0.2rem', display: 'block' }}>
-            6 proyectos estratégicos directivos
-          </span>
+          <div style={{ fontSize: '0.72rem', color: 'var(--accent-emerald)' }}>Proyectos & Ahorros 2026</div>
+        </div>
+
+        <div className="card-glass" style={{ padding: '1rem', borderLeft: '4px solid var(--accent-amber)' }}>
+          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600 }}>COBROS PENDIENTES (EDEMSA)</div>
+          <div style={{ fontSize: '1.4rem', color: '#fff', fontWeight: 800, margin: '0.2rem 0' }}>
+            {activeCurrency === 'USD' ? `USD $${pendingBillingUSD.toLocaleString()}` : `ARS $${(pendingBillingUSD * 1350).toLocaleString()}`}
+          </div>
+          <div style={{ fontSize: '0.72rem', color: 'var(--accent-amber)' }}>10 Alimentadores Mendoza</div>
         </div>
 
         <div className="card-glass" style={{ padding: '1rem', borderLeft: '4px solid var(--accent-cyan)' }}>
-          <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.2rem' }}>
-            COBROS / FACTURACIÓN PENDIENTE
-          </span>
-          <div style={{ fontSize: '1.6rem', color: 'var(--accent-cyan)', fontWeight: 800 }}>
-            USD ${pendingBillingUSD.toLocaleString()}
+          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600 }}>AHORRO ANUAL NUBES</div>
+          <div style={{ fontSize: '1.4rem', color: '#fff', fontWeight: 800, margin: '0.2rem 0' }}>
+            {activeCurrency === 'USD' ? `USD $${totalAnnualCloudSavings.toLocaleString()} / año` : `ARS $${(totalAnnualCloudSavings * 1350).toLocaleString()} / año`}
           </div>
-          <span style={{ fontSize: '0.7rem', color: 'var(--accent-cyan)', marginTop: '0.2rem', display: 'block' }}>
-            EDEMSA & Cotizaciones homologadas
-          </span>
-        </div>
-
-        <div className="card-glass" style={{ padding: '1rem', borderLeft: '4px solid var(--accent-purple)' }}>
-          <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.2rem' }}>
-            AHORRO ANUAL EN NUBE / HEROKU
-          </span>
-          <div style={{ fontSize: '1.6rem', color: 'var(--accent-purple)', fontWeight: 800 }}>
-            USD ${totalSavingsUSD.toLocaleString()}
-          </div>
-          <span style={{ fontSize: '0.7rem', color: 'var(--accent-purple)', marginTop: '0.2rem', display: 'block' }}>
-            Optimización de entornos de staging
-          </span>
+          <div style={{ fontSize: '0.72rem', color: 'var(--accent-cyan)' }}>USD $${totalMonthlyCloudSavings.toLocaleString()} / mes</div>
         </div>
       </div>
 
-      {/* Main Financial Items List */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-        {financialItems.map((item) => {
-          const status = actionSuccessMap[item.id];
-          return (
-            <div 
-              key={item.id}
-              className="card-glass"
-              style={{
-                padding: '1rem 1.2rem',
-                borderLeft: '4px solid var(--accent-emerald)',
-                display: 'flex',
-                justify: 'space-between',
-                alignItems: 'center',
-                gap: '1rem',
-                flexWrap: 'wrap'
-              }}
-            >
-              <div style={{ flex: 1, minWidth: '280px' }}>
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.25rem', flexWrap: 'wrap' }}>
-                  <span className="tag critical" style={{ fontSize: '0.64rem', padding: '0.1rem 0.4rem', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--accent-emerald)', border: '1px solid var(--accent-emerald)' }}>
-                    {item.category}
-                  </span>
-                  <span style={{ fontSize: '0.78rem', color: 'var(--accent-cyan)', fontWeight: 700 }}>
-                    👤 {item.lead}
-                  </span>
-                </div>
+      {/* CLOUD SAVINGS DETAILED BREAKDOWN (AWS + HUAWEI + HEROKU) */}
+      <div className="card-glass" style={{ padding: '1.2rem', marginBottom: '1.5rem', borderLeft: '4px solid var(--accent-cyan)' }}>
+        <h3 style={{ fontSize: '1.05rem', color: '#fff', margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <Cloud className="text-cyan" size={18} /> ☁️ Desglose Exacto de Ahorro Cloud Mensual & Anual
+        </h3>
 
-                <h4 style={{ fontSize: '0.96rem', color: '#fff', margin: '0 0 0.3rem 0', fontWeight: 700 }}>
-                  {item.project}
-                </h4>
-
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '0 0 0.35rem 0', lineHeight: '1.35' }}>
-                  {item.detail}
-                </p>
-
-                <span style={{ fontSize: '0.74rem', color: 'var(--accent-emerald)', fontWeight: 600 }}>
-                  📌 Estado Financiero: {item.status}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+          {cloudSavingsItems.map((c, idx) => (
+            <div key={idx} style={{ background: 'rgba(30, 41, 59, 0.8)', border: '1px solid var(--border-subtle)', borderRadius: '10px', padding: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                <span style={{ fontSize: '0.94rem', color: '#fff', fontWeight: 700 }}>
+                  {c.provider}
+                </span>
+                <span style={{ fontSize: '0.76rem', color: 'var(--accent-emerald)', background: 'rgba(52, 211, 153, 0.15)', padding: '0.2rem 0.55rem', borderRadius: '4px', fontWeight: 800 }}>
+                  USD ${c.monthlyUSD.toLocaleString()} / mes
                 </span>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem', flexShrink: 0 }}>
-                <div style={{ fontSize: '1.3rem', color: 'var(--accent-emerald)', fontWeight: 800 }}>
-                  USD ${item.amountUSD.toLocaleString()}
-                </div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--accent-cyan)', fontWeight: 700, marginBottom: '0.35rem' }}>
+                💰 Ahorro Anual: USD ${c.annualUSD.toLocaleString()} / año
+              </div>
 
-                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                  <button
-                    className="btn-secondary"
-                    onClick={() => handleSendWhatsAppAlert(item)}
-                    style={{ fontSize: '0.72rem', padding: '0.3rem 0.6rem', border: '1px solid var(--accent-emerald)', color: 'var(--accent-emerald)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
-                    title="Enviar recordatorio por WhatsApp 💬"
-                  >
-                    <MessageCircle size={13} /> WhatsApp
-                  </button>
-
-                  <button
-                    className="btn-secondary"
-                    onClick={() => handleSendEmailAlert(item)}
-                    style={{ fontSize: '0.72rem', padding: '0.3rem 0.6rem', border: '1px solid var(--accent-cyan)', color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
-                    title="Enviar notificación por Email ✉️"
-                  >
-                    <Mail size={13} /> Email
-                  </button>
-
-                  <button
-                    className="btn-primary"
-                    onClick={() => handleDispatchFinancialToNotion(item)}
-                    disabled={status === 'success' || status === 'syncing'}
-                    style={{ fontSize: '0.72rem', padding: '0.3rem 0.65rem', background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-blue))', whiteSpace: 'nowrap' }}
-                  >
-                    {status === 'syncing' ? (
-                      'Sincronizando...'
-                    ) : status === 'success' ? (
-                      '¡Ingestado a Notion!'
-                    ) : (
-                      <>
-                        <Send size={12} /> Derivar a Notion
-                      </>
-                    )}
-                  </button>
-                </div>
+              <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', lineHeight: '1.35' }}>
+                {c.detail}
               </div>
             </div>
-          );
-        })}
+          ))}
+        </div>
+      </div>
+
+      {/* FINANCIAL ITEMS STREAM */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        {financialItems.map((item) => (
+          <div 
+            key={item.id}
+            className="card-glass"
+            style={{
+              padding: '1.1rem 1.3rem',
+              borderLeft: '4px solid var(--accent-emerald)',
+              display: 'flex',
+              justify: 'space-between',
+              alignItems: 'center',
+              gap: '1rem',
+              flexWrap: 'wrap'
+            }}
+          >
+            <div style={{ flex: 1, minWidth: '280px' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.35rem', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.72rem', color: 'var(--accent-emerald)', background: 'rgba(52, 211, 153, 0.15)', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: 700 }}>
+                  {item.category}
+                </span>
+                <span style={{ fontSize: '0.76rem', color: 'var(--accent-cyan)', fontWeight: 600 }}>
+                  👤 Responsable: {item.lead}
+                </span>
+              </div>
+
+              <h4 style={{ fontSize: '0.98rem', color: '#ffffff', margin: '0 0 0.35rem 0', fontWeight: 700 }}>
+                {item.project}
+              </h4>
+
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-body)', margin: '0 0 0.45rem 0', lineHeight: '1.4' }}>
+                {item.detail}
+              </p>
+
+              <div style={{ fontSize: '0.78rem', color: 'var(--accent-amber)', fontWeight: 600 }}>
+                📍 Estado: {item.status}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem', flexShrink: 0 }}>
+              <div style={{ fontSize: '1.3rem', color: 'var(--accent-emerald)', fontWeight: 800 }}>
+                {activeCurrency === 'USD' ? `USD $${item.amountUSD.toLocaleString()}` : `ARS $${(item.amountUSD * 1350).toLocaleString()}`}
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.4rem' }}>
+                <button
+                  className="btn-secondary"
+                  onClick={() => handleSendWhatsAppAlert(item)}
+                  style={{ fontSize: '0.72rem', padding: '0.35rem 0.6rem', border: '1px solid var(--accent-emerald)', color: 'var(--accent-emerald)' }}
+                  title="Enviar alerta por WhatsApp"
+                >
+                  <MessageCircle size={12} /> WhatsApp
+                </button>
+
+                <button
+                  className="btn-secondary"
+                  onClick={() => handleSendEmailAlert(item)}
+                  style={{ fontSize: '0.72rem', padding: '0.35rem 0.6rem', border: '1px solid var(--accent-cyan)', color: 'var(--accent-cyan)' }}
+                  title="Enviar correo de seguimiento"
+                >
+                  <Mail size={12} /> Email
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
     </div>
