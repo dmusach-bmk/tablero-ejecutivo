@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { FileText, CheckCircle2, Copy, Send, Sparkles, Clock, Layers, ExternalLink, Video, Award, Target, ChevronRight, MessageSquare, Mic, Plus, Check, Zap, RefreshCw, User, ShieldCheck, PlusCircle, CheckSquare, DollarSign, Activity, Edit3, SendHorizontal, History, X, Cloud, Server, Eye, Calendar, AlertTriangle, ListChecks } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { FileText, CheckCircle2, Copy, Send, Sparkles, Clock, Layers, ExternalLink, Video, Award, Target, ChevronRight, MessageSquare, Mic, Plus, Check, Zap, RefreshCw, User, ShieldCheck, PlusCircle, CheckSquare, DollarSign, Activity, Edit3, SendHorizontal, History, X, Cloud, Server, Eye, Calendar, AlertTriangle, ListChecks, Lock, RotateCcw, Database } from 'lucide-react';
 import { postCommentToNotion, createNotionPage, updateNotionPageStatus } from '../services/notionService';
 
 export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCards = [], credentials }) {
@@ -16,6 +16,26 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
 
   // MODAL INSPECTOR STATE FOR CLICKABLE CARDS
   const [activeModalType, setActiveModalType] = useState(null);
+
+  // CLOSED TOPICS DATABASE PERSISTENCE (PERSISTED IN LOCALSTORAGE FOR DIEGO)
+  const [closedTopicsDb, setClosedTopicsDb] = useState(() => {
+    const saved = localStorage.getItem('dm_closed_topics_db');
+    if (saved) {
+      try { return JSON.parse(saved); } catch(e){}
+    }
+    return [
+      {
+        id: 'closed-demo-1',
+        topicId: 'ser-7',
+        seriesName: '🤖 Soporte AI Gemini & Capacitaciones Filmadas',
+        closedDate: '08/08/2026',
+        closedBy: 'Diego Musach (CTO)',
+        reason: 'Bot Gemini entrenado con transcripciones Fathom en producción.'
+      }
+    ];
+  });
+
+  const [showClosedTopicsModal, setShowClosedTopicsModal] = useState(false);
 
   // LIVE SCRATCHPAD STATE
   const [scratchpadText, setScratchpadText] = useState(() => {
@@ -38,8 +58,8 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     ];
   });
 
-  // PRE-EXECUTION AUDIT MODAL STATE (VISTA PREVIA DE CONFIRMACIÓN IA)
-  const [proposedAiActions, setProposedAiActions] = useState(null); // Array of proposed actions before execution
+  // PRE-EXECUTION AUDIT MODAL STATE
+  const [proposedAiActions, setProposedAiActions] = useState(null);
   const [isProcessingScratchpad, setIsProcessingScratchpad] = useState(false);
   const [scratchpadSuccessMessage, setScratchpadSuccessMessage] = useState('');
 
@@ -70,10 +90,149 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     recognition.start();
   };
 
+  // REAL FATHOM & NOTION WEEKLY FOLLOW UP SERIES (JULIO - AGOSTO 2026)
+  const allFollowUpSeries = [
+    {
+      id: 'ser-1',
+      seriesName: '📌 Weekly Follow Up Tecnologia (con Alejandro)',
+      targetCard: 'Weekly Follow Up Tecnologia (con Alejandro)',
+      meetingDate: todayShortDate,
+      lead: 'Diego Musach (CTO) / Alejandro Cubino (CEO)',
+      keyword: 'tecnologia',
+      priority: 'P1 - CRITICA',
+      defaultStatus: 'Abierto / En Seguimiento',
+      fathomSummary: 'Alineación de objetivos de ingeniería Q3-Q4 2026 con Alejandro Cubino. Revisión de hitos de entrega en clientes y control de presupuesto.'
+    },
+    {
+      id: 'ser-2',
+      seriesName: '📹 Weekly Follow Up Video (STB Elebao & FingerPrint)',
+      targetCard: 'Weekly Follow Up Video',
+      meetingDate: '10/08/2026',
+      lead: 'Enrique Bevilacqua',
+      keyword: 'telecable',
+      priority: 'P1 - CRITICA',
+      defaultStatus: 'Laboratorio OK',
+      fathomSummary: 'Pruebas de laboratorio en decodificadores STB Elebao AOSP completadas con procesadores Montage para Telecable Costa Rica. Marca de agua digital FingerPrint validada sobre HLS/DASH.'
+    },
+    {
+      id: 'ser-3',
+      seriesName: '⚡ Weekly Follow Up Energia (EDEMSA Mendoza & Pérdidas BT)',
+      targetCard: 'Weekly Follow Up Energia',
+      meetingDate: '27/07/2026',
+      lead: 'Camilo Uribe / Diego Musach',
+      keyword: 'edemsa',
+      priority: 'P1 - CRITICA',
+      defaultStatus: 'Facturación Autorizada (USD 50k)',
+      fathomSummary: 'Auditoría técnica de pérdidas en BT en 10 alimentadores validada con Sergio Palmucci, Nicolás y Zuin. Emisión de factura por USD 50,000 aprobada.'
+    },
+    {
+      id: 'ser-4',
+      seriesName: '📊 Weekly Follow Up con Camilo (Tecsys Brasil & Gabinetes)',
+      targetCard: 'Weekly Follow Up con Camilo',
+      meetingDate: '03/08/2026',
+      lead: 'Camilo Uribe',
+      keyword: 'tecsys',
+      priority: 'P1 - CRITICA',
+      defaultStatus: 'En Traspaso Notion (USD 45k)',
+      fathomSummary: 'Cotización desglosada de USD 45,000 en certificaciones FCC/CE. Traspaso de celdas Excel a Notion API. Relevamiento operativo de 2,300 gabinetes de fibra de vidrio en Argentina y Colombia.'
+    },
+    {
+      id: 'ser-5',
+      seriesName: '🌐 Weekly Follow Up Enrique (WIND Telecom & SSO OAuth2)',
+      targetCard: 'Weekly Follow Up Enrique',
+      meetingDate: '03/08/2026',
+      lead: 'Enrique Bevilacqua',
+      keyword: 'wind',
+      priority: 'P1 - CRITICA',
+      fathomSummary: 'Reinstalación de microservicios en Cluster de VMs en staging para WIND Telecom. Configuración del flujo OAuth2 para Single Sign-On (SSO). Ingesta de mediciones cosf/pact en reconectadores.'
+    },
+    {
+      id: 'ser-6',
+      seriesName: '📱 Follow Up Mario (Vega OS & Firestick 4K Select)',
+      targetCard: 'Follow Up Mario',
+      meetingDate: '10/08/2026',
+      lead: 'Mario Maqueda',
+      keyword: 'vega',
+      priority: 'P2 - ALTA',
+      fathomSummary: 'Pruebas de la app en hardware Amazon Fire TV Stick 4K Select con sistema Vega OS. Auditoría al 100% de claves de firma de desarrollador Android 2026.'
+    },
+    {
+      id: 'ser-7',
+      seriesName: '🤖 Soporte AI Gemini & Capacitaciones Filmadas',
+      targetCard: 'Soporte AI BOT Gemini',
+      meetingDate: '13/07/2026',
+      lead: 'Fabricio Jose Nieva / Joseph Valer',
+      keyword: 'bot',
+      priority: 'P2 - ALTA',
+      fathomSummary: 'Entrenamiento del Bot AI Gemini de soporte utilizando el repositorio de capacitaciones filmadas en Fathom. Reducción estimada del 35% de tickets Nivel 1. Tiempo medio de respuesta reducido a 14 min.'
+    },
+    {
+      id: 'ser-8',
+      seriesName: '☁️ Infraestructura Cloud & Ahorro Anual (AWS + Huawei + Heroku)',
+      targetCard: 'Apagado Servidores Heroku & CableView',
+      meetingDate: '10/08/2026',
+      lead: 'Leonard Amaya / Diego Musach',
+      keyword: 'heroku',
+      priority: 'P2 - ALTA',
+      defaultStatus: 'Ahorro USD 26,880/año',
+      fathomSummary: 'Desmantelamiento de servidores Heroku y optimizaciones en AWS y Huawei Cloud. Ahorro mensual de USD 2,240/mes (USD 26,880/año: AWS $1,800/mes, Huawei $400/mes, Heroku $40/mes).'
+    }
+  ];
+
+  // FILTER ACTIVE VS CLOSED TOPICS FROM THE DATABASE
+  const isTopicClosed = (topicId) => closedTopicsDb.some(c => c.topicId === topicId);
+
+  const activeFollowUpSeries = allFollowUpSeries.filter(t => !isTopicClosed(t.id));
+
+  // HANDLE CLOSING AND RECORDING TOPIC IN DATABASE
+  const handleCloseNotionCardForTopic = async (topic) => {
+    const matchedCard = getMatchedNotionCard(topic.keyword);
+    const targetPageId = matchedCard ? (matchedCard.notionPageId || matchedCard.id) : null;
+
+    setSyncingTopicId(topic.id);
+    if (targetPageId) {
+      await updateNotionPageStatus(credentials?.notionToken, targetPageId, 'Cerrada');
+    }
+
+    // Record in local database so it NEVER reopens automatically
+    const newClosedRecord = {
+      id: `closed-${Date.now()}`,
+      topicId: topic.id,
+      seriesName: topic.seriesName,
+      closedDate: todayShortDate,
+      closedBy: 'Diego Musach (CTO)',
+      reason: callCommentsMap[topic.id] || 'Tema marcado como Cerrado en reporte.'
+    };
+
+    const updatedDb = [...closedTopicsDb, newClosedRecord];
+    setClosedTopicsDb(updatedDb);
+    localStorage.setItem('dm_closed_topics_db', JSON.stringify(updatedDb));
+    setActionStatusMap(prev => ({ ...prev, [topic.id]: 'closed' }));
+
+    setSyncingTopicId(null);
+  };
+
+  // HANDLE RE-OPENING TOPIC WITH CONFIRMATION PROMPT
+  const handleReopenClosedTopic = (closedItem) => {
+    const confirmReopen = window.confirm(`¿Estás seguro de que deseas reabrir el tema "${closedItem.seriesName}"?\n\nAl reabrirlo, volverá a aparecer activo en tu reporte semanal.`);
+    if (confirmReopen) {
+      const updatedDb = closedTopicsDb.filter(c => c.id !== closedItem.id);
+      setClosedTopicsDb(updatedDb);
+      localStorage.setItem('dm_closed_topics_db', JSON.stringify(updatedDb));
+
+      // Also reset action status
+      setActionStatusMap(prev => {
+        const copy = { ...prev };
+        delete copy[closedItem.topicId];
+        return copy;
+      });
+    }
+  };
+
   // STEP 1: PRE-ANALYZE SCRATCHPAD AND SHOW PRE-EXECUTION AUDIT MODAL
   const handlePreAnalyzeScratchpad = () => {
     if (!scratchpadText.trim()) {
-      alert('Por favor escribe al menos un tema o nota en tu bloc de notas antes de presionar Submit.');
+      alert('Por favor escribe al menos una nota sobre el tema antes de presionar Submit.');
       return;
     }
 
@@ -97,7 +256,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
           rawLine: line,
           targetCardTitle: matchedCard.title,
           targetPageId: matchedCard.notionPageId || matchedCard.id,
-          proposedContent: `[Bloc de Notas Call CEO ${todayShortDate}]: "${line}"`
+          proposedContent: `[Nota de Gestión ${todayShortDate}]: "${line}"`
         };
       } else {
         return {
@@ -105,7 +264,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
           approved: true,
           actionType: 'create',
           rawLine: line,
-          targetCardTitle: `[Call CEO ${todayShortDate}] ${line.substring(0, 100)}`,
+          targetCardTitle: `[Gestión CTO ${todayShortDate}] ${line.substring(0, 100)}`,
           targetPageId: null,
           proposedContent: line
         };
@@ -139,7 +298,6 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
       executedCount++;
     }
 
-    // Save to historical record for Fathom matching
     const newRecord = {
       id: `hist-${Date.now()}`,
       date: `${todayFormattedDate} (${todayShortDate})`,
@@ -159,175 +317,6 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     setScratchpadSuccessMessage(`¡Aprobación Confirmada! Se ejecutaron ${executedCount} acciones auditadas en Notion API y quedaron registradas para matchear con la transcripción Fathom del ${todayShortDate}.`);
   };
 
-  // Exhaustive July-August Fathom Topics
-  const exhaustiveJulyAugustCallTopics = [
-    {
-      id: 'top-10aug-1',
-      meetingDate: todayShortDate,
-      meetingName: `Meet Seguimiento Video (${todayShortDate})`,
-      title: '1. STB Elebao AOSP & Procesadores Montage (Telecable Costa Rica)',
-      lead: 'Enrique Bevilacqua',
-      keyword: 'telecable',
-      priority: 'P1 - CRITICA',
-      fathomSummary: 'Pruebas de laboratorio en decodificadores Elebao AOSP completadas con procesadores Montage para Telecable Costa Rica.',
-      defaultStatus: 'Laboratorio OK'
-    },
-    {
-      id: 'top-10aug-2',
-      meetingDate: todayShortDate,
-      meetingName: `Meet Seguimiento Video (${todayShortDate})`,
-      title: '2. Marca de Agua Digital FingerPrint sobre Streaming de Video',
-      lead: 'Enrique Bevilacqua',
-      keyword: 'fingerprint',
-      priority: 'P1 - CRITICA',
-      fathomSummary: 'Verificación exitosa de la marca de agua digital FingerPrint inyectada sobre streaming HLS/DASH.',
-      defaultStatus: 'Validado'
-    },
-    {
-      id: 'top-10aug-3',
-      meetingDate: todayShortDate,
-      meetingName: `Meet Seguimiento Video (${todayShortDate})`,
-      title: '3. Desmantelamiento Heroku & Migración CableView (USD 14,400/año)',
-      lead: 'Leonard Amaya',
-      keyword: 'heroku',
-      priority: 'P2 - ALTA',
-      fathomSummary: 'Ventana de mantenimiento para auto-stop de servidores Heroku y congelamiento de vistas frontend. Ahorro de USD 14,400/año.',
-      defaultStatus: 'Ahorro Programado'
-    },
-    {
-      id: 'top-10aug-4',
-      meetingDate: todayShortDate,
-      meetingName: `Meet Seguimiento Video (${todayShortDate})`,
-      title: '4. Vega OS & Hardware Amazon Fire TV Stick 4K Select',
-      lead: 'Mario Maqueda',
-      keyword: 'vega',
-      priority: 'P2 - ALTA',
-      fathomSummary: 'Adquisición aprobada del Firestick 4K Select para laboratorio Vega OS. Claves Android 2026 registradas al 100%.',
-      defaultStatus: 'Adquisición Aprobada'
-    },
-    {
-      id: 'top-10aug-5',
-      meetingDate: todayShortDate,
-      meetingName: `Meet Seguimiento Video (${todayShortDate})`,
-      title: '5. Auditoría de Métricas de Soporte Nivel 1 (Sabrina & Kenyi)',
-      lead: 'Fabricio Nieva / Joseph Valer',
-      keyword: 'soporte',
-      priority: 'P3 - MEDIA',
-      fathomSummary: 'Tiempo medio de respuesta reducido a 14 minutos. Conciliación de horas semanales de atención por Sabrina y Kenyi.',
-      defaultStatus: 'Métricas OK'
-    },
-    {
-      id: 'top-03aug-1',
-      meetingDate: '03/08/2026',
-      meetingName: 'Weekly Follow Up Tecnologia - Cluster VMs & SSO OAuth2',
-      title: '6. WIND Telecom: Cluster de VMs en Staging & Pruebas de Carga',
-      lead: 'Enrique Bevilacqua',
-      keyword: 'wind',
-      priority: 'P1 - CRITICA',
-      fathomSummary: 'Reinstalación de microservicios en cluster virtualizado para WIND Telecom. Pruebas de resiliencia completadas.',
-      defaultStatus: 'Staging Listo'
-    },
-    {
-      id: 'top-03aug-2',
-      meetingDate: '03/08/2026',
-      meetingName: 'Weekly Follow Up Tecnologia - Cluster VMs & SSO OAuth2',
-      title: '7. Estándar Single Sign-On (SSO) OAuth2 para Plataforma Directiva',
-      lead: 'Enrique Bevilacqua',
-      keyword: 'sso',
-      priority: 'P1 - CRITICA',
-      fathomSummary: 'Definición de tokens JWT y flujo OAuth2 para autenticación unificada entre la web directiva y los nodos de red.',
-      defaultStatus: 'Arquitectura OK'
-    },
-    {
-      id: 'top-03aug-3',
-      meetingDate: '03/08/2026',
-      meetingName: 'Weekly Follow Up Tecnologia - Cluster VMs & SSO OAuth2',
-      title: '8. Tecsys Brasil: Homologación Certificados FCC/CE (USD 45,000)',
-      lead: 'Camilo Uribe',
-      keyword: 'tecsys',
-      priority: 'P1 - CRITICA',
-      fathomSummary: 'Cotización desglosada de USD 45,000 en certificaciones de laboratorio. Traspaso a tarjetas de Notion en curso.',
-      defaultStatus: 'En Traspaso Notion'
-    },
-    {
-      id: 'top-03aug-4',
-      meetingDate: '03/08/2026',
-      meetingName: 'Weekly Follow Up Tecnologia - Cluster VMs & SSO OAuth2',
-      title: '9. Telemetría Reconectadores: Mediciones cosf, pact y pret',
-      lead: 'Enrique Bevilacqua',
-      keyword: 'reconectadores',
-      priority: 'P2 - ALTA',
-      fathomSummary: 'Confirmada presencia de variables cosf y pact en reconectadores. Ingesta de parámetros en base de datos coordinada con Fernando.',
-      defaultStatus: 'En Integración'
-    },
-    {
-      id: 'top-27jul-1',
-      meetingDate: '27/07/2026',
-      meetingName: 'Weekly Follow Up Tecnologia - EDEMSA Mendoza & Pérdidas BT',
-      title: '10. EDEMSA Mendoza: Autorización Factura USD 50,000 (10 Alimentadores)',
-      lead: 'Camilo Uribe / Diego Musach',
-      keyword: 'edemsa',
-      priority: 'P1 - CRITICA',
-      fathomSummary: 'Auditoría técnica de pérdidas en BT en 10 alimentadores validada con Sergio Palmucci, Nicolás y Zuin. Cobro emitido.',
-      defaultStatus: 'Autorizado p/ Cobro'
-    },
-    {
-      id: 'top-27jul-2',
-      meetingDate: '27/07/2026',
-      meetingName: 'Weekly Follow Up Tecnologia - EDEMSA Mendoza & Pérdidas BT',
-      title: '11. Relevamiento Operativo de 2,300 Gabinetes en Argentina y Colombia',
-      lead: 'Camilo Uribe',
-      keyword: 'gabinetes',
-      priority: 'P2 - ALTA',
-      fathomSummary: 'Informe de costes unitarios de montaje de gabinetes de fibra de vidrio consolidado en Notion.',
-      defaultStatus: 'Completado'
-    },
-    {
-      id: 'top-13jul-1',
-      meetingDate: '13/07/2026',
-      meetingName: 'Weekly Follow Up Tecnologia - Bot AI Gemini & Capacitaciones',
-      title: '12. Entrenar Bot AI Gemini con Repositorio Fathom (Reducción 35%)',
-      lead: 'Fabricio Nieva / Joseph Valer',
-      keyword: 'bot',
-      priority: 'P2 - ALTA',
-      fathomSummary: 'Ingesta de capacitaciones filmadas en Fathom al Bot AI Gemini de soporte. Disminución proyectada del 35% de tickets.',
-      defaultStatus: 'En Pruebas Prácticas'
-    },
-    {
-      id: 'top-13jul-2',
-      meetingDate: '13/07/2026',
-      meetingName: 'Weekly Follow Up Tecnologia - Bot AI Gemini & Capacitaciones',
-      title: '13. Servidores Supermicro para OTT Hyve en Honduras (Gonzalo González)',
-      lead: 'Gonzalo González',
-      keyword: 'supermicro',
-      priority: 'P1 - CRITICA',
-      fathomSummary: 'Visita técnica a Honduras y evaluación de servidores Supermicro para el despliegue de streaming OTT.',
-      defaultStatus: 'En Instalación'
-    },
-    {
-      id: 'top-06jul-1',
-      meetingDate: '06/07/2026',
-      meetingName: 'Weekly Follow Up Tecnologia - Evaluación Q3 & Despliegues STB',
-      title: '14. Plan de Pruebas de Estrés en STB Android & AOSP',
-      lead: 'Enrique Bevilacqua',
-      keyword: 'stb',
-      priority: 'P2 - ALTA',
-      fathomSummary: 'Banco de pruebas de estrés antes del envío de decodificadores a Telecable Costa Rica.',
-      defaultStatus: 'Completado'
-    },
-    {
-      id: 'top-06jul-2',
-      meetingDate: '06/07/2026',
-      meetingName: 'Weekly Follow Up Tecnologia - Evaluación Q3 & Despliegues STB',
-      title: '15. Auditoría de Seguridad IAM & Permisos en PostgreSQL',
-      lead: 'Leonard Amaya',
-      keyword: 'seguridad',
-      priority: 'P2 - ALTA',
-      fathomSummary: 'Revisión de roles IAM y políticas de acceso a bases de datos en producción.',
-      defaultStatus: 'Auditado'
-    }
-  ];
-
   const getMatchedNotionCard = (keyword) => {
     if (!Array.isArray(notionCards) || notionCards.length === 0) return null;
     return notionCards.find(c => (c.title || '').toLowerCase().includes(keyword.toLowerCase()));
@@ -336,7 +325,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
   const handleCreateNewNotionCardForTopic = async (topic) => {
     setSyncingTopicId(topic.id);
     const userNote = callCommentsMap[topic.id] || '';
-    const titleText = `${topic.title} ${userNote ? `• Nota Call ${todayShortDate}: "${userNote}"` : ''}`;
+    const titleText = `${topic.seriesName} ${userNote ? `• Nota de Gestión ${todayShortDate}: "${userNote}"` : ''}`;
 
     const res = await createNotionPage(credentials?.notionToken, null, {
       title: titleText.substring(0, 150),
@@ -353,30 +342,10 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     setSyncingTopicId(null);
   };
 
-  const handleCloseNotionCardForTopic = async (topic) => {
-    const matchedCard = getMatchedNotionCard(topic.keyword);
-    const targetPageId = matchedCard ? (matchedCard.notionPageId || matchedCard.id) : null;
-
-    if (!targetPageId) {
-      alert(`No hay una tarjeta de Notion vinculada para el tema "${topic.title}". Puedes presionar "⚡ Crear Tarjeta en Notion" primero.`);
-      return;
-    }
-
-    setSyncingTopicId(topic.id);
-    const res = await updateNotionPageStatus(credentials?.notionToken, targetPageId, 'Cerrada');
-
-    if (res.success) {
-      setActionStatusMap(prev => ({ ...prev, [topic.id]: 'closed' }));
-    } else {
-      alert(`Error cambiando estado a Cerrada en Notion: ${res.error || 'Verifica credenciales'}`);
-    }
-    setSyncingTopicId(null);
-  };
-
   const handleSyncTopicCommentToNotion = async (topic) => {
     const comment = callCommentsMap[topic.id] || '';
     if (!comment.trim()) {
-      alert(`Por favor escribe un comentario o dicta una nota para el tema "${topic.title}".`);
+      alert(`Por favor escribe una nota sobre el tema o comentario para "${topic.seriesName}".`);
       return;
     }
 
@@ -389,7 +358,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     }
 
     setSyncingTopicId(topic.id);
-    const formattedComment = `[Call CEO ${todayShortDate}]: "${topic.title}" • Estado: ${topic.defaultStatus}\n💬 Comentario Diego: "${comment.trim()}"`;
+    const formattedComment = `[Nota sobre el Tema - Call ${todayShortDate}]: "${topic.seriesName}" • Estado: ${topic.defaultStatus || 'Abierto'}\n💬 Nota de Gestión (Diego): "${comment.trim()}"`;
 
     const res = await postCommentToNotion(credentials?.notionToken, targetPageId, formattedComment);
     if (res.success) {
@@ -400,21 +369,20 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
 
   const generateFullCallSummaryText = () => {
     let summary = `======================================================================\n`;
-    summary += `📊 REPORTE SEMANAL EJECUTIVO CTO PARA ALEJANDRO CUBINO (CEO)\n`;
+    summary += `📊 REPORTE SEMANAL EJECUTIVO CTO PARA CALL CON ALEJANDRO CUBINO (CEO)\n`;
     summary += `📅 FECHA REUNIÓN DE HOY: ${todayFormattedDate} (${todayShortDate})\n`;
     summary += `Director & Head of Engineering: Diego Paolo Musach (CTO)\n`;
-    summary += `Fuente: Fathom Video Notetaker & Ingesta de Notas Directivas\n`;
+    summary += `Fuente: Transcripciones Fathom & Tarjetas Reales de Follow Up en Notion\n`;
     summary += `======================================================================\n\n`;
 
-    exhaustiveJulyAugustCallTopics.forEach((t) => {
-      const note = callCommentsMap[t.id] || 'Sin observaciones adicionales.';
+    activeFollowUpSeries.forEach((t) => {
+      const note = callCommentsMap[t.id] || 'Sin notas adicionales sobre el tema.';
       const card = getMatchedNotionCard(t.keyword);
-      summary += `[${t.meetingDate} - ${t.meetingName}]\n`;
-      summary += `${t.title}\n`;
-      summary += `• Responsable: ${t.lead} | Estado: ${t.defaultStatus}\n`;
-      summary += `• Tarjeta Notion Vinculada: ${card ? card.title : 'General'}\n`;
+      summary += `[${t.seriesName}]\n`;
+      summary += `• Responsable: ${t.lead} | Estado: ${t.defaultStatus || 'Abierto'}\n`;
+      summary += `• Tarjeta Notion Vinculada: ${card ? card.title : t.targetCard}\n`;
       summary += `• Avance Fathom: ${t.fathomSummary}\n`;
-      summary += `• 💬 Comentario de Diego: "${note}"\n\n`;
+      summary += `• 💬 Notas sobre el Tema (Gestión): "${note}"\n\n`;
     });
 
     return summary;
@@ -442,7 +410,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
               <h2 style={{ fontSize: '1.25rem', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <FileText className="text-purple" size={22} /> 📊 Reporte Semanal CEO (Alejandro Cubino)
+                <FileText className="text-purple" size={22} /> 📊 Reporte Semanal CEO (Para Pantalla en Call con Alejandro)
               </h2>
               <span style={{ fontSize: '0.78rem', color: 'var(--accent-emerald)', background: 'rgba(52, 211, 153, 0.15)', border: '1px solid var(--accent-emerald)', padding: '0.2rem 0.65rem', borderRadius: '6px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                 <Calendar size={13} /> REUNIÓN HOY: {todayFormattedDate} ({todayShortDate})
@@ -450,11 +418,22 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
             </div>
 
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0 }}>
-              Bloc de Notas Directivo en Vivo + Análisis e Ingesta de la IA "Diego Paolo Musach" etiquetado con fecha <strong>{todayShortDate}</strong> para matchear con Fathom.
+              Diseñado para revisar y hablar en vivo durante la llamada. Basado en las series <strong>Weekly Follow Up Tecnología (Julio y Agosto de 2026)</strong>.
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            
+            {/* BUTTON TO VIEW CLOSED TOPICS DATABASE */}
+            <button
+              className="btn-secondary"
+              onClick={() => setShowClosedTopicsModal(true)}
+              style={{ fontSize: '0.78rem', padding: '0.45rem 0.85rem', border: '1px solid var(--accent-amber)', color: 'var(--accent-amber)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+              title="Ver base de datos de temas cerrados que no se vuelven a abrir automáticamente"
+            >
+              <Lock size={14} /> 🔒 Temas Cerrados ({closedTopicsDb.length})
+            </button>
+
             <button
               className="btn-primary"
               onClick={handleCopyCallSummary}
@@ -468,17 +447,17 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
               onClick={handleSendCEOEmail}
               style={{ fontSize: '0.78rem', padding: '0.45rem 0.9rem', border: '1px solid var(--accent-purple)', color: 'var(--accent-purple)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
             >
-              <Send size={14} /> Enviar a Alejandro (acubino@bromteck.com)
+              <Send size={14} /> Opción Email (acubino@bromteck.com)
             </button>
           </div>
         </div>
       </div>
 
-      {/* LIVE SCRATCHPAD ENGINE WITH MANDATORY MEETING DATE HEADER */}
+      {/* LIVE SCRATCHPAD ENGINE WITH UPDATED LABELS */}
       <div className="card-glass" style={{ padding: '1.3rem', marginBottom: '1.5rem', borderLeft: '4px solid var(--accent-cyan)', background: 'rgba(15, 23, 42, 0.9)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem', flexWrap: 'wrap', gap: '0.5rem' }}>
           <h3 style={{ fontSize: '1.05rem', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <Edit3 className="text-cyan" size={18} /> 📝 Bloc de Notas Directivo de la Call con Alejandro (Diego Paolo Musach) • <span style={{ color: 'var(--accent-cyan)' }}>📅 {todayShortDate}</span>
+            <Edit3 className="text-cyan" size={18} /> 📝 Bloc de Notas sobre la Gestión & Seguimiento • <span style={{ color: 'var(--accent-cyan)' }}>📅 {todayShortDate}</span>
           </h3>
 
           <button
@@ -492,7 +471,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
         </div>
 
         <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
-          Escribe un tema o compromiso por línea (Enter por tema). Al finalizar la call del <strong>{todayFormattedDate}</strong>, presiona el botón para procesar y auditar la vista previa antes de impactar en Notion API:
+          Escribe notas o comentarios sobre la gestión por línea (Enter por tema). Al finalizar la call del <strong>{todayFormattedDate}</strong>, presiona el botón para auditar y sincronizar con Notion API:
         </p>
 
         <textarea
@@ -509,7 +488,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
           <span style={{ fontSize: '0.74rem', color: 'var(--accent-cyan)' }}>
-            💡 Presiona <strong>Enter</strong> por cada tema para que la IA los procese en forma independiente.
+            💡 Presiona <strong>Enter</strong> por cada nota para que la IA las procese independientemente.
           </span>
 
           <button
@@ -518,7 +497,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
             disabled={isProcessingScratchpad || !scratchpadText.trim()}
             style={{ fontSize: '0.82rem', padding: '0.55rem 1.2rem', background: 'linear-gradient(135deg, var(--accent-cyan), var(--accent-purple))', fontWeight: 700 }}
           >
-            <SendHorizontal size={15} /> 🤖 Submit a Asistente Diego Paolo Musach (Ver Vista Previa)
+            <SendHorizontal size={15} /> 🤖 Submit a Asistente Diego Musach (Auditar Notas)
           </button>
         </div>
 
@@ -533,7 +512,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
       {scratchpadHistory.length > 0 && (
         <div className="card-glass" style={{ padding: '1rem 1.2rem', marginBottom: '1.5rem', borderLeft: '4px solid var(--accent-emerald)', background: 'rgba(15, 23, 42, 0.7)' }}>
           <span style={{ fontSize: '0.8rem', color: '#fff', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.65rem' }}>
-            <History className="text-emerald" size={16} /> 📜 Historial de Notas de Calls Procesadas (Matcheable por Fecha con Fathom)
+            <History className="text-emerald" size={16} /> 📜 Historial de Notas de Gestión Procesadas (Matcheables con Fathom)
           </span>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
@@ -541,7 +520,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
               <div key={hist.id} style={{ background: 'rgba(30, 41, 59, 0.8)', border: '1px solid var(--border-subtle)', borderRadius: '8px', padding: '0.65rem 0.85rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem', flexWrap: 'wrap' }}>
                   <span style={{ fontSize: '0.78rem', color: 'var(--accent-cyan)', fontWeight: 700 }}>
-                    📅 {hist.date} ({hist.processedItemsCount} Temas Ingestados)
+                    📅 {hist.date} ({hist.processedItemsCount} Notas Ingestadas)
                   </span>
                   <span style={{ fontSize: '0.72rem', color: 'var(--accent-emerald)', background: 'rgba(52, 211, 153, 0.15)', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: 700 }}>
                     {hist.status}
@@ -574,18 +553,18 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
           <div style={{ fontSize: '0.72rem', color: 'var(--accent-purple)', fontWeight: 700 }}>🔍 Clic para ver el detalle de las 5 llamadas ➔</div>
         </div>
 
-        {/* KPI CARD 2: TEMAS TÉCNICOS (CLICKABLE) */}
+        {/* KPI CARD 2: SERIE FOLLOW UP (CLICKABLE) */}
         <div 
           className="card-glass" 
           onClick={() => setActiveModalType('topics')}
           style={{ padding: '1rem', borderLeft: '4px solid var(--accent-cyan)', cursor: 'pointer', transition: 'all 0.2s ease' }}
-          title="Haz clic para ver el detalle completo de los 15 temas técnicos"
+          title="Haz clic para ver la lista completa de temas de Follow Up"
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600 }}>⚙️ TEMAS TÉCNICOS</div>
+            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600 }}>⚙️ SERIES FOLLOW UP</div>
             <Eye size={14} className="text-cyan" />
           </div>
-          <div style={{ fontSize: '1.4rem', color: '#fff', fontWeight: 800, margin: '0.2rem 0' }}>15 Puntos Clave</div>
+          <div style={{ fontSize: '1.4rem', color: '#fff', fontWeight: 800, margin: '0.2rem 0' }}>{activeFollowUpSeries.length} Activos ({closedTopicsDb.length} Cerrados)</div>
           <div style={{ fontSize: '0.72rem', color: 'var(--accent-cyan)', fontWeight: 700 }}>🔍 Clic para ver la lista completa ➔</div>
         </div>
 
@@ -623,9 +602,9 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
 
       </div>
 
-      {/* EXHAUSTIVE LIST OF ALL 15 TOPICS GROUPED BY MEETING */}
+      {/* ACTIVE WEEKLY FOLLOW UP SERIES FROM NOTION & FATHOM */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem', marginBottom: '1.5rem' }}>
-        {exhaustiveJulyAugustCallTopics.map((topic) => {
+        {activeFollowUpSeries.map((topic) => {
           const matchedCard = getMatchedNotionCard(topic.keyword);
           const currentComment = callCommentsMap[topic.id] || '';
           const isSyncing = syncingTopicId === topic.id;
@@ -646,45 +625,44 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
               {/* Header Topic Row */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <div>
-                  <div style={{ fontSize: '0.74rem', color: 'var(--accent-purple)', fontWeight: 700, marginBottom: '0.2rem' }}>
-                    📹 Fathom ({topic.meetingDate}): {topic.meetingName}
-                  </div>
-                  <h4 style={{ fontSize: '1rem', color: '#ffffff', margin: '0 0 0.25rem 0', fontWeight: 700 }}>
-                    {topic.title}
+                  <h4 style={{ fontSize: '1.02rem', color: '#ffffff', margin: '0 0 0.25rem 0', fontWeight: 700 }}>
+                    {topic.seriesName}
                   </h4>
                   <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '0.76rem', color: 'var(--accent-cyan)', fontWeight: 600 }}>
                       👤 Responsable: {topic.lead}
                     </span>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--accent-emerald)', background: 'rgba(52, 211, 153, 0.15)', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: 700 }}>
-                      {topic.defaultStatus}
-                    </span>
+                    {topic.defaultStatus && (
+                      <span style={{ fontSize: '0.72rem', color: 'var(--accent-emerald)', background: 'rgba(52, 211, 153, 0.15)', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: 700 }}>
+                        {topic.defaultStatus}
+                      </span>
+                    )}
                   </div>
                 </div>
 
                 {/* Linked Notion Card Badge */}
                 {matchedCard ? (
                   <div style={{ fontSize: '0.74rem', color: 'var(--accent-purple)', background: 'rgba(192, 132, 252, 0.15)', border: '1px solid rgba(192, 132, 252, 0.3)', padding: '0.3rem 0.65rem', borderRadius: '6px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <Target size={13} /> Tarjeta Notion: "{matchedCard.title ? matchedCard.title.substring(0, 40) : 'General'}" ({matchedCard.status || 'Abierto'})
+                    <Target size={13} /> Tarjeta Notion: "{matchedCard.title ? matchedCard.title.substring(0, 40) : topic.targetCard}" ({matchedCard.status || 'Abierto'})
                   </div>
                 ) : (
-                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', background: 'rgba(255, 255, 255, 0.05)', padding: '0.3rem 0.65rem', borderRadius: '6px' }}>
-                    📍 Sin coincidencia directa en Notion
+                  <div style={{ fontSize: '0.74rem', color: 'var(--accent-purple)', background: 'rgba(192, 132, 252, 0.15)', padding: '0.3rem 0.65rem', borderRadius: '6px', fontWeight: 600 }}>
+                    🎯 Tarjeta Notion: "{topic.targetCard}"
                   </div>
                 )}
               </div>
 
               {/* Fathom Key Takeaways */}
               <div style={{ fontSize: '0.8rem', color: 'var(--text-body)', lineHeight: '1.45', background: 'rgba(15, 23, 42, 0.6)', padding: '0.65rem 0.85rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                💡 <strong>Avance en Fathom:</strong> {topic.fathomSummary}
+                💡 <strong>Resumen Fathom API ({topic.meetingDate}):</strong> {topic.fathomSummary}
               </div>
 
-              {/* Live Call Comment Box with Microphone 🎙️ */}
+              {/* Live Call Comment Box for "Notas sobre el tema" with Microphone 🎙️ */}
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                 <input
                   type="text"
                   className="form-input"
-                  placeholder={listeningTargetId === topic.id ? "🎙️ Escuchando tu dictado..." : "💬 Escribe aquí tu comentario o nota para Alejandro..."}
+                  placeholder={listeningTargetId === topic.id ? "🎙️ Escuchando tu dictado..." : "💬 Escribe aquí tus Notas sobre el tema o comentarios para gestión..."}
                   value={currentComment}
                   onChange={(e) => setCallCommentsMap(prev => ({ ...prev, [topic.id]: e.target.value }))}
                   style={{ fontSize: '0.82rem', padding: '0.5rem 0.85rem', flex: 1, background: 'rgba(15, 23, 42, 0.95)' }}
@@ -694,7 +672,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
                   onClick={() => handleStartVoiceDictation(topic.id, (txt) => setCallCommentsMap(prev => ({ ...prev, [topic.id]: prev[topic.id] ? `${prev[topic.id]} ${txt}` : txt })))}
                   className="btn-secondary"
                   style={{ padding: '0.5rem 0.75rem', border: '1px solid var(--accent-cyan)', color: 'var(--accent-cyan)' }}
-                  title="Dictar comentario por micrófono 🎙️"
+                  title="Dictar nota sobre el tema por micrófono 🎙️"
                 >
                   <Mic size={14} className={listeningTargetId === topic.id ? 'pulse' : ''} />
                 </button>
@@ -713,7 +691,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
                   <PlusCircle size={13} /> {statusState === 'created' ? '¡Tarjeta Creada!' : '⚡ Crear Tarjeta en Notion'}
                 </button>
 
-                {/* Cross Action 2: Cambiar Status a "Cerrada" */}
+                {/* Cross Action 2: Cambiar Status a "Cerrada" (AND STORE IN DATABASE SO IT WON'T REOPEN) */}
                 <button
                   className="btn-secondary"
                   onClick={() => handleCloseNotionCardForTopic(topic)}
@@ -727,7 +705,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
                     whiteSpace: 'nowrap'
                   }}
                 >
-                  <CheckSquare size={13} /> {statusState === 'closed' ? '¡Tarjeta Cerrada!' : '✅ Cambiar Status a "Cerrada"'}
+                  <CheckSquare size={13} /> {statusState === 'closed' ? '¡Tema Cerrado & Archivado!' : '✅ Cambiar Status a "Cerrada"'}
                 </button>
 
                 {/* Action 3: Sincronizar Comentario */}
@@ -737,7 +715,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
                   disabled={statusState === 'commented' || isSyncing || !currentComment.trim()}
                   style={{ fontSize: '0.76rem', padding: '0.45rem 0.85rem', border: '1px solid var(--accent-cyan)', color: 'var(--accent-cyan)', whiteSpace: 'nowrap' }}
                 >
-                  <MessageSquare size={13} /> {statusState === 'commented' ? '¡Comentado!' : '💬 Sincronizar Comentario'}
+                  <MessageSquare size={13} /> {statusState === 'commented' ? '¡Nota Guardada!' : '💬 Guardar Nota en Notion'}
                 </button>
 
               </div>
@@ -747,7 +725,68 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
         })}
       </div>
 
-      {/* MODAL AUDITORÍA DE VISTA PREVIA Y CONFIRMACIÓN IA (PRE-EXECUTION AUDIT MODAL) */}
+      {/* MODAL DATABASE TEMAS CERRADOS (CLOSED TOPICS DATABASE MODAL) */}
+      {showClosedTopicsModal && (
+        <div className="modal-overlay" onClick={() => setShowClosedTopicsModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px' }}>
+            <div className="modal-header">
+              <h2>
+                <Database className="text-amber" size={22} /> 🔒 Base de Datos de Temas Cerrados ({closedTopicsDb.length})
+              </h2>
+              <button className="btn-icon" onClick={() => setShowClosedTopicsModal(false)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+              Los siguientes temas fueron marcados como <strong>Cerrados</strong> y están almacenados en la base de datos persistente para que no vuelvan a abrirse automáticamente en reportes futuros. Si deseas reabrir alguno, presiona "↺ Reabrir Tema".
+            </p>
+
+            {closedTopicsDb.length === 0 ? (
+              <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                No hay temas cerrados en la base de datos.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', marginBottom: '1.2rem', maxHeight: '400px', overflowY: 'auto' }}>
+                {closedTopicsDb.map((item) => (
+                  <div key={item.id} style={{ background: 'rgba(30, 41, 59, 0.9)', border: '1px solid var(--border-subtle)', borderRadius: '10px', padding: '0.85rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <div>
+                      <div style={{ fontSize: '0.92rem', color: '#fff', fontWeight: 700, marginBottom: '0.2rem' }}>
+                        {item.seriesName}
+                      </div>
+                      <div style={{ fontSize: '0.76rem', color: 'var(--accent-amber)', display: 'flex', gap: '0.75rem' }}>
+                        <span>📅 Fecha Cierre: {item.closedDate}</span>
+                        <span>👤 Registrado por: {item.closedBy}</span>
+                      </div>
+                      {item.reason && (
+                        <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontStyle: 'italic', marginTop: '0.2rem' }}>
+                          Razón/Nota: "{item.reason}"
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      className="btn-secondary"
+                      onClick={() => handleReopenClosedTopic(item)}
+                      style={{ fontSize: '0.76rem', padding: '0.35rem 0.75rem', border: '1px solid var(--accent-cyan)', color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                    >
+                      <RotateCcw size={13} /> ↺ Reabrir Tema
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button className="btn-primary" onClick={() => setShowClosedTopicsModal(false)}>
+                Cerrar Base de Datos
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL AUDITORÍA DE VISTA PREVIA Y CONFIRMACIÓN IA */}
       {proposedAiActions && (
         <div className="modal-overlay" onClick={() => setProposedAiActions(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '850px' }}>
@@ -761,7 +800,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
             </div>
 
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-              Revisa y edita las acciones propuestas por el Asistente IA antes de ejecutarlas en Notion API. Puedes desmarcar cualquier ítem que no desees impactar:
+              Revisa y edita las notas o acciones propuestas por la IA antes de ejecutarlas en Notion API. Puedes desmarcar cualquier ítem que no desees impactar:
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', marginBottom: '1.2rem', maxHeight: '420px', overflowY: 'auto', paddingRight: '0.5rem' }}>
@@ -789,7 +828,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
                   </div>
 
                   <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontStyle: 'italic', marginBottom: '0.4rem' }}>
-                    Nota Original: "{prop.rawLine}"
+                    Nota sobre el Tema: "{prop.rawLine}"
                   </div>
 
                   <input
@@ -809,7 +848,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
               <span style={{ fontSize: '0.76rem', color: 'var(--accent-cyan)' }}>
-                Selected: {proposedAiActions.filter(p => p.approved).length} de {proposedAiActions.length} acciones listas para ejecutar.
+                Seleccionadas: {proposedAiActions.filter(p => p.approved).length} de {proposedAiActions.length} acciones listas para ejecutar.
               </span>
 
               <div style={{ display: 'flex', gap: '0.6rem' }}>
@@ -821,7 +860,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
                   className="btn-primary"
                   onClick={handleExecuteApprovedAiProposals}
                   disabled={isProcessingScratchpad || proposedAiActions.filter(p => p.approved).length === 0}
-                  style={{ fontSize: '0.82rem', padding: '0.5rem 1.2rem', background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-blue))' }}
+                  style={{ fontSize: '0.82rem', padding: '0.55rem 1.2rem', background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-blue))' }}
                 >
                   <CheckCircle2 size={16} />
                   {isProcessingScratchpad ? 'Ejecutando en Notion API...' : `✅ Aprobar & Ejecutar ${proposedAiActions.filter(p => p.approved).length} Acciones en Notion`}
@@ -912,19 +951,19 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1rem' }}>
               <div style={{ background: 'rgba(30, 41, 59, 0.9)', padding: '0.75rem 1rem', borderRadius: '8px' }}>
-                <strong>{todayShortDate}:</strong> Meet Seguimiento Video: Desarrollo + QT + Servicios (STB Elebao, FingerPrint, Heroku)
+                <strong>{todayShortDate}:</strong> Weekly Follow Up Tecnologia (con Alejandro Cubino)
               </div>
               <div style={{ background: 'rgba(30, 41, 59, 0.9)', padding: '0.75rem 1rem', borderRadius: '8px' }}>
-                <strong>03/08/2026:</strong> Weekly Follow Up Tecnología - Cluster VMs WIND & SSO OAuth2 (Tecsys, Telemetría)
+                <strong>10/08/2026:</strong> Weekly Follow Up Video (STB Elebao, FingerPrint, Heroku)
               </div>
               <div style={{ background: 'rgba(30, 41, 59, 0.9)', padding: '0.75rem 1rem', borderRadius: '8px' }}>
-                <strong>27/07/2026:</strong> Weekly Follow Up Tecnología - EDEMSA Mendoza & Pérdidas BT (10 alimentadores, USD 50k)
+                <strong>03/08/2026:</strong> Weekly Follow Up Enrique (Cluster VMs WIND & SSO OAuth2)
               </div>
               <div style={{ background: 'rgba(30, 41, 59, 0.9)', padding: '0.75rem 1rem', borderRadius: '8px' }}>
-                <strong>13/07/2026:</strong> Weekly Follow Up Tecnología - Bot AI Gemini & Capacitaciones (Supermicro Honduras)
+                <strong>27/07/2026:</strong> Weekly Follow Up Energia (EDEMSA Mendoza 10 alimentadores, USD 50k)
               </div>
               <div style={{ background: 'rgba(30, 41, 59, 0.9)', padding: '0.75rem 1rem', borderRadius: '8px' }}>
-                <strong>06/07/2026:</strong> Weekly Follow Up Tecnología - Evaluación Q3 & Despliegues STB (Pruebas AOSP)
+                <strong>03/08/2026:</strong> Weekly Follow Up con Camilo (Tecsys Brasil USD 45k, Gabinetes)
               </div>
             </div>
 
