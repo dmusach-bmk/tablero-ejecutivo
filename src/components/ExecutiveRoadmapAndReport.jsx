@@ -194,7 +194,6 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
       await updateNotionPageStatus(credentials?.notionToken, targetPageId, 'Cerrada');
     }
 
-    // Record in local database so it NEVER reopens automatically
     const newClosedRecord = {
       id: `closed-${Date.now()}`,
       topicId: topic.id,
@@ -220,7 +219,6 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
       setClosedTopicsDb(updatedDb);
       localStorage.setItem('dm_closed_topics_db', JSON.stringify(updatedDb));
 
-      // Also reset action status
       setActionStatusMap(prev => {
         const copy = { ...prev };
         delete copy[closedItem.topicId];
@@ -602,7 +600,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
 
       </div>
 
-      {/* ACTIVE WEEKLY FOLLOW UP SERIES FROM NOTION & FATHOM */}
+      {/* ACTIVE WEEKLY FOLLOW UP SERIES FROM NOTION & FATHOM WITH INSTANT ENTER KEY SYNC */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem', marginBottom: '1.5rem' }}>
         {activeFollowUpSeries.map((topic) => {
           const matchedCard = getMatchedNotionCard(topic.keyword);
@@ -657,14 +655,20 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
                 💡 <strong>Resumen Fathom API ({topic.meetingDate}):</strong> {topic.fathomSummary}
               </div>
 
-              {/* Live Call Comment Box for "Notas sobre el tema" with Microphone 🎙️ */}
+              {/* Live Call Comment Box for "Notas sobre el tema" WITH INSTANT ENTER KEY HANDLING ⌨️ */}
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                 <input
                   type="text"
                   className="form-input"
-                  placeholder={listeningTargetId === topic.id ? "🎙️ Escuchando tu dictado..." : "💬 Escribe aquí tus Notas sobre el tema o comentarios para gestión..."}
+                  placeholder={listeningTargetId === topic.id ? "🎙️ Escuchando tu dictado..." : "💬 Escribe tu nota y presiona ENTER para guardar en Notion API ↵"}
                   value={currentComment}
                   onChange={(e) => setCallCommentsMap(prev => ({ ...prev, [topic.id]: e.target.value }))}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSyncTopicCommentToNotion(topic);
+                    }
+                  }}
                   style={{ fontSize: '0.82rem', padding: '0.5rem 0.85rem', flex: 1, background: 'rgba(15, 23, 42, 0.95)' }}
                 />
 
@@ -691,7 +695,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
                   <PlusCircle size={13} /> {statusState === 'created' ? '¡Tarjeta Creada!' : '⚡ Crear Tarjeta en Notion'}
                 </button>
 
-                {/* Cross Action 2: Cambiar Status a "Cerrada" (AND STORE IN DATABASE SO IT WON'T REOPEN) */}
+                {/* Cross Action 2: Cambiar Status a "Cerrada" */}
                 <button
                   className="btn-secondary"
                   onClick={() => handleCloseNotionCardForTopic(topic)}
@@ -715,7 +719,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
                   disabled={statusState === 'commented' || isSyncing || !currentComment.trim()}
                   style={{ fontSize: '0.76rem', padding: '0.45rem 0.85rem', border: '1px solid var(--accent-cyan)', color: 'var(--accent-cyan)', whiteSpace: 'nowrap' }}
                 >
-                  <MessageSquare size={13} /> {statusState === 'commented' ? '¡Nota Guardada!' : '💬 Guardar Nota en Notion'}
+                  <MessageSquare size={13} /> {statusState === 'commented' ? '¡Nota Guardada!' : '💬 Guardar (o presiona ENTER ↵)'}
                 </button>
 
               </div>
@@ -725,7 +729,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
         })}
       </div>
 
-      {/* MODAL DATABASE TEMAS CERRADOS (CLOSED TOPICS DATABASE MODAL) */}
+      {/* MODAL DATABASE TEMAS CERRADOS */}
       {showClosedTopicsModal && (
         <div className="modal-overlay" onClick={() => setShowClosedTopicsModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px' }}>
@@ -840,6 +844,12 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
                       updated[idx].proposedContent = e.target.value;
                       setProposedAiActions(updated);
                     }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleExecuteApprovedAiProposals();
+                      }
+                    }}
                     style={{ fontSize: '0.8rem', padding: '0.4rem 0.65rem', width: '100%' }}
                   />
                 </div>
@@ -863,7 +873,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
                   style={{ fontSize: '0.82rem', padding: '0.55rem 1.2rem', background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-blue))' }}
                 >
                   <CheckCircle2 size={16} />
-                  {isProcessingScratchpad ? 'Ejecutando en Notion API...' : `✅ Aprobar & Ejecutar ${proposedAiActions.filter(p => p.approved).length} Acciones en Notion`}
+                  {isProcessingScratchpad ? 'Ejecutando en Notion API...' : `✅ Aprobar & Ejecutar (o presiona ENTER ↵)`}
                 </button>
               </div>
             </div>
