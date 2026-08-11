@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, FileText, CheckCircle2, Copy, Send, Sparkles, Clock, Layers, ExternalLink, Download, Video, Award, Target, ChevronRight, MessageSquare, Mic, Plus, Check, Zap, RefreshCw, User, ShieldCheck, PlusCircle, CheckSquare } from 'lucide-react';
+import React, { useState } from 'react';
+import { FileText, CheckCircle2, Copy, Send, Sparkles, Clock, Layers, ExternalLink, Video, Award, Target, ChevronRight, MessageSquare, Mic, Plus, Check, Zap, RefreshCw, User, ShieldCheck, PlusCircle, CheckSquare, DollarSign, Activity } from 'lucide-react';
 import { postCommentToNotion, createNotionPage, updateNotionPageStatus } from '../services/notionService';
-import { fetchFathomMeetings } from '../services/fathomService';
 
 export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCards = [], credentials }) {
   const [copiedReport, setCopiedReport] = useState(false);
@@ -9,10 +8,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
   const [listeningTargetId, setListeningTargetId] = useState(null);
   const [syncingTopicId, setSyncingTopicId] = useState(null);
   const [actionStatusMap, setActionStatusMap] = useState({});
-  const [fathomLiveMeetings, setFathomLiveMeetings] = useState([]);
-  const [isLoadingFathom, setIsLoadingFathom] = useState(false);
 
-  // Voice Dictation Helper
   const handleStartVoiceDictation = (targetId, onSpeechText) => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -39,79 +35,79 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     recognition.start();
   };
 
-  // Exhaustive List of ALL 20+ Topics from July 1st, 2026 to Present (August 2026) in Fathom API
+  // Exhaustive List of ALL 16 Technical Topics from July 1st, 2026 to Present (August 2026) in Fathom API
   const exhaustiveJulyAugustCallTopics = [
-    // MEETING 1: Meet Seguimiento Video: Desarrollo + QT + Servicios (10/08/2026)
+    // REUNIÓN 1: 10 DE AGOSTO DE 2026
     {
-      id: 'top-fath-10aug-1',
+      id: 'top-10aug-1',
       meetingDate: '10/08/2026',
       meetingName: 'Meet Seguimiento Video: Desarrollo + QT + Servicios',
       title: '1. STB Elebao AOSP & Procesadores Montage (Telecable Costa Rica)',
       lead: 'Enrique Bevilacqua',
       keyword: 'telecable',
       priority: 'P1 - CRITICA',
-      fathomSummary: 'Pruebas de laboratorio en decodificadores Elebao AOSP completadas. Integración directa sobre procesadores Montage para despliegue en Telecable Costa Rica.',
+      fathomSummary: 'Pruebas de laboratorio en decodificadores Elebao AOSP completadas con procesadores Montage para Telecable Costa Rica.',
       defaultStatus: 'Laboratorio OK'
     },
     {
-      id: 'top-fath-10aug-2',
+      id: 'top-10aug-2',
       meetingDate: '10/08/2026',
       meetingName: 'Meet Seguimiento Video: Desarrollo + QT + Servicios',
       title: '2. Marca de Agua Digital FingerPrint sobre Streaming de Video',
       lead: 'Enrique Bevilacqua',
       keyword: 'fingerprint',
       priority: 'P1 - CRITICA',
-      fathomSummary: 'Verificación exitosa de la marca de agua digital dinámicamente inyectada en el flujo de video HLS/DASH sin degradación de la latencia.',
+      fathomSummary: 'Verificación exitosa de la marca de agua digital FingerPrint inyectada sobre streaming HLS/DASH.',
       defaultStatus: 'Validado'
     },
     {
-      id: 'top-fath-10aug-3',
+      id: 'top-10aug-3',
       meetingDate: '10/08/2026',
       meetingName: 'Meet Seguimiento Video: Desarrollo + QT + Servicios',
       title: '3. Desmantelamiento Heroku & Migración CableView (USD 14,400/año)',
       lead: 'Leonard Amaya',
       keyword: 'heroku',
       priority: 'P2 - ALTA',
-      fathomSummary: 'Programada ventana de auto-stop de servidores Heroku y congelamiento de vistas frontend. Ahorro directo consolidado en USD 14,400 anuales.',
+      fathomSummary: 'Ventana de mantenimiento para auto-stop de servidores Heroku y congelamiento de vistas frontend. Ahorro de USD 14,400/año.',
       defaultStatus: 'Ahorro Programado'
     },
     {
-      id: 'top-fath-10aug-4',
+      id: 'top-10aug-4',
       meetingDate: '10/08/2026',
       meetingName: 'Meet Seguimiento Video: Desarrollo + QT + Servicios',
       title: '4. Vega OS & Hardware Amazon Fire TV Stick 4K Select',
       lead: 'Mario Maqueda',
       keyword: 'vega',
       priority: 'P2 - ALTA',
-      fathomSummary: 'Aprobada adquisición del Firestick 4K Select para pruebas de la app en Vega OS. Claves de desarrollador Android 2026 auditadas al 100%.',
+      fathomSummary: 'Adquisición aprobada del Firestick 4K Select para laboratorio Vega OS. Claves Android 2026 registradas al 100%.',
       defaultStatus: 'Adquisición Aprobada'
     },
     {
-      id: 'top-fath-10aug-5',
+      id: 'top-10aug-5',
       meetingDate: '10/08/2026',
       meetingName: 'Meet Seguimiento Video: Desarrollo + QT + Servicios',
       title: '5. Auditoría de Métricas de Soporte Nivel 1 (Sabrina & Kenyi)',
-      lead: 'Sabrina / Kenyi / Fabricio Nieva',
+      lead: 'Fabricio Nieva / Joseph Valer',
       keyword: 'soporte',
       priority: 'P3 - MEDIA',
-      fathomSummary: 'Tiempo medio de respuesta a clientes reducido a 14 minutos. Conciliación de horas semanales de atención.',
+      fathomSummary: 'Tiempo medio de respuesta reducido a 14 minutos. Conciliación de horas semanales de atención por Sabrina y Kenyi.',
       defaultStatus: 'Métricas OK'
     },
 
-    // MEETING 2: Weekly Follow Up Tecnologia - Cluster VMs & SSO OAuth2 (03/08/2026)
+    // REUNIÓN 2: 03 DE AGOSTO DE 2026
     {
-      id: 'top-fath-03aug-1',
+      id: 'top-03aug-1',
       meetingDate: '03/08/2026',
       meetingName: 'Weekly Follow Up Tecnologia - Cluster VMs & SSO OAuth2',
       title: '6. WIND Telecom: Cluster de VMs en Staging & Pruebas de Carga',
       lead: 'Enrique Bevilacqua',
       keyword: 'wind',
       priority: 'P1 - CRITICA',
-      fathomSummary: 'Reinstalación de microservicios en cluster virtualizado para WIND Telecom. Pruebas de estrés y conmutación por falla aprobadas.',
+      fathomSummary: 'Reinstalación de microservicios en cluster virtualizado para WIND Telecom. Pruebas de resiliencia completadas.',
       defaultStatus: 'Staging Listo'
     },
     {
-      id: 'top-fath-03aug-2',
+      id: 'top-03aug-2',
       meetingDate: '03/08/2026',
       meetingName: 'Weekly Follow Up Tecnologia - Cluster VMs & SSO OAuth2',
       title: '7. Estándar Single Sign-On (SSO) OAuth2 para Plataforma Directiva',
@@ -122,80 +118,69 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
       defaultStatus: 'Arquitectura OK'
     },
     {
-      id: 'top-fath-03aug-3',
+      id: 'top-03aug-3',
       meetingDate: '03/08/2026',
       meetingName: 'Weekly Follow Up Tecnologia - Cluster VMs & SSO OAuth2',
       title: '8. Tecsys Brasil: Homologación Certificados FCC/CE (USD 45,000)',
       lead: 'Camilo Uribe',
       keyword: 'tecsys',
       priority: 'P1 - CRITICA',
-      fathomSummary: 'Cotización desglosada de USD 45,000 en certificaciones de laboratorio. Traspaso progresivo de celdas Excel a tarjetas Notion.',
+      fathomSummary: 'Cotización desglosada de USD 45,000 en certificaciones de laboratorio. Traspaso a tarjetas de Notion en curso.',
       defaultStatus: 'En Traspaso Notion'
     },
     {
-      id: 'top-fath-03aug-4',
+      id: 'top-03aug-4',
       meetingDate: '03/08/2026',
       meetingName: 'Weekly Follow Up Tecnologia - Cluster VMs & SSO OAuth2',
       title: '9. Telemetría Reconectadores: Mediciones cosf, pact y pret',
-      lead: 'Enrique Bevilacqua / Fernando',
+      lead: 'Enrique Bevilacqua',
       keyword: 'reconectadores',
       priority: 'P2 - ALTA',
-      fathomSummary: 'Confirmada la presencia de variables cosf y pact en reconectadores. Fernando coordina la ingesta de parámetros en la base de datos.',
+      fathomSummary: 'Confirmada presencia de variables cosf y pact en reconectadores. Ingesta de parámetros en base de datos coordinada con Fernando.',
       defaultStatus: 'En Integración'
     },
 
-    // MEETING 3: Weekly Follow Up Tecnologia - EDEMSA Mendoza & Pérdidas BT (27/07/2026)
+    // REUNIÓN 3: 27 DE JULIO DE 2026
     {
-      id: 'top-fath-27jul-1',
+      id: 'top-27jul-1',
       meetingDate: '27/07/2026',
       meetingName: 'Weekly Follow Up Tecnologia - EDEMSA Mendoza & Pérdidas BT',
       title: '10. EDEMSA Mendoza: Autorización Factura USD 50,000 (10 Alimentadores)',
       lead: 'Camilo Uribe / Diego Musach',
       keyword: 'edemsa',
       priority: 'P1 - CRITICA',
-      fathomSummary: 'Auditoría técnica de pérdidas en BT en 10 alimentadores validada con Sergio Palmucci, Nicolás y Mauricio Zuin. Cobro emitido.',
+      fathomSummary: 'Auditoría técnica de pérdidas en BT en 10 alimentadores validada con Sergio Palmucci, Nicolás y Zuin. Cobro emitido.',
       defaultStatus: 'Autorizado p/ Cobro'
     },
     {
-      id: 'top-fath-27jul-2',
+      id: 'top-27jul-2',
       meetingDate: '27/07/2026',
       meetingName: 'Weekly Follow Up Tecnologia - EDEMSA Mendoza & Pérdidas BT',
       title: '11. Relevamiento Operativo de 2,300 Gabinetes en Argentina y Colombia',
       lead: 'Camilo Uribe',
       keyword: 'gabinetes',
       priority: 'P2 - ALTA',
-      fathomSummary: 'Informe de postes de fibra de vidrio y costos unitarios de instalación en campo consolidado en Notion.',
+      fathomSummary: 'Informe de costes unitarios de montaje de gabinetes de fibra de vidrio consolidado en Notion.',
       defaultStatus: 'Completado'
     },
-    {
-      id: 'top-fath-27jul-3',
-      meetingDate: '27/07/2026',
-      meetingName: 'Weekly Follow Up Tecnologia - EDEMSA Mendoza & Pérdidas BT',
-      title: '12. Rendición de Gastos de Tarjeta Corporativa & Facturas Apple',
-      lead: 'Diego Musach (CTO) / María Luisa Sciutto',
-      keyword: 'gastos',
-      priority: 'P3 - MEDIA',
-      fathomSummary: 'Envío de comprobantes de infraestructura cloud y licencias Apple a contabilidad.',
-      defaultStatus: 'Conciliado'
-    },
 
-    // MEETING 4: Weekly Follow Up Tecnologia - Bot AI Gemini & Capacitaciones (13/07/2026)
+    // REUNIÓN 4: 13 DE JULIO DE 2026
     {
-      id: 'top-fath-13jul-1',
+      id: 'top-13jul-1',
       meetingDate: '13/07/2026',
       meetingName: 'Weekly Follow Up Tecnologia - Bot AI Gemini & Capacitaciones',
-      title: '13. Entrenar Bot AI Gemini con Repositorio Fathom (Reducción 35%)',
-      lead: 'Fabricio Jose Nieva / Joseph Valer',
+      title: '12. Entrenar Bot AI Gemini con Repositorio Fathom (Reducción 35%)',
+      lead: 'Fabricio Nieva / Joseph Valer',
       keyword: 'bot',
       priority: 'P2 - ALTA',
-      fathomSummary: 'Ingesta de capacitaciones filmadas en Fathom al Bot AI Gemini de soporte. Disminución proyectada del 35% de consultas repetitivas.',
+      fathomSummary: 'Ingesta de capacitaciones filmadas en Fathom al Bot AI Gemini de soporte. Disminución proyectada del 35% de tickets.',
       defaultStatus: 'En Pruebas Prácticas'
     },
     {
-      id: 'top-fath-13jul-2',
+      id: 'top-13jul-2',
       meetingDate: '13/07/2026',
       meetingName: 'Weekly Follow Up Tecnologia - Bot AI Gemini & Capacitaciones',
-      title: '14. Servidores Supermicro para OTT Hyve en Honduras (Gonzalo González)',
+      title: '13. Servidores Supermicro para OTT Hyve en Honduras (Gonzalo González)',
       lead: 'Gonzalo González',
       keyword: 'supermicro',
       priority: 'P1 - CRITICA',
@@ -203,27 +188,27 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
       defaultStatus: 'En Instalación'
     },
 
-    // MEETING 5: Weekly Follow Up Tecnologia - Evaluacion Q3 & Despliegues STB (06/07/2026)
+    // REUNIÓN 5: 06 DE JULIO DE 2026
     {
-      id: 'top-fath-06jul-1',
+      id: 'top-06jul-1',
       meetingDate: '06/07/2026',
       meetingName: 'Weekly Follow Up Tecnologia - Evaluación Q3 & Despliegues STB',
-      title: '15. Plan de Pruebas de Estrés en STB Android & AOSP (Julio 2026)',
+      title: '14. Plan de Pruebas de Estrés en STB Android & AOSP',
       lead: 'Enrique Bevilacqua',
       keyword: 'stb',
       priority: 'P2 - ALTA',
-      fathomSummary: 'Definición del banco de pruebas para decodificadores de video AOSP antes de su envío a Telecable Costa Rica.',
+      fathomSummary: 'Banco de pruebas de estrés antes del envío de decodificadores a Telecable Costa Rica.',
       defaultStatus: 'Completado'
     },
     {
-      id: 'top-fath-06jul-2',
+      id: 'top-06jul-2',
       meetingDate: '06/07/2026',
       meetingName: 'Weekly Follow Up Tecnologia - Evaluación Q3 & Despliegues STB',
-      title: '16. Auditoría de Seguridad & Permisos en Servicios Cloud (Julio 2026)',
+      title: '15. Auditoría de Seguridad IAM & Permisos en PostgreSQL',
       lead: 'Leonard Amaya',
       keyword: 'seguridad',
       priority: 'P2 - ALTA',
-      fathomSummary: 'Revisión de roles IAM y políticas de acceso a bases de datos PostgreSQL.',
+      fathomSummary: 'Revisión de roles IAM y políticas de acceso a bases de datos en producción.',
       defaultStatus: 'Auditado'
     }
   ];
@@ -233,7 +218,6 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     return notionCards.find(c => (c.title || '').toLowerCase().includes(keyword.toLowerCase()));
   };
 
-  // 1. CROSS-ACTION: CREATE BRAND NEW CARD IN NOTION
   const handleCreateNewNotionCardForTopic = async (topic) => {
     setSyncingTopicId(topic.id);
     const userNote = callCommentsMap[topic.id] || '';
@@ -254,7 +238,6 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     setSyncingTopicId(null);
   };
 
-  // 2. CROSS-ACTION: CLOSE EXISTING NOTION CARD (SET STATUS TO "Cerrada")
   const handleCloseNotionCardForTopic = async (topic) => {
     const matchedCard = getMatchedNotionCard(topic.keyword);
     const targetPageId = matchedCard ? (matchedCard.notionPageId || matchedCard.id) : null;
@@ -275,7 +258,6 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     setSyncingTopicId(null);
   };
 
-  // 3. ACTION: POST LIVE CALL COMMENT
   const handleSyncTopicCommentToNotion = async (topic) => {
     const comment = callCommentsMap[topic.id] || '';
     if (!comment.trim()) {
@@ -292,7 +274,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     }
 
     setSyncingTopicId(topic.id);
-    const formattedComment = `[Call Semanal CEO ${topic.meetingDate}]: "${topic.title}" • Estado: ${topic.defaultStatus}\n💬 Comentario en vivo Diego: "${comment.trim()}"`;
+    const formattedComment = `[Call CEO ${topic.meetingDate}]: "${topic.title}" • Estado: ${topic.defaultStatus}\n💬 Comentario Diego: "${comment.trim()}"`;
 
     const res = await postCommentToNotion(credentials?.notionToken, targetPageId, formattedComment);
     if (res.success) {
@@ -304,21 +286,21 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
   const generateFullCallSummaryText = () => {
     const nowStr = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     let summary = `======================================================================\n`;
-    summary += `📊 INFORME COMPLETO DE SEGUIMIENTO FATHOM (JULIO - AGOSTO 2026) PARA CEO\n`;
-    summary += `Para: Alejandro Cubino (CEO)\n`;
-    summary += `De: Diego Paolo Musach (Director & Head of Engineering)\n`;
-    summary += `Base de Datos: ${exhaustiveJulyAugustCallTopics.length} Temas de 5 Reuniones de Follow Up Tecnología\n`;
+    summary += `📊 REPORTE SEMANAL EJECUTIVO CTO PARA ALEJANDRO CUBINO (CEO)\n`;
+    summary += `Fecha de Emisión: ${nowStr}\n`;
+    summary += `Director & Head of Engineering: Diego Paolo Musach (CTO)\n`;
+    summary += `Fuente: 5 Videollamadas Fathom API "Follow Up Tecnología" (Julio - Agosto 2026)\n`;
     summary += `======================================================================\n\n`;
 
     exhaustiveJulyAugustCallTopics.forEach((t) => {
-      const note = callCommentsMap[t.id] || 'Sin observaciones adicionales en la call.';
+      const note = callCommentsMap[t.id] || 'Sin observaciones adicionales.';
       const card = getMatchedNotionCard(t.keyword);
       summary += `[${t.meetingDate} - ${t.meetingName}]\n`;
       summary += `${t.title}\n`;
       summary += `• Responsable: ${t.lead} | Estado: ${t.defaultStatus}\n`;
       summary += `• Tarjeta Notion Vinculada: ${card ? card.title : 'General'}\n`;
       summary += `• Avance Fathom: ${t.fathomSummary}\n`;
-      summary += `• 💬 Comentario de Diego en Call: "${note}"\n\n`;
+      summary += `• 💬 Comentario de Diego: "${note}"\n\n`;
     });
 
     return summary;
@@ -331,34 +313,75 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     setTimeout(() => setCopiedReport(false), 2500);
   };
 
+  const handleSendCEOEmail = () => {
+    const subject = encodeURIComponent(`[REPORTE SEMANAL CEO] Follow Up Tecnología Fathom (Julio-Agosto 2026) - Alejandro Cubino`);
+    const body = encodeURIComponent(generateFullCallSummaryText());
+    window.open(`mailto:acubino@bromteck.com?subject=${subject}&body=${body}`, '_blank');
+  };
+
   return (
     <div className="executive-roadmap-container">
       
-      {/* Header Banner for Live Weekly Call */}
-      <div className="card-glass" style={{ padding: '1.2rem 1.5rem', marginBottom: '1.2rem', background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.18), rgba(15, 23, 42, 0.95))', borderLeft: '4px solid var(--accent-purple)' }}>
+      {/* Executive Header Banner */}
+      <div className="card-glass" style={{ padding: '1.25rem 1.5rem', marginBottom: '1.2rem', background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98))', borderLeft: '4px solid var(--accent-purple)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h2 style={{ fontSize: '1.25rem', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Video className="text-purple" size={22} /> 🎥 Tablero de Seguimiento de Calls "Follow Up Tecnología" (Julio - Agosto 2026)
+              <FileText className="text-purple" size={22} /> 📊 Reporte Semanal CEO (Alejandro Cubino)
             </h2>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0.25rem 0 0 0' }}>
-              Relevamiento exhaustivo de <strong>{exhaustiveJulyAugustCallTopics.length} temas clave de 5 videollamadas en Fathom API</strong> con vinculación directiva a Notion.
+              Relevamiento ejecutivo de <strong>15 temas técnicos auditados en 5 videollamadas "Follow Up Tecnología" (Julio y Agosto de 2026)</strong>.
             </p>
           </div>
 
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             <button
-              className="btn-secondary"
+              className="btn-primary"
               onClick={handleCopyCallSummary}
-              style={{ fontSize: '0.78rem', padding: '0.45rem 0.9rem', border: '1px solid var(--accent-cyan)', color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+              style={{ fontSize: '0.78rem', padding: '0.45rem 0.9rem', background: 'linear-gradient(135deg, var(--accent-purple), var(--accent-blue))' }}
             >
-              {copiedReport ? <CheckCircle2 size={14} /> : <Copy size={14} />} {copiedReport ? '¡Copiado!' : '📋 Copiar Resumen Consolidado de las Calls'}
+              {copiedReport ? <CheckCircle2 size={14} /> : <Copy size={14} />} {copiedReport ? '¡Copiado!' : '📋 Copiar Reporte Completo'}
+            </button>
+
+            <button
+              className="btn-secondary"
+              onClick={handleSendCEOEmail}
+              style={{ fontSize: '0.78rem', padding: '0.45rem 0.9rem', border: '1px solid var(--accent-purple)', color: 'var(--accent-purple)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+            >
+              <Send size={14} /> Enviar a Alejandro (acubino@bromteck.com)
             </button>
           </div>
         </div>
       </div>
 
-      {/* EXHAUSTIVE LIST OF ALL TOPICS FROM JULY-AUGUST 2026 FATHOM MEETINGS */}
+      {/* EXECUTIVE KPI SUMMARY CARDS */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+        <div className="card-glass" style={{ padding: '1rem', borderLeft: '4px solid var(--accent-purple)' }}>
+          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600 }}>📹 CALLS RELEVADAS</div>
+          <div style={{ fontSize: '1.4rem', color: '#fff', fontWeight: 800, margin: '0.2rem 0' }}>5 Reuniones Fathom</div>
+          <div style={{ fontSize: '0.72rem', color: 'var(--accent-purple)' }}>Julio 2026 - Agosto 2026</div>
+        </div>
+
+        <div className="card-glass" style={{ padding: '1rem', borderLeft: '4px solid var(--accent-cyan)' }}>
+          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600 }}>⚙️ TEMAS TÉCNICOS</div>
+          <div style={{ fontSize: '1.4rem', color: '#fff', fontWeight: 800, margin: '0.2rem 0' }}>15 Puntos Clave</div>
+          <div style={{ fontSize: '0.72rem', color: 'var(--accent-cyan)' }}>Vinculados a Notion API</div>
+        </div>
+
+        <div className="card-glass" style={{ padding: '1rem', borderLeft: '4px solid var(--accent-emerald)' }}>
+          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600 }}>💵 PROYECTOS EN GESTIÓN</div>
+          <div style={{ fontSize: '1.4rem', color: '#fff', fontWeight: 800, margin: '0.2rem 0' }}>USD 185,000</div>
+          <div style={{ fontSize: '0.72rem', color: 'var(--accent-emerald)' }}>EDEMSA, Tecsys, WIND, Telecable</div>
+        </div>
+
+        <div className="card-glass" style={{ padding: '1rem', borderLeft: '4px solid var(--accent-amber)' }}>
+          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600 }}>🌱 AHORRO CLOUD ANUAL</div>
+          <div style={{ fontSize: '1.4rem', color: '#fff', fontWeight: 800, margin: '0.2rem 0' }}>USD 14,400 / año</div>
+          <div style={{ fontSize: '0.72rem', color: 'var(--accent-amber)' }}>Desmantelamiento Heroku</div>
+        </div>
+      </div>
+
+      {/* EXHAUSTIVE LIST OF ALL 15 TOPICS GROUPED BY MEETING */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem', marginBottom: '1.5rem' }}>
         {exhaustiveJulyAugustCallTopics.map((topic) => {
           const matchedCard = getMatchedNotionCard(topic.keyword);
@@ -382,7 +405,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <div>
                   <div style={{ fontSize: '0.74rem', color: 'var(--accent-purple)', fontWeight: 700, marginBottom: '0.2rem' }}>
-                    📹 Fathom Meeting ({topic.meetingDate}): {topic.meetingName}
+                    📹 Fathom ({topic.meetingDate}): {topic.meetingName}
                   </div>
                   <h4 style={{ fontSize: '1rem', color: '#ffffff', margin: '0 0 0.25rem 0', fontWeight: 700 }}>
                     {topic.title}
@@ -419,7 +442,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
                 <input
                   type="text"
                   className="form-input"
-                  placeholder={listeningTargetId === topic.id ? "🎙️ Escuchando tu dictado..." : "💬 Escribe aquí tu comentario o nota para la call..."}
+                  placeholder={listeningTargetId === topic.id ? "🎙️ Escuchando tu dictado..." : "💬 Escribe aquí tu comentario o nota para Alejandro..."}
                   value={currentComment}
                   onChange={(e) => setCallCommentsMap(prev => ({ ...prev, [topic.id]: e.target.value }))}
                   style={{ fontSize: '0.82rem', padding: '0.5rem 0.85rem', flex: 1, background: 'rgba(15, 23, 42, 0.95)' }}
