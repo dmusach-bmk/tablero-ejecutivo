@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck, Bell, Settings, LayoutDashboard, FileText, BarChart3, Users, Calendar, Mail, Compass, Bot, Award, AlertCircle, Crown, Video } from 'lucide-react';
+import { ShieldCheck, Bell, Settings, LayoutDashboard, FileText, BarChart3, Users, Calendar, Mail, Compass, Bot, Award, AlertCircle, Crown, Video, DollarSign } from 'lucide-react';
 
 export default function Navbar({ activeTab, setActiveTab, missingDeadlinesCount, onOpenDeadlineModal, onOpenSettings }) {
   const navTabs = [
@@ -8,15 +8,15 @@ export default function Navbar({ activeTab, setActiveTab, missingDeadlinesCount,
     { id: 'followup', label: '🚨 Follow Up Diario', icon: AlertCircle, inDevelopment: false },
     { id: 'fathom', label: '🎥 Fathom Calls AI', icon: Video, inDevelopment: false },
     { id: 'google_workspace', label: '📧 Gmail & Drive AI', icon: Mail, inDevelopment: false },
+    { id: 'financials', label: '💵 Control Financiero', icon: DollarSign, inDevelopment: false },
+    { id: 'roadmap_report', label: '📅 Gantt & Reporte CEO', icon: Calendar, inDevelopment: false },
     { id: 'asesor', label: '🧠 ASESOR EJECUTIVO', icon: Bot, inDevelopment: false },
     { id: 'scorecards', label: '📊 Scorecard Equipo', icon: Award, inDevelopment: false },
     
-    // Items not customized yet marked as (En desarrollo) and disabled
+    // Secondary items marked as (En desarrollo)
     { id: 'micromanagement', label: 'Equipo Real & Temas (En desarrollo)', icon: Users, inDevelopment: true },
     { id: 'notion', label: 'Notion & Transcripts (En desarrollo)', icon: FileText, inDevelopment: true },
     { id: 'excel', label: 'Excel Analytics (En desarrollo)', icon: BarChart3, inDevelopment: true },
-    { id: 'deadlines', label: 'Fechas Límite (En desarrollo)', icon: Calendar, inDevelopment: true },
-    { id: 'actions', label: 'Borrador Email / Notion (En desarrollo)', icon: Mail, inDevelopment: true },
     { id: 'leadership', label: 'Liderazgo & Eng (En desarrollo)', icon: Compass, inDevelopment: true },
   ];
 

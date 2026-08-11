@@ -10,6 +10,8 @@ import DailyFollowUp from './components/DailyFollowUp';
 import DiegoEjecutivo from './components/DiegoEjecutivo';
 import FathomAnalyzer from './components/FathomAnalyzer';
 import GoogleWorkspaceHub from './components/GoogleWorkspaceHub';
+import ExecutiveFinancials from './components/ExecutiveFinancials';
+import ExecutiveRoadmapAndReport from './components/ExecutiveRoadmapAndReport';
 import DeadlinesManager from './components/DeadlinesManager';
 import ActionHub from './components/ActionHub';
 import LeadershipAdvisor from './components/LeadershipAdvisor';
@@ -187,6 +189,20 @@ export default function App() {
         {activeTab === 'google_workspace' && (
           <GoogleWorkspaceHub
             credentials={credentials}
+            notionCards={notionCards}
+          />
+        )}
+
+        {activeTab === 'financials' && (
+          <ExecutiveFinancials
+            credentials={credentials}
+            notionCards={notionCards}
+          />
+        )}
+
+        {activeTab === 'roadmap_report' && (
+          <ExecutiveRoadmapAndReport
+            teamTracking={teamTracking}
             notionCards={notionCards}
           />
         )}
