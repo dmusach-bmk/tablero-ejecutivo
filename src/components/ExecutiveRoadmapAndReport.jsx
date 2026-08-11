@@ -1,244 +1,336 @@
 import React, { useState } from 'react';
-import { Calendar, FileText, CheckCircle2, Copy, Send, Sparkles, Clock, Layers, ExternalLink, Download, Video, Award, Target, ChevronRight } from 'lucide-react';
+import { Calendar, FileText, CheckCircle2, Copy, Send, Sparkles, Clock, Layers, ExternalLink, Download, Video, Award, Target, ChevronRight, MessageSquare, Mic, Plus, Check, Zap, RefreshCw, User, ShieldCheck } from 'lucide-react';
+import { postCommentToNotion } from '../services/notionService';
 
-export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCards = [] }) {
+export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCards = [], credentials }) {
   const [copiedReport, setCopiedReport] = useState(false);
+  const [callCommentsMap, setCallCommentsMap] = useState({});
+  const [listeningTargetId, setListeningTargetId] = useState(null);
+  const [syncingTopicId, setSyncingTopicId] = useState(null);
+  const [syncedStatusMap, setSyncedStatusMap] = useState({});
 
-  const fathomDetailedFollowUps = [
+  const handleStartVoiceDictation = (targetId, onSpeechText) => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("🎙️ Dictado por voz: Te recomendamos abrir el tablero en Google Chrome.");
+      return;
+    }
+    setListeningTargetId(targetId);
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'es-ES';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      if (transcript) {
+        onSpeechText(transcript);
+      }
+      setListeningTargetId(null);
+    };
+
+    recognition.onerror = () => setListeningTargetId(null);
+    recognition.onend = () => setListeningTargetId(null);
+
+    recognition.start();
+  };
+
+  // 10 Key Executive Topics for the Weekly Call, Linked to Notion Cards & Fathom Takeaways
+  const weeklyCallTopics = [
     {
-      id: 'fath-10aug',
-      title: 'Meet Seguimiento Video: Desarrollo + QT + Servicios',
-      date: '10 de Agosto, 2026 (Última Reunión)',
-      lead: 'Diego Musach (CTO) / Enrique Bevilacqua / Leonard Amaya / Mario Maqueda',
-      topics: [
-        'STB Elebao AOSP & Montage: Resultados finales de laboratorio para Telecable Costa Rica con validación de FingerPrint.',
-        'Heroku & CableView: Ventana de mantenimiento para auto-stop de servidores Heroku y congelamiento de vistas frontend.',
-        'Vega OS & Amazon Firestick: Desarrollo de la app en Vega OS para dispositivos Amazon Fire TV Stick 4K Select con Mario Maqueda.',
-        'Android Signing Keys 2026: Relevamiento de 100% de apps y claves de desarrollador Android registradas en Google Play Console.',
-        'Soporte Técnico: Métricas de atención Nivel 1 auditadas con Sabrina y Kenyi (14 min tiempo medio).'
-      ]
+      id: 'top-1',
+      title: '1. STB Elebao AOSP & Marca FingerPrint (Telecable Costa Rica)',
+      lead: 'Enrique Bevilacqua',
+      keyword: 'telecable',
+      fathomSummary: 'Pruebas de laboratorio completadas con procesadores Montage. Marca de agua digital FingerPrint verificada sobre señal de streaming.',
+      defaultStatus: 'Listo para Homologación'
     },
     {
-      id: 'fath-03aug',
-      title: 'Weekly Follow Up Tecnología - Cluster VMs & SSO OAuth2',
-      date: '03 de Agosto, 2026',
-      lead: 'Enrique Bevilacqua / Camilo Uribe',
-      topics: [
-        'WIND Telecom: Reinstalación y pruebas de carga en Cluster de máquinas virtuales (VMs) en entorno staging.',
-        'Single Sign-On (SSO): Arquitectura de autenticación unificada bajo estándar OAuth2 aprobada.',
-        'Tecsys Brasil: Cotización desglosada de USD 45,000 en certificados FCC y CE y traspaso a Notion.',
-        'Reconectadores: Integración de mediciones cosf, pact y pret en telemetría de red con Fernando.'
-      ]
-    },
-    {
-      id: 'fath-27jul',
-      title: 'Weekly Follow Up Tecnología - EDEMSA Mendoza & Pérdidas BT',
-      date: '27 de Julio, 2026',
+      id: 'top-2',
+      title: '2. EDEMSA Mendoza: Facturación USD 50,000 por 10 Alimentadores',
       lead: 'Camilo Uribe / Diego Musach',
-      topics: [
-        'EDEMSA (Mendoza): Auditoría técnica de 10 alimentadores corregida con Sergio Palmucci, Nicolás y Mauricio Zuin.',
-        'Facturación: Grilla de pérdidas técnicas en BT aprobada para emisión de factura por USD 50,000.',
-        'Gabinetes: Relevamiento de 2,300 gabinetes de fibra de vidrio en Argentina y Colombia.'
-      ]
+      keyword: 'edemsa',
+      fathomSummary: 'Auditoría técnica de 10 alimentadores corregida con Sergio Palmucci, Nicolás y Zuin. Grilla de pérdidas BT autorizada para cobro.',
+      defaultStatus: 'Autorizado p/ Cobro'
     },
     {
-      id: 'fath-13jul',
-      title: 'Weekly Follow Up Tecnología - Bot AI Gemini & Capacitaciones',
-      date: '13 de Julio, 2026',
+      id: 'top-3',
+      title: '3. Tecsys Brasil: Homologación Certificados FCC/CE (USD 45,000)',
+      lead: 'Camilo Uribe',
+      keyword: 'tecsys',
+      fathomSummary: 'Cotización desglosada de USD 45,000 en certificados FCC y CE. En proceso de traspasar ítems de Excel a tarjetas de Notion.',
+      defaultStatus: 'En Traspaso Notion'
+    },
+    {
+      id: 'top-4',
+      title: '4. WIND Telecom: Cluster de VMs en Staging & SSO OAuth2',
+      lead: 'Enrique Bevilacqua',
+      keyword: 'wind',
+      fathomSummary: 'Reinstalación y pruebas de resiliencia en Cluster de máquinas virtuales. Estándar OAuth2 unificado para Single Sign-On.',
+      defaultStatus: 'Staging Listo'
+    },
+    {
+      id: 'top-5',
+      title: '5. Desmantelamiento Heroku & Migración CableView (USD 14,400/año)',
+      lead: 'Leonard Amaya',
+      keyword: 'heroku',
+      fathomSummary: 'Programada ventana de mantenimiento para auto-stop de servidores Heroku y congelamiento de vistas frontend de CableView.',
+      defaultStatus: 'Ahorro Programado'
+    },
+    {
+      id: 'top-6',
+      title: '6. Soporte AI Gemini: Entrenamiento con Capacitaciones Filmadas',
       lead: 'Fabricio Jose Nieva / Joseph Valer',
-      topics: [
-        'Bot AI Gemini: Prototipo del Agente de soporte entrenado con capacitaciones filmadas en Fathom.',
-        'Impacto Operativo: Reducción estimada del 35% en volumen de consultas repetitivas de Nivel 1.'
-      ]
+      keyword: 'bot',
+      fathomSummary: 'Entrenamiento del Bot AI Gemini con repositorio de capacitaciones filmadas en Fathom. Reducción proyectada del 35% de tickets.',
+      defaultStatus: 'En Pruebas Prácticas'
+    },
+    {
+      id: 'top-7',
+      title: '7. Vega OS & Hardware Amazon Fire TV Stick 4K Select',
+      lead: 'Mario Maqueda',
+      keyword: 'vega',
+      fathomSummary: 'Aprobada adquisición del Firestick 4K Select para pruebas de la app en Vega OS. Claves Android 2026 registradas al 100%.',
+      defaultStatus: 'Adquisición Aprobada'
+    },
+    {
+      id: 'top-8',
+      title: '8. Relevamiento Operativo de 2,300 Gabinetes de Fibra de Vidrio',
+      lead: 'Camilo Uribe',
+      keyword: 'gabinetes',
+      fathomSummary: 'Planilla técnica de relevamiento consolidada en Argentina y Colombia con desglose de costos por gabinete.',
+      defaultStatus: 'Completado'
+    },
+    {
+      id: 'top-9',
+      title: '9. Servidores Supermicro para Clientes OTT Hyve en Honduras',
+      lead: 'Gonzalo González',
+      keyword: 'supermicro',
+      fathomSummary: 'Relevamiento de equipos e instalación física de servidores Supermicro para clientes de streaming en Honduras.',
+      defaultStatus: 'En Instalación'
+    },
+    {
+      id: 'top-10',
+      title: '10. Telemetría de Red: Mediciones cosf / pact en Reconectadores',
+      lead: 'Enrique Bevilacqua',
+      keyword: 'reconectadores',
+      fathomSummary: 'Coordinación con Fernando para integración de mediciones de cosf, pact y pret en la plataforma de control directivo.',
+      defaultStatus: 'En Integración'
     }
   ];
 
-  const generateComprehensiveFathomCEOReport = () => {
-    const nowStr = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    
-    return `================================================================================
-📊 INFORME EJECUTIVO DETALLADO CTO PARA CEO - SEGUIMIENTO DE TECNOLOGÍA
-Para: Alejandro Cubino (CEO)
-De: Diego Paolo Musach (Director & Head of Engineering)
-Base de Datos: Auditoría Exclusiva de Videollamadas "Follow Up Tecnología" en Fathom API
-Período Auditado: Julio 2026 - Agosto 2026
-Fecha de Emisión: ${nowStr}
-================================================================================
-
-1. 🎥 RELEVAMIENTO DE LA ÚLTIMA REUNIÓN DE FOLLOW UP TECNOLOGÍA (10 DE AGOSTO, 2026):
-• TITULO: "Meet Seguimiento Video: Desarrollo + QT + Servicios"
-• PARTICIPANTES: Diego Musach (CTO), Enrique Bevilacqua, Leonard Amaya, Mario Maqueda, Kenyi, Sabrina.
-• PUNTOS CLAVE DISCUTIDOS Y ACORDADOS:
-  1. STB ELEBAO AOSP & MONTAGE (Telecable Costa Rica):
-     - Completadas las pruebas de laboratorio sobre los decodificadores Elebao AOSP.
-     - Verificación exitosa de la marca de agua digital "FingerPrint" procesada directamente sobre chips Montage.
-     - Equipos en estado "Homologación OK" para despliegue en campo.
-  2. INFRAESTRUCTURA & DESMANTELAMIENTO HEROKU (CableView):
-     - Leonard Amaya presentó la ventana de mantenimiento para congelar las vistas frontend de CableView.
-     - Programado el apagado definitivo (auto-stop) de entornos Heroku para consolidar un AHORRO ANUAL DE USD 14,400.
-  3. DESARROLLO EN VEGA OS & HARDWARE AMAZON (Mario Maqueda):
-     - Aprobada la adquisición del dispositivo Amazon Fire TV Stick 4K Select para pruebas de la app en Vega OS.
-     - Relevamiento al 100% de claves de firma de desarrollador Android 2026 registrado sin observaciones por Google.
-  4. MÉTRICAS DE SOPORTE TÉCNICO DE NIVEL 1 (Sabrina & Kenyi):
-     - Tiempo medio de atención de tickets reducido a 14 minutos.
-     - Evaluación de horas trabajadas e integración con las capacitaciones filmadas.
-
-================================================================================
-2. 📌 REVISIÓN HISTÓRICA DE SESIONES PREVIAS DE FOLLOW UP TECNOLOGÍA (JULIO - AGOSTO 2026):
-
-• SESIÓN 03/08/2026: Cluster VMs WIND Telecom & SSO OAuth2
-  - WIND Telecom: Despliegue en staging del cluster de máquinas virtuales y pruebas de resiliencia.
-  - Single Sign-On (SSO): Estándar OAuth2 unificado para autenticación de usuarios.
-  - Tecsys Brasil: Cotización desglosada por USD 45,000 en certificados FCC y CE. Traspaso a tarjetas de Notion en curso.
-  - Telemetría: Integración de mediciones de reconectadores (cosf, pact, pret) con Fernando.
-
-• SESIÓN 27/07/2026: EDEMSA Mendoza & Auditoría de Pérdidas BT
-  - EDEMSA Mendoza: Validación de 10 alimentadores corregidos con Sergio Palmucci, Nicolás y Mauricio Zuin.
-  - Facturación: Aprobada emisión de factura por USD 50,000 en pérdidas técnicas de BT.
-  - Relevamiento Gabinetes: Relevamiento operativo de 2,300 gabinetes de fibra de vidrio en Argentina y Colombia.
-
-• SESIÓN 13/07/2026: Bot AI Gemini & Capacitaciones Filmadas
-  - Entrenamiento de Bot AI Gemini utilizando el repositorio de capacitaciones en Fathom.
-  - Reducción del 35% de consultas de soporte de Nivel 1 implementado por Fabricio Nieva y Joseph Valer.
-
-================================================================================
-3. 👤 COMPROMISOS DIRECTIVOS DETALLADOS POR INTEGRANTE:
-
-• ENRIQUE BEVILACQUA (Lead Architecture & Video):
-  - Emisión de informe técnico final STB Elebao AOSP para Telecable Costa Rica.
-  - Integración del estándar OAuth2 para SSO en WIND Telecom.
-  - Coordinación de mediciones de cosf / pact en reconectadores.
-
-• CAMILO URIBE (Lead Integraciones Tecsys & Comercial SS):
-  - Emisión y seguimiento del cobro de USD 50,000 con EDEMSA Mendoza.
-  - Traspaso de planilla de cotizaciones FCC/CE de Tecsys (USD 45,000) a Notion.
-  - Consolidación de costos de 2,300 gabinetes de fibra de vidrio.
-
-• LEONARD AMAYA (Senior Software Engineer):
-  - Ejecutar auto-stop de servidores Heroku y migración frontend de CableView (Ahorro USD 14,400/año).
-  - Optimizar tiempos de renderizado de vistas directivas.
-
-• FABRICIO JOSE NIEVA & JOSEPH VALER (Soporte AI & Operaciones):
-  - Calibración del Agente Bot Gemini con casos de prueba de llamadas reales Fathom.
-  - Auditoría de tiempos de respuesta de tickets Nivel 1.
-
-• MARIO MAQUEDA (Software Architecture & Vega OS):
-  - Configurar entorno de pruebas en Amazon Fire TV Stick 4K Select para Vega OS.
-  - Mantener vigentes los certificados de firma Android 2026.
-
-• GONZALO GONZÁLEZ (Infraestructura Hardware):
-  - Despliegue de servidores Supermicro para proyectos OTT Hyve en Honduras.
-
-================================================================================
-4. 💵 ESTADO FINANCIERO Y PRESUPUESTACIÓN DE INGENIERÍA:
-• Volumen Total Gestionado: USD 185,000
-• Facturación Pendiente de Cobro: USD 95,000 (EDEMSA USD 50k + Tecsys USD 45k)
-• Ahorro Anual Infraestructura Cloud: USD 14,400 (Baja Heroku)
-• Control en Notion API: 2-Way Sync en tiempo real con 165 tarjetas directivas activas.
-================================================================================`;
+  // Helper to match each topic with a real Notion card from Diego's workspace
+  const getMatchedNotionCard = (keyword) => {
+    if (!Array.isArray(notionCards) || notionCards.length === 0) return null;
+    return notionCards.find(c => (c.title || '').toLowerCase().includes(keyword.toLowerCase()));
   };
 
-  const handleCopyCEOReport = () => {
-    const text = generateComprehensiveFathomCEOReport();
+  // Sync a single topic call comment to Notion API
+  const handleSyncTopicCommentToNotion = async (topic) => {
+    const comment = callCommentsMap[topic.id] || '';
+    if (!comment.trim()) {
+      alert(`Por favor escribe un comentario o dicta una nota para el tema "${topic.title}".`);
+      return;
+    }
+
+    const matchedCard = getMatchedNotionCard(topic.keyword);
+    const targetPageId = matchedCard ? (matchedCard.notionPageId || matchedCard.id) : (notionCards[0]?.notionPageId || notionCards[0]?.id);
+
+    if (!targetPageId) {
+      alert('No se encontró una tarjeta de Notion válida para vincular el comentario.');
+      return;
+    }
+
+    setSyncingTopicId(topic.id);
+    const formattedComment = `[Call Semanal CEO ${new Date().toLocaleDateString()}]: "${topic.title}" • Estado: ${topic.defaultStatus}\n💬 Comentario en vivo Diego: "${comment.trim()}"`;
+
+    const res = await postCommentToNotion(credentials?.notionToken, targetPageId, formattedComment);
+    if (res.success) {
+      setSyncedStatusMap(prev => ({ ...prev, [topic.id]: true }));
+    } else {
+      alert(`Error al sincronizar comentario con Notion: ${res.error || 'Verifica credenciales'}`);
+    }
+    setSyncingTopicId(null);
+  };
+
+  // Batch sync all call comments to Notion API
+  const handleSyncAllCommentsToNotion = async () => {
+    const commentedTopics = weeklyCallTopics.filter(t => callCommentsMap[t.id] && callCommentsMap[t.id].trim());
+    if (commentedTopics.length === 0) {
+      alert('No has ingresado comentarios en los temas de la call semanal.');
+      return;
+    }
+
+    for (const t of commentedTopics) {
+      await handleSyncTopicCommentToNotion(t);
+    }
+    alert(`¡Se sincronizaron ${commentedTopics.length} comentarios de la call con Notion API!`);
+  };
+
+  const generateFullCallSummaryText = () => {
+    const nowStr = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    let summary = `======================================================================\n`;
+    summary += `📊 RESUMEN DE SEGUIMIENTO EN VIVO - CALL SEMANAL CON CEO (ALEJANDRO CUBINO)\n`;
+    summary += `Fecha: ${nowStr}\n`;
+    summary += `Director: Diego Paolo Musach (CTO)\n`;
+    summary += `======================================================================\n\n`;
+
+    weeklyCallTopics.forEach((t, idx) => {
+      const note = callCommentsMap[t.id] || 'Sin observaciones adicionales en la call.';
+      const card = getMatchedNotionCard(t.keyword);
+      summary += `${t.title}\n`;
+      summary += `• Responsable: ${t.lead} | Estado: ${t.defaultStatus}\n`;
+      summary += `• Tarjeta Notion Vinculada: ${card ? card.title : 'General'}\n`;
+      summary += `• Avance Fathom: ${t.fathomSummary}\n`;
+      summary += `• 💬 Comentario de Diego en Call: "${note}"\n\n`;
+    });
+
+    return summary;
+  };
+
+  const handleCopyCallSummary = () => {
+    const text = generateFullCallSummaryText();
     navigator.clipboard.writeText(text);
     setCopiedReport(true);
     setTimeout(() => setCopiedReport(false), 2500);
   };
 
-  const handleSendCEOEmail = () => {
-    const subject = encodeURIComponent(`[INFORME EJECUTIVO DETALLADO CTO] Follow Up Tecnología Fathom (Julio-Agosto 2026) - Alejandro Cubino`);
-    const body = encodeURIComponent(generateComprehensiveFathomCEOReport());
-    window.open(`mailto:acubino@bromteck.com?subject=${subject}&body=${body}`, '_blank');
-  };
-
   return (
     <div className="executive-roadmap-container">
       
-      {/* Header Banner */}
-      <div className="card-glass" style={{ padding: '1.2rem 1.5rem', marginBottom: '1.2rem', background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(15, 23, 42, 0.95))', borderLeft: '4px solid var(--accent-purple)' }}>
+      {/* Header Banner for Live Weekly Call */}
+      <div className="card-glass" style={{ padding: '1.2rem 1.5rem', marginBottom: '1.2rem', background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.18), rgba(15, 23, 42, 0.95))', borderLeft: '4px solid var(--accent-purple)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h2 style={{ fontSize: '1.25rem', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Video className="text-purple" size={22} /> 🤖 Reporte Semanal Completo para CEO (Basado en Follow Up Tecnología Fathom)
+              <Video className="text-purple" size={22} /> 🎥 Tablero de Seguimiento para la Call Semanal con CEO (Alejandro Cubino)
             </h2>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0.25rem 0 0 0' }}>
-              Informe directivo exhaustivo para Alejandro Cubino relevando la última sesión del <strong>10 de Agosto de 2026</strong> y reuniones desde <strong>Julio de 2026</strong>.
+              Revisión interactiva en vivo de los 10 temas directivos. Permite agregar comentarios por punto y sincronizarlos con Notion API.
             </p>
           </div>
 
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             <button
               className="btn-primary"
-              onClick={handleCopyCEOReport}
+              onClick={handleSyncAllCommentsToNotion}
               style={{ fontSize: '0.78rem', padding: '0.45rem 0.9rem', background: 'linear-gradient(135deg, var(--accent-purple), var(--accent-blue))' }}
             >
-              {copiedReport ? <CheckCircle2 size={14} /> : <Copy size={14} />} {copiedReport ? '¡Reporte Copiado!' : '📋 Copiar Reporte Exhaustivo para CEO'}
+              <Zap size={14} /> ⚡ Sincronizar Todos los Comentarios con Notion
             </button>
 
             <button
               className="btn-secondary"
-              onClick={handleSendCEOEmail}
-              style={{ fontSize: '0.78rem', padding: '0.45rem 0.9rem', border: '1px solid var(--accent-purple)', color: 'var(--accent-purple)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+              onClick={handleCopyCallSummary}
+              style={{ fontSize: '0.78rem', padding: '0.45rem 0.9rem', border: '1px solid var(--accent-cyan)', color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
             >
-              <Send size={14} /> Enviar por Email a Alejandro
+              {copiedReport ? <CheckCircle2 size={14} /> : <Copy size={14} />} {copiedReport ? '¡Copiado!' : '📋 Copiar Resumen Consolidado'}
             </button>
           </div>
         </div>
       </div>
 
-      {/* FATHOM FOLLOW UP TECNOLOGIA DETAILED MEETINGS BREAKDOWN */}
-      <div className="card-glass" style={{ padding: '1.2rem', marginBottom: '1.5rem', borderLeft: '4px solid var(--accent-cyan)' }}>
-        <h3 style={{ fontSize: '1.05rem', color: '#fff', margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <Video className="text-cyan" size={18} /> 🎥 Videollamadas Fathom "Follow Up Tecnología" Relevadas (Julio - Agosto 2026)
-        </h3>
+      {/* THE 10 INTERACTIVE WEEKLY CALL TOPICS WITH NOTION CARD LINKING & LIVE COMMENTING */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem', marginBottom: '1.5rem' }}>
+        {weeklyCallTopics.map((topic) => {
+          const matchedCard = getMatchedNotionCard(topic.keyword);
+          const currentComment = callCommentsMap[topic.id] || '';
+          const isSyncing = syncingTopicId === topic.id;
+          const isSynced = syncedStatusMap[topic.id];
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-          {fathomDetailedFollowUps.map((meeting) => (
-            <div key={meeting.id} style={{ background: 'rgba(30, 41, 59, 0.8)', border: '1px solid var(--border-subtle)', borderRadius: '10px', padding: '0.9rem 1.1rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '0.94rem', color: '#fff', fontWeight: 700 }}>
-                  {meeting.title}
-                </span>
-                <span style={{ fontSize: '0.76rem', color: 'var(--accent-purple)', fontWeight: 600 }}>
-                  📅 {meeting.date}
-                </span>
-              </div>
-
-              <div style={{ fontSize: '0.76rem', color: 'var(--accent-cyan)', fontWeight: 600, marginBottom: '0.4rem' }}>
-                👤 Integrantes: {meeting.lead}
-              </div>
-
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-body)', lineHeight: '1.45' }}>
-                {meeting.topics.map((point, idx) => (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.35rem', marginBottom: '0.25rem' }}>
-                    <span style={{ color: 'var(--accent-emerald)' }}>•</span>
-                    <span>{point}</span>
+          return (
+            <div 
+              key={topic.id} 
+              className="card-glass"
+              style={{ 
+                padding: '1.25rem',
+                borderLeft: '4px solid var(--accent-cyan)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.85rem'
+              }}
+            >
+              {/* Header Topic Row */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div>
+                  <h4 style={{ fontSize: '1rem', color: '#ffffff', margin: '0 0 0.25rem 0', fontWeight: 700 }}>
+                    {topic.title}
+                  </h4>
+                  <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '0.76rem', color: 'var(--accent-cyan)', fontWeight: 600 }}>
+                      👤 Responsable: {topic.lead}
+                    </span>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--accent-emerald)', background: 'rgba(52, 211, 153, 0.15)', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: 700 }}>
+                      {topic.defaultStatus}
+                    </span>
                   </div>
-                ))}
+                </div>
+
+                {/* Linked Notion Card Badge */}
+                {matchedCard ? (
+                  <div style={{ fontSize: '0.74rem', color: 'var(--accent-purple)', background: 'rgba(192, 132, 252, 0.15)', border: '1px solid rgba(192, 132, 252, 0.3)', padding: '0.3rem 0.65rem', borderRadius: '6px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Target size={13} /> Tarjeta Notion: "{matchedCard.title ? matchedCard.title.substring(0, 40) : 'General'}" ({matchedCard.status || 'Abierto'})
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', background: 'rgba(255, 255, 255, 0.05)', padding: '0.3rem 0.65rem', borderRadius: '6px' }}>
+                    📍 Vinculado a Matriz General Notion
+                  </div>
+                )}
               </div>
+
+              {/* Fathom Key Takeaways */}
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-body)', lineHeight: '1.45', background: 'rgba(15, 23, 42, 0.6)', padding: '0.65rem 0.85rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                💡 <strong>Avance en Fathom:</strong> {topic.fathomSummary}
+              </div>
+
+              {/* Live Call Comment Box with Microphone 🎙️ */}
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder={listeningTargetId === topic.id ? "🎙️ Escuchando tu dictado para la call..." : "💬 Escribe aquí tu comentario o nota para Alejandro durante la call..."}
+                  value={currentComment}
+                  onChange={(e) => setCallCommentsMap(prev => ({ ...prev, [topic.id]: e.target.value }))}
+                  style={{ fontSize: '0.82rem', padding: '0.5rem 0.85rem', flex: 1, background: 'rgba(15, 23, 42, 0.95)' }}
+                />
+
+                <button
+                  onClick={() => handleStartVoiceDictation(topic.id, (txt) => setCallCommentsMap(prev => ({ ...prev, [topic.id]: prev[topic.id] ? `${prev[topic.id]} ${txt}` : txt })))}
+                  className="btn-secondary"
+                  style={{ padding: '0.5rem 0.75rem', border: '1px solid var(--accent-cyan)', color: 'var(--accent-cyan)' }}
+                  title="Dictar comentario en vivo por micrófono 🎙️"
+                >
+                  <Mic size={14} className={listeningTargetId === topic.id ? 'pulse' : ''} />
+                </button>
+
+                <button
+                  className="btn-primary"
+                  onClick={() => handleSyncTopicCommentToNotion(topic)}
+                  disabled={isSyncing || isSynced || !currentComment.trim()}
+                  style={{
+                    fontSize: '0.76rem',
+                    padding: '0.5rem 0.85rem',
+                    background: isSynced ? 'rgba(52, 211, 153, 0.2)' : 'linear-gradient(135deg, var(--accent-purple), var(--accent-blue))',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {isSyncing ? (
+                    'Sincronizando...'
+                  ) : isSynced ? (
+                    <>
+                      <CheckCircle2 size={13} /> ¡Comentario en Notion!
+                    </>
+                  ) : (
+                    <>
+                      <MessageSquare size={13} /> Sincronizar Comentario con Notion
+                    </>
+                  )}
+                </button>
+              </div>
+
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* CEO REPORT PREVIEW TEXTAREA */}
-      <div className="card-glass" style={{ padding: '1.2rem', borderLeft: '4px solid var(--accent-purple)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem' }}>
-          <h3 style={{ fontSize: '1.05rem', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <FileText className="text-purple" size={18} /> 📄 Previsualización del Informe CEO Exhaustivo (Julio - Agosto 2026)
-          </h3>
-          <span style={{ fontSize: '0.74rem', color: 'var(--accent-purple)', fontWeight: 700 }}>
-            Formato Markdown Directo
-          </span>
-        </div>
-
-        <textarea
-          className="form-input"
-          rows={26}
-          readOnly
-          value={generateComprehensiveFathomCEOReport()}
-          style={{ fontSize: '0.8rem', lineHeight: '1.48', fontFamily: 'monospace', background: 'rgba(15, 23, 42, 0.95)', color: '#e2e8f0', borderRadius: '8px', padding: '0.85rem' }}
-        />
+          );
+        })}
       </div>
 
     </div>
