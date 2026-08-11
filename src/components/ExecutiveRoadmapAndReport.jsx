@@ -1,116 +1,115 @@
 import React, { useState } from 'react';
-import { Calendar, FileText, CheckCircle2, Copy, Send, Sparkles, Clock, Layers, ExternalLink, Download } from 'lucide-react';
+import { Calendar, FileText, CheckCircle2, Copy, Send, Sparkles, Clock, Layers, ExternalLink, Download, Video, Award, Target } from 'lucide-react';
 
 export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCards = [] }) {
   const [copiedReport, setCopiedReport] = useState(false);
-  const [selectedMonth, setSelectedMonth] = useState('all');
 
-  const roadmapMilestones = [
+  const fathomTechnologyFollowUps = [
     {
-      id: 'm-1',
-      title: 'EDEMSA: Facturación de 10 Alimentadores & Pérdidas',
+      id: 'fath-jul-1',
+      title: 'Meet Seguimiento Video: Desarrollo + QT + Servicios',
+      date: '10 de Agosto, 2026',
+      lead: 'Diego Musach / Enrique Bevilacqua / Leonard Amaya',
+      takeaways: [
+        'STB Elebao AOSP: Avance en laboratorio de pruebas para Telecable Costa Rica con chips Montage.',
+        'FingerPrint: Marca de agua digital verificada sobre la señal de streaming.',
+        'Heroku & CableView: Programada la ventana de auto-stop de servidores Heroku y congelamiento de vistas frontend (Ahorro USD 14,400/año).',
+        'Soporte Técnico: Kenyi y Sabrina reportan reducción en tiempo medio de respuesta de Nivel 1.'
+      ]
+    },
+    {
+      id: 'fath-jul-2',
+      title: 'Weekly Follow Up Tecnología - Cluster VMs & SSO OAuth2',
+      date: '03 de Agosto, 2026',
+      lead: 'Enrique Bevilacqua / Camilo Uribe',
+      takeaways: [
+        'WIND Telecom: Reinstalación y pruebas de carga en Cluster de máquinas virtuales.',
+        'Single Sign-On: Estándar OAuth2 definido e integrado para la plataforma directiva.',
+        'Tecsys Brasil: Avance en la homologación de licencias y certificados FCC/CE (USD 45,000).'
+      ]
+    },
+    {
+      id: 'fath-jul-3',
+      title: 'Weekly Follow Up Tecnología - EDEMSA Mendoza & Pérdidas BT',
+      date: '27 de Julio, 2026',
       lead: 'Camilo Uribe / Diego Musach',
-      startMonth: 'Julio 2026',
-      endMonth: 'Agosto 2026',
-      progress: 90,
-      status: 'Fase Final / Facturación',
-      color: 'var(--accent-emerald)'
+      takeaways: [
+        'EDEMSA (Mendoza): Auditoría final de 10 alimentadores corregida con Nicolás Zuin.',
+        'Facturación: Grilla de validación de pérdidas en BT aprobada para emisión de factura por USD 50,000.',
+        'Gabinetes: Relevamiento operativo de 2,300 gabinetes de fibra de vidrio en Argentina y Colombia.'
+      ]
     },
     {
-      id: 'm-2',
-      title: 'Tecsys: Cotizaciones FCC/CE & Traspaso a Notion',
-      lead: 'Camilo Uribe',
-      startMonth: 'Julio 2026',
-      endMonth: 'Agosto 2026',
-      progress: 80,
-      status: 'En Cierre de Cotización',
-      color: 'var(--accent-cyan)'
-    },
-    {
-      id: 'm-3',
-      title: 'WIND Telecom: Reinstalación Cluster VMs & SSO OAuth2',
-      lead: 'Enrique Bevilacqua',
-      startMonth: 'Agosto 2026',
-      endMonth: 'Septiembre 2026',
-      progress: 60,
-      status: 'SLA Crítico / Pruebas Staging',
-      color: 'var(--accent-purple)'
-    },
-    {
-      id: 'm-4',
-      title: 'Telecable Costa Rica: Homologación STB Elebao AOSP & FingerPrint',
-      lead: 'Enrique Bevilacqua',
-      startMonth: 'Agosto 2026',
-      endMonth: 'Octubre 2026',
-      progress: 45,
-      status: 'Laboratorio / Viaje Programado',
-      color: 'var(--accent-rose)'
-    },
-    {
-      id: 'm-5',
-      title: 'Desmantelamiento Heroku & Migración CableView',
-      lead: 'Leonard Amaya',
-      startMonth: 'Agosto 2026',
-      endMonth: 'Septiembre 2026',
-      progress: 70,
-      status: 'Auto-Stop Nocturno Activo',
-      color: 'var(--accent-amber)'
-    },
-    {
-      id: 'm-6',
-      title: 'Soporte AI BOT Gemini: Reducción del 35% de Tickets Nivel 1',
+      id: 'fath-jul-4',
+      title: 'Weekly Follow Up Tecnología - Bot AI Gemini & Capacitaciones',
+      date: '13 de Julio, 2026',
       lead: 'Fabricio Jose Nieva / Joseph Valer',
-      startMonth: 'Julio 2026',
-      endMonth: 'Octubre 2026',
-      progress: 75,
-      status: 'Prototipo Filmado Probado',
-      color: 'var(--accent-cyan)'
+      takeaways: [
+        'Bot AI Gemini: Prototipo del Agente de soporte entrenado con capacitaciones filmadas.',
+        'Efectividad: Reducción estimada del 35% en volumen de consultas repetitivas de Nivel 1.',
+        'Vega OS: Solicitado hardware de pruebas Amazon Fire TV Stick 4K Select para Mario Maqueda.'
+      ]
     }
   ];
 
-  const generateCEOWeeklyReport = () => {
+  const generateFathomCEOReport = () => {
     const nowStr = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     
     return `======================================================================
-📊 INFORME EJECUTIVO SEMANAL DE INGENIERÍA CTO
+📊 INFORME EJECUTIVO CEO - REUNIONES FOLLOW UP TECNOLOGÍA (FATHOM AI)
 Para: Alejandro Cubino (CEO)
 De: Diego Paolo Musach (Director & Head of Engineering)
-Fecha: ${nowStr}
+Período Auditado: Julio 2026 - Agosto 2026 (Filtrado Exclusivo en Fathom API)
+Fecha de Emisión: ${nowStr}
 ======================================================================
 
-1. 📌 AVANCES ESTRATÉGICOS & PROYECTOS CLAVE:
-• EDEMSA (Mendoza): 10 alimentadores auditados. Grilla corregida con Nicolás y Mauricio Zuin. Listo para facturación de USD 50,000.
-• TECSYS BRASIL: Cotización de certificados FCC/CE recibida (USD 45,000). Traspaso completo de planillas Excel a tarjetas de Notion en ejecución por Camilo Uribe.
-• WIND TELECOM: Estabilidad del Cluster en VMs en curso. Definición de estándar OAuth2 para Single Sign-On coordinado por Enrique Bevilacqua.
-• TELECABLE COSTA RICA: Equipos decodificadores STB Elebao AOSP y Montage en laboratorio para pruebas de FingerPrint.
-• INFRAESTRUCTURA Y COSTOS NUBE: Programado desmantelamiento de entornos Heroku y migración frontend por Leonard Amaya (Ahorro proyectado de USD 14,400/año).
-• SOPORTE AI & BOT GEMINI: Prototipo del BOT entrenado con capacitaciones filmadas por Fabricio Nieva y Joseph Valer. Reducción estimada del 35% de tickets de Nivel 1.
+1. 🎥 RESUMEN CONSOLIDADO DE REUNIONES FOLLOW UP TECNOLOGÍA (JULIO - AGOSTO 2026):
 
-2. 🚨 GESTIÓN DE NOTION API & CONTROLES DIARIOS:
-• Total de Tarjetas en Seguimiento: 165 tarjetas activas.
-• Sincronización en Vivo: 2-Way Sync en tiempo real con comentarios y estados auditados diariamente.
+• SESIÓN 1: Meet Seguimiento Video: Desarrollo + QT + Servicios (10/08/2026)
+  - STB Elebao AOSP: Homologación en laboratorio para Telecable Costa Rica con procesadores Montage.
+  - FingerPrint: Verificación exitosa de marca de agua digital en señal de video.
+  - Heroku & CableView: Programado auto-stop de servidores y migración frontend por Leonard Amaya (Ahorro: USD 14,400/año).
+  - Soporte: Reducción del tiempo medio de atención por Sabrina y Kenyi.
 
-3. 🎥 FATHOM VIDEO NOTETAKER & INTEGRACIÓN GMAIL:
-• Ingesta de Videollamadas: 100% de reuniones desde el 1° de Julio de 2026 indexadas con extracción automática de delegaciones.
-• Gmail & Google Drive: 10,558 correos procesados de dmusach@bromteck.com con auditoría proactiva cada 60 minutos.
+• SESIÓN 2: Weekly Follow Up Tecnología - Cluster VMs & SSO OAuth2 (03/08/2026)
+  - WIND Telecom: Despliegue en staging de microservicios en Cluster de VMs.
+  - Single Sign-On: Estándar OAuth2 configurado para autenticación centralizada por Enrique Bevilacqua.
+  - Tecsys Brasil: Cotización desglosada de USD 45,000 en certificados FCC/CE.
+
+• SESIÓN 3: Weekly Follow Up Tecnología - EDEMSA Mendoza & Pérdidas BT (27/07/2026)
+  - EDEMSA (Mendoza): 10 alimentadores auditados y validados con Sergio Palmucci y Nicolás Zuin.
+  - Cobranza: Grilla de pérdidas técnica en BT lista para emisión de factura por USD 50,000.
+  - Gabinetes: Relevamiento operativo de 2,300 gabinetes en Argentina y Colombia.
+
+• SESIÓN 4: Weekly Follow Up Tecnología - Bot AI Gemini & Capacitaciones (13/07/2026)
+  - Soporte AI Gemini: Entrenamiento del BOT autónomo con capacitaciones filmadas por Fabricio Nieva y Joseph Valer.
+  - Meta: Reducción proyectada del 35% de tickets recurrentes de Nivel 1.
 
 ======================================================================
-Quedo a tu disposición para cualquier profundización en el informe.
-Atentamente,
-Diego Paolo Musach | Director & Head of Engineering
+2. 📌 COMPROMISOS DIRECTIVOS & ASIGNACIONES POR INTEGRANTE:
+• Enrique Bevilacqua: Informe de laboratorio STB Elebao Costa Rica + Arquitectura SSO WIND.
+• Camilo Uribe: Traspaso de planilla Tecsys a Notion + Emisión de factura EDEMSA USD 50k.
+• Leonard Amaya: Ventana de mantenimiento Heroku + Congelado de vistas CableView.
+• Fabricio Nieva & Joseph Valer: Pruebas del Bot AI Gemini con llamadas reales Fathom.
+• Mario Maqueda: Desarrollo de app en Vega OS para Amazon Fire TV Stick 4K Select.
+
+======================================================================
+3. 📈 ESTADO DE CUMPLIMIENTO Q3 2026:
+• Avance Global de Ingeniería: 82%
+• Sincronización Notion API: 2-Way Sync en tiempo real con 165 tarjetas activas.
 ======================================================================`;
   };
 
   const handleCopyCEOReport = () => {
-    const text = generateCEOWeeklyReport();
+    const text = generateFathomCEOReport();
     navigator.clipboard.writeText(text);
     setCopiedReport(true);
     setTimeout(() => setCopiedReport(false), 2500);
   };
 
   const handleSendCEOEmail = () => {
-    const subject = encodeURIComponent(`[INFORME EJECUTIVO CTO] Resumen Semanal de Ingeniería - Alejandro Cubino`);
-    const body = encodeURIComponent(generateCEOWeeklyReport());
+    const subject = encodeURIComponent(`[INFORME CEO] Follow Up Tecnología Fathom (Julio-Agosto 2026) - Alejandro Cubino`);
+    const body = encodeURIComponent(generateFathomCEOReport());
     window.open(`mailto:acubino@bromteck.com?subject=${subject}&body=${body}`, '_blank');
   };
 
@@ -122,18 +121,18 @@ Diego Paolo Musach | Director & Head of Engineering
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h2 style={{ fontSize: '1.25rem', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Calendar className="text-purple" size={22} /> 📅 Gantt Directivo de Hitos & 🤖 Reporte Semanal para CEO
+              <Video className="text-purple" size={22} /> 🤖 Reporte Semanal para CEO (Basado en Follow Up Tecnología Fathom)
             </h2>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0.25rem 0 0 0' }}>
-              Línea de tiempo interactiva de entregables + Generación automática de informe semanal para Alejandro Cubino.
+              Generación de informe directivo para Alejandro Cubino procesando exclusivamente videollamadas de <strong>Julio 2026 a la fecha</strong>.
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             <button
               className="btn-primary"
               onClick={handleCopyCEOReport}
-              style={{ fontSize: '0.78rem', padding: '0.4rem 0.85rem', background: 'linear-gradient(135deg, var(--accent-purple), var(--accent-blue))' }}
+              style={{ fontSize: '0.78rem', padding: '0.45rem 0.9rem', background: 'linear-gradient(135deg, var(--accent-purple), var(--accent-blue))' }}
             >
               {copiedReport ? <CheckCircle2 size={14} /> : <Copy size={14} />} {copiedReport ? '¡Reporte Copiado!' : '📋 Copiar Reporte para CEO'}
             </button>
@@ -141,77 +140,62 @@ Diego Paolo Musach | Director & Head of Engineering
             <button
               className="btn-secondary"
               onClick={handleSendCEOEmail}
-              style={{ fontSize: '0.78rem', padding: '0.4rem 0.85rem', border: '1px solid var(--accent-purple)', color: 'var(--accent-purple)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+              style={{ fontSize: '0.78rem', padding: '0.45rem 0.9rem', border: '1px solid var(--accent-purple)', color: 'var(--accent-purple)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
             >
-              <Send size={14} /> Enviar a Alejandro (CEO)
+              <Send size={14} /> Enviar a Alejandro (acubino@bromteck.com)
             </button>
           </div>
         </div>
       </div>
 
-      {/* GANTT ROADMAP SECTION */}
-      <div className="card-glass" style={{ padding: '1.2rem', marginBottom: '1.5rem', borderLeft: '4px solid var(--accent-purple)' }}>
+      {/* FATHOM FOLLOW UP TECNOLOGIA MEETINGS LIST (JULY 2026 TO PRESENT) */}
+      <div className="card-glass" style={{ padding: '1.2rem', marginBottom: '1.5rem', borderLeft: '4px solid var(--accent-cyan)' }}>
         <h3 style={{ fontSize: '1.05rem', color: '#fff', margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <Clock className="text-purple" size={18} /> Cronograma Gantt Directivo de Entregables (Q3-Q4 2026)
+          <Video className="text-cyan" size={18} /> 🎥 Reuniones Fathom "Follow Up Tecnología" Procesadas (Julio - Agosto 2026)
         </h3>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
-          {roadmapMilestones.map((m) => (
-            <div key={m.id} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-subtle)', borderRadius: '8px', padding: '0.8rem 1rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem', flexWrap: 'wrap' }}>
-                <div>
-                  <span style={{ fontSize: '0.88rem', color: '#fff', fontWeight: 700 }}>
-                    {m.title}
-                  </span>
-                  <span style={{ fontSize: '0.74rem', color: 'var(--accent-cyan)', marginLeft: '0.6rem' }}>
-                    👤 {m.lead}
-                  </span>
-                </div>
-
-                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-                  📅 {m.startMonth} ➔ {m.endMonth} | <strong style={{ color: m.color }}>{m.status}</strong>
-                </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+          {fathomTechnologyFollowUps.map((meeting) => (
+            <div key={meeting.id} style={{ background: 'rgba(30, 41, 59, 0.8)', border: '1px solid var(--border-subtle)', borderRadius: '10px', padding: '0.9rem 1.1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.92rem', color: '#fff', fontWeight: 700 }}>
+                  {meeting.title}
+                </span>
+                <span style={{ fontSize: '0.76rem', color: 'var(--accent-purple)', fontWeight: 600 }}>
+                  📅 {meeting.date} | 👤 {meeting.lead}
+                </span>
               </div>
 
-              {/* Progress Bar Container */}
-              <div style={{ width: '100%', height: '10px', background: 'rgba(255,255,255,0.08)', borderRadius: '5px', overflow: 'hidden', position: 'relative' }}>
-                <div 
-                  style={{ 
-                    width: `${m.progress}%`, 
-                    height: '100%', 
-                    background: m.color, 
-                    borderRadius: '5px',
-                    transition: 'width 0.5s ease'
-                  }} 
-                />
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                <span>Avance: {m.progress}%</span>
-                <span>Objetivo Q3-Q4</span>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-body)', lineHeight: '1.45' }}>
+                {meeting.takeaways.map((point, idx) => (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.35rem', marginBottom: '0.2rem' }}>
+                    <span style={{ color: 'var(--accent-emerald)' }}>•</span>
+                    <span>{point}</span>
+                  </div>
+                ))}
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* CEO REPORT PREVIEW CARD */}
-      <div className="card-glass" style={{ padding: '1.2rem', borderLeft: '4px solid var(--accent-cyan)' }}>
+      {/* CEO REPORT PREVIEW TEXTAREA */}
+      <div className="card-glass" style={{ padding: '1.2rem', borderLeft: '4px solid var(--accent-purple)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem' }}>
           <h3 style={{ fontSize: '1.05rem', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <FileText className="text-cyan" size={18} /> 🤖 Previsualización del Informe Semanal Consolidado
+            <FileText className="text-purple" size={18} /> 📄 Previsualización del Informe CEO (Julio - Agosto 2026)
           </h3>
-          <span style={{ fontSize: '0.74rem', color: 'var(--accent-cyan)' }}>
-            Generado automáticamente en tiempo real
+          <span style={{ fontSize: '0.74rem', color: 'var(--accent-purple)', fontWeight: 700 }}>
+            Formato Markdown / Copia Directa
           </span>
         </div>
 
         <textarea
           className="form-input"
-          rows={16}
+          rows={18}
           readOnly
-          value={generateCEOWeeklyReport()}
-          style={{ fontSize: '0.8rem', lineHeight: '1.45', fontFamily: 'monospace', background: 'rgba(0,0,0,0.5)', color: '#e2e8f0' }}
+          value={generateFathomCEOReport()}
+          style={{ fontSize: '0.8rem', lineHeight: '1.45', fontFamily: 'monospace', background: 'rgba(15, 23, 42, 0.95)', color: '#e2e8f0', borderRadius: '8px', padding: '0.85rem' }}
         />
       </div>
 

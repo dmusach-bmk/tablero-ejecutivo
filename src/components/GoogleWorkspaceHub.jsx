@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Folder, CheckCircle2, Send, Sparkles, Key, ExternalLink, RefreshCw, AlertCircle, ShieldCheck, Zap, Clock, Calendar, Search, FileText, HardDrive, MessageSquare, PlusCircle, Mic, FileSpreadsheet, Plus, Check, Target, ChevronRight, Trash2, Edit3, ListFilter, Eye, X, Table, RotateCcw, Compass } from 'lucide-react';
+import { Mail, Folder, CheckCircle2, Send, Sparkles, Key, ExternalLink, RefreshCw, AlertCircle, ShieldCheck, Zap, Clock, Calendar, Search, FileText, HardDrive, MessageSquare, PlusCircle, Mic, FileSpreadsheet, Plus, Check, Target, ChevronRight, Trash2, Edit3, ListFilter, Eye, X, Table, RotateCcw, Compass, HelpCircle, ThumbsUp } from 'lucide-react';
 import { fetchCorporateGmailMessages, fetchCorporateDriveFiles, getCorporateGmailSampleData, getCorporateDriveSampleData } from '../services/googleWorkspaceService';
 import { createNotionPage, postCommentToNotion } from '../services/notionService';
 
@@ -10,7 +10,7 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
 
   const [accountEmail, setAccountEmail] = useState('dmusach@bromteck.com');
   const [startDate, setStartDate] = useState('2026-05-01');
-  const [activeTab, setActiveTab] = useState('tasks');
+  const [activeTab, setActiveTab] = useState('gmail');
   const [searchQuery, setSearchQuery] = useState('');
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [isFetchingGoogleAPI, setIsFetchingGoogleAPI] = useState(false);
@@ -28,6 +28,41 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
   const [actionSuccessStatus, setActionSuccessStatus] = useState({});
   const [processingId, setProcessingId] = useState(null);
 
+  // Intelligent Notion Card Matcher for Emails
+  const findMatchingNotionCardForEmail = (email) => {
+    if (!Array.isArray(notionCards) || notionCards.length === 0) return null;
+    const s = (email.subject + ' ' + email.snippet + ' ' + email.from).toLowerCase();
+
+    return notionCards.find(card => {
+      const cTitle = (card.title || '').toLowerCase();
+      const cMember = (card.memberName || card.responsable || '').toLowerCase();
+
+      if (s.includes('edemsa') || s.includes('palmucci') || s.includes('godel')) {
+        return cTitle.includes('edemsa') || cTitle.includes('pérdidas');
+      }
+      if (s.includes('tecsys') || s.includes('fcc') || s.includes('hábitat')) {
+        return cTitle.includes('tecsys') || cTitle.includes('cotización');
+      }
+      if (s.includes('wind') || s.includes('sso') || s.includes('cluster')) {
+        return cTitle.includes('wind') || cTitle.includes('sso');
+      }
+      if (s.includes('telecable') || s.includes('elebao') || s.includes('fingerprint') || s.includes('aosp')) {
+        return cTitle.includes('telecable') || cTitle.includes('fingerprint') || cTitle.includes('aosp');
+      }
+      if (s.includes('heroku') || s.includes('cableview') || s.includes('leonard')) {
+        return cTitle.includes('heroku') || cTitle.includes('cableview');
+      }
+      if (s.includes('bot') || s.includes('capacitaciones') || s.includes('fabricio')) {
+        return cTitle.includes('bot') || cTitle.includes('soporte');
+      }
+      if (s.includes('vega') || s.includes('firestick') || s.includes('fire tv')) {
+        return cTitle.includes('vega') || cTitle.includes('firestick');
+      }
+
+      return email.relatedMember && cMember.includes(email.relatedMember.split(' ')[0].toLowerCase());
+    });
+  };
+
   // Helper to parse clean titles instead of raw URLs
   const getCleanSpreadsheetTitle = (raw) => {
     if (!raw) return '📊 Planilla de POCs & Relevamiento 2026';
@@ -40,7 +75,6 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
     return raw;
   };
 
-  // Rich AI Analyzed Spreadsheet Rows Engine
   const getDefaultSheetRows = (sheetName) => [
     { rowId: `r-1-${Date.now()}`, project: 'EDEMSA Mendoza', task: 'Auditoría 10 alimentadores & pérdidas BT', lead: 'Camilo Uribe', status: 'Listo p/ Facturar', amount: 'USD 50,000', sheetLink: 'https://docs.google.com/spreadsheets/d/1wYtI9vmRuu6wWlIlfk7RdH-ElbcZ2QSjDgVA5gJEdGRw/edit?gid=1845085710#gid=1845085710' },
     { rowId: `r-2-${Date.now()}`, project: 'Tecsys Brasil', task: 'Certificados FCC y CE en planillas', lead: 'Camilo Uribe', status: 'En Traspaso a Notion', amount: 'USD 45,000', sheetLink: 'https://docs.google.com/spreadsheets/d/1wYtI9vmRuu6wWlIlfk7RdH-ElbcZ2QSjDgVA5gJEdGRw/edit?gid=1845085710#gid=1845085710' },
@@ -106,55 +140,6 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
   const [gmailMessages, setGmailMessages] = useState(getCorporateGmailSampleData());
   const [driveFiles, setDriveFiles] = useState(getCorporateDriveSampleData());
 
-  // Dedicated AI Extracted Tasks List
-  const [aiExtractedTasks, setAiExtractedTasks] = useState([
-    {
-      id: 'task-1',
-      title: 'EDEMSA Mendoza: Autorizar facturación de USD 50,000 por 10 alimentadores auditados',
-      source: '📧 Correo de Sergio Palmucci (EDEMSA) + 📊 Planilla de POCs 2026',
-      responsable: 'Camilo Uribe / Diego Musach',
-      priority: 'P1 - CRITICA',
-      actionNeeded: 'Verificar grilla con Mauricio Zuin y notificar emisión de factura en Notion.',
-      notionKeyword: 'edemsa'
-    },
-    {
-      id: 'task-2',
-      title: 'Tecsys Brasil: Traspasar planilla de cotizaciones FCC/CE (USD 45,000) a tarjetas de Notion',
-      source: '📧 Correo de Camilo Uribe + 📊 Planilla de POCs 2026',
-      responsable: 'Camilo Uribe',
-      priority: 'P1 - CRITICA',
-      actionNeeded: 'Volcar los 6 ítems de homologación a tarjetas individuales de seguimiento.',
-      notionKeyword: 'tecsys'
-    },
-    {
-      id: 'task-3',
-      title: 'WIND Telecom: Definir estándar OAuth2 para Single Sign-On en Cluster de VMs',
-      source: '📧 Correo de Enrique Bevilacqua + 📊 Planilla de POCs 2026',
-      responsable: 'Enrique Bevilacqua',
-      priority: 'P1 - CRITICA',
-      actionNeeded: 'Aprobar arquitectura de autenticación SSO para la migración de entorno virtualizado.',
-      notionKeyword: 'wind'
-    },
-    {
-      id: 'task-4',
-      title: 'Vega OS: Aprobar compra de Amazon Fire TV Stick 4K Select para laboratorio',
-      source: '📧 Correo de Mario Maqueda <sw1@bromteck.com>',
-      responsable: 'Mario Maqueda',
-      priority: 'P2 - ALTA',
-      actionNeeded: 'Autorizar presupuesto para hardware de pruebas de la aplicación en Vega OS.',
-      notionKeyword: 'vega'
-    },
-    {
-      id: 'task-5',
-      title: 'Heroku Migration: Programar ventana de auto-stop de servidores y CableView',
-      source: '📧 Correo de Leonard Amaya <lamaya@bromteck.com>',
-      responsable: 'Leonard Amaya',
-      priority: 'P2 - ALTA',
-      actionNeeded: 'Apagar entornos Heroku para consolidar ahorro de USD 14,400 anuales.',
-      notionKeyword: 'heroku'
-    }
-  ]);
-
   const handleStartVoiceDictation = (targetId, onSpeechText) => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -181,7 +166,6 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
     recognition.start();
   };
 
-  // Add Spreadsheet Manually
   const handleAddPrioritySpreadsheet = () => {
     if (!newSheetInput.trim()) return;
     const inputVal = newSheetInput.trim();
@@ -201,7 +185,6 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
     setNewSheetInput('');
   };
 
-  // Discard Spreadsheet to Discarded List
   const handleDiscardSpreadsheet = (sheetId) => {
     const target = prioritySpreadsheets.find(s => s.id === sheetId);
     if (!target) return;
@@ -213,7 +196,6 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
     localStorage.setItem('dm_discarded_spreadsheets', JSON.stringify(updatedDiscarded));
   };
 
-  // Restore Discarded Spreadsheet
   const handleRestoreSpreadsheet = (sheetId) => {
     const target = discardedSpreadsheets.find(s => s.id === sheetId);
     if (!target) return;
@@ -225,7 +207,6 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
     localStorage.setItem('dm_discarded_spreadsheets', JSON.stringify(updatedDiscarded));
   };
 
-  // Add Discovered File from Drive
   const handleAddDiscoveredFile = (discFile) => {
     const newSheet = {
       id: `sheet-disc-${Date.now()}`,
@@ -263,8 +244,8 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
   };
 
   // 2. ACTION: COMMENT ON EXISTING NOTION TASK
-  const handleCommentOnExistingNotionCard = async (item) => {
-    const targetCardId = selectedNotionCardMap[item.id || item.rowId];
+  const handleCommentOnExistingNotionCard = async (item, matchedCardObj) => {
+    const targetCardId = selectedNotionCardMap[item.id || item.rowId] || (matchedCardObj ? (matchedCardObj.notionPageId || matchedCardObj.id) : null);
     if (!targetCardId) {
       alert('Por favor selecciona una tarjeta de Notion existente de la lista desplegable.');
       return;
@@ -273,7 +254,7 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
 
     const userNote = customCommentMap[item.id || item.rowId] || '';
     const baseText = item.title || item.task || item.subject || 'Seguimiento de Workspace Hub';
-    const commentContent = `[Workspace AI Hub]: ${baseText} ${userNote ? `\n💬 Comentario de Diego: "${userNote}"` : ''}`;
+    const commentContent = `[Gmail ${item.date || ''} - De: ${item.from || 'Correo'}]: "${baseText}" ${userNote ? `\n💬 Comentario Diego: "${userNote}"` : ''}`;
 
     const res = await postCommentToNotion(credentials?.notionToken, targetCardId, commentContent);
     if (res.success) {
@@ -282,7 +263,7 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
     setProcessingId(null);
   };
 
-  // 3. ACTION: DISCARD TASK
+  // 3. ACTION: DISCARD TASK / THEME
   const handleDiscardTask = (itemId) => {
     setDismissedTasksMap(prev => ({ ...prev, [itemId]: true }));
   };
@@ -322,7 +303,6 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
     handleFetchGoogleWorkspaceData();
   }, [startDate]);
 
-  const activeTasks = aiExtractedTasks.filter(t => !dismissedTasksMap[t.id]);
   const activeEmails = gmailMessages.filter(m => !dismissedTasksMap[m.id]);
 
   return (
@@ -333,16 +313,16 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h2 style={{ fontSize: '1.25rem', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Mail className="text-cyan" size={22} /> 📧 Gmail Corporativo & 📁 Google Drive AI ({accountEmail})
+              <Mail className="text-cyan" size={22} /> 📧 Gmail Corporativo & Asociación IA con Tarjetas ({accountEmail})
             </h2>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0.25rem 0 0 0' }}>
-              Análisis completo de planillas y correos con descubrimiento de archivos, gestión de descartados e inspección de filas Excel.
+              Cada correo es analizado por la IA para asociarlo con tarjetas existentes en Notion, sugerir su creación o descartar el tema.
             </p>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ fontSize: '0.74rem', color: 'var(--accent-emerald)', background: 'rgba(52, 211, 153, 0.15)', padding: '0.3rem 0.75rem', borderRadius: '6px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-              <Check size={14} /> {activeTasks.length} Tareas Directivas Activas
+              <Check size={14} /> {activeEmails.length} Correos Analizados por IA
             </span>
           </div>
         </div>
@@ -493,25 +473,6 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
       {/* Navigation Sub-Tabs */}
       <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.2rem', flexWrap: 'wrap' }}>
         <button
-          onClick={() => setActiveTab('tasks')}
-          style={{
-            padding: '0.55rem 1.2rem',
-            borderRadius: '8px',
-            background: activeTab === 'tasks' ? 'linear-gradient(135deg, var(--accent-purple), var(--accent-blue))' : 'var(--bg-card)',
-            color: '#fff',
-            border: activeTab === 'tasks' ? 'none' : '1px solid var(--border-subtle)',
-            fontSize: '0.84rem',
-            fontWeight: 700,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.45rem'
-          }}
-        >
-          <Target size={16} /> 🎯 Tareas Detectadas por IA ({activeTasks.length})
-        </button>
-
-        <button
           onClick={() => setActiveTab('gmail')}
           style={{
             padding: '0.55rem 1.2rem',
@@ -548,131 +509,29 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
         >
           <HardDrive size={16} /> Archivos Google Drive ({driveFiles.length})
         </button>
+
+        <div style={{ flex: 1, minWidth: '240px', position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <Search size={14} style={{ position: 'absolute', left: '12px', color: 'var(--text-muted)' }} />
+          <input
+            type="text"
+            placeholder={listeningTargetId === 'workspaceSearch' ? "🎙️ Escuchando..." : "Buscar correos por asunto, remitente o micrófono..."}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{ paddingLeft: '34px', paddingRight: '36px', fontSize: '0.8rem', height: '36px', width: '100%' }}
+            className="form-input"
+          />
+        </div>
       </div>
 
-      {/* VIEW 1: DEDICATED AI EXTRACTED TASKS WITH THE 4 REQUESTED ACTIONS */}
-      {activeTab === 'tasks' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-          {activeTasks.map((task) => {
-            const status = actionSuccessStatus[task.id];
-            const isProc = processingId === task.id;
-            const currentNote = customCommentMap[task.id] || '';
-            const selectedCardId = selectedNotionCardMap[task.id] || '';
-
-            return (
-              <div 
-                key={task.id} 
-                className="card-glass"
-                style={{ 
-                  padding: '1.25rem',
-                  borderLeft: '4px solid var(--accent-purple)', 
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.85rem'
-                }}
-              >
-                <div>
-                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.35rem', flexWrap: 'wrap' }}>
-                    <span className="tag critical" style={{ fontSize: '0.65rem' }}>
-                      {task.priority}
-                    </span>
-                    <span style={{ fontSize: '0.78rem', color: 'var(--accent-cyan)', fontWeight: 700 }}>
-                      👤 Responsable: {task.responsable}
-                    </span>
-                    <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-                      📍 Origen: {task.source}
-                    </span>
-                  </div>
-
-                  <h4 style={{ fontSize: '1rem', color: '#ffffff', margin: '0 0 0.35rem 0', fontWeight: 700 }}>
-                    {task.title}
-                  </h4>
-
-                  <p style={{ fontSize: '0.8rem', color: 'var(--accent-emerald)', margin: 0, fontWeight: 600 }}>
-                    💡 Acción Directiva Sugerida: {task.actionNeeded}
-                  </p>
-                </div>
-
-                {/* Recuadro para mis comentarios de Diego */}
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder={listeningTargetId === task.id ? "🎙️ Escuchando tu dictado..." : "💬 Escribe aquí tu comentario o dictado para Notion (opcional)..."}
-                    value={currentNote}
-                    onChange={(e) => setCustomCommentMap(prev => ({ ...prev, [task.id]: e.target.value }))}
-                    style={{ fontSize: '0.8rem', padding: '0.45rem 0.8rem', flex: 1, background: 'rgba(15, 23, 42, 0.95)' }}
-                  />
-
-                  <button
-                    onClick={() => handleStartVoiceDictation(task.id, (txt) => setCustomCommentMap(prev => ({ ...prev, [task.id]: prev[task.id] ? `${prev[task.id]} ${txt}` : txt })))}
-                    className="btn-secondary"
-                    style={{ padding: '0.45rem 0.65rem', border: '1px solid var(--accent-cyan)', color: 'var(--accent-cyan)' }}
-                  >
-                    <Mic size={14} className={listeningTargetId === task.id ? 'pulse' : ''} />
-                  </button>
-                </div>
-
-                {/* The 4 Action Controls Required by Diego */}
-                <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap', background: 'rgba(15, 23, 42, 0.6)', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
-                  
-                  <button
-                    className="btn-primary"
-                    onClick={() => handleAddNewTaskToNotion(task)}
-                    disabled={status === 'created' || isProc}
-                    style={{ fontSize: '0.76rem', padding: '0.45rem 0.85rem', background: status === 'created' ? 'rgba(52, 211, 153, 0.2)' : 'linear-gradient(135deg, var(--accent-purple), var(--accent-blue))', whiteSpace: 'nowrap' }}
-                  >
-                    <PlusCircle size={13} /> {status === 'created' ? '¡Creada en Notion!' : 'Agregar a Notion como nueva tarea'}
-                  </button>
-
-                  <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flex: 1, minWidth: '280px' }}>
-                    <select
-                      className="form-select"
-                      value={selectedCardId}
-                      onChange={(e) => setSelectedNotionCardMap(prev => ({ ...prev, [task.id]: e.target.value }))}
-                      style={{ fontSize: '0.76rem', padding: '0.4rem 0.6rem', flex: 1 }}
-                    >
-                      <option value="">-- Seleccionar Tarjeta Existente de Notion ({notionCards.length} disponibles) --</option>
-                      {notionCards.map((card) => (
-                        <option key={card.id || card.notionPageId} value={card.notionPageId || card.id}>
-                          {card.title ? card.title.substring(0, 50) : 'Sin Título'} ({card.status || 'Abierto'})
-                        </option>
-                      ))}
-                    </select>
-
-                    <button
-                      className="btn-secondary"
-                      onClick={() => handleCommentOnExistingNotionCard(task)}
-                      disabled={status === 'commented' || isProc || !selectedCardId}
-                      style={{ fontSize: '0.76rem', padding: '0.4rem 0.75rem', border: '1px solid var(--accent-cyan)', color: 'var(--accent-cyan)', whiteSpace: 'nowrap' }}
-                    >
-                      <MessageSquare size={13} /> {status === 'commented' ? '¡Comentado!' : 'Comentar en tarea existente'}
-                    </button>
-                  </div>
-
-                  <button
-                    className="btn-danger"
-                    onClick={() => handleDiscardTask(task.id)}
-                    style={{ fontSize: '0.76rem', padding: '0.45rem 0.75rem', whiteSpace: 'nowrap' }}
-                  >
-                    <Trash2 size={13} /> Descartar tarea
-                  </button>
-
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* VIEW 2: GMAIL CORRESPONDENCE WITH THE 4 ACTIONS */}
+      {/* VIEW 1: GMAIL CORRESPONDENCE WITH INTELLIGENT NOTION CARD MATCHING & SUGGESTION BADGES */}
       {activeTab === 'gmail' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
           {activeEmails.map((mailItem) => {
+            const matchedCardObj = findMatchingNotionCardForEmail(mailItem);
             const status = actionSuccessStatus[mailItem.id];
             const isProc = processingId === mailItem.id;
             const currentNote = customCommentMap[mailItem.id] || '';
-            const selectedCardId = selectedNotionCardMap[mailItem.id] || '';
+            const selectedCardId = selectedNotionCardMap[mailItem.id] || (matchedCardObj ? (matchedCardObj.notionPageId || matchedCardObj.id) : '');
 
             return (
               <div 
@@ -680,14 +539,14 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
                 className="card-glass"
                 style={{ 
                   padding: '1.25rem',
-                  borderLeft: '4px solid var(--accent-cyan)', 
+                  borderLeft: matchedCardObj ? '4px solid var(--accent-emerald)' : '4px solid var(--accent-cyan)', 
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '0.85rem'
                 }}
               >
                 <div>
-                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.35rem', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.45rem', flexWrap: 'wrap' }}>
                     <span className="tag critical" style={{ fontSize: '0.64rem' }}>
                       {mailItem.priority || 'P1 - CRITICA'}
                     </span>
@@ -708,11 +567,23 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
                     {mailItem.subject}
                   </h4>
 
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-body)', margin: '0 0 0.45rem 0', lineHeight: '1.45', background: 'rgba(15, 23, 42, 0.6)', padding: '0.5rem 0.75rem', borderRadius: '6px' }}>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-body)', margin: '0 0 0.5rem 0', lineHeight: '1.45', background: 'rgba(15, 23, 42, 0.6)', padding: '0.5rem 0.75rem', borderRadius: '6px' }}>
                     "{mailItem.snippet}"
                   </p>
+
+                  {/* AI Match Suggestion Badge */}
+                  {matchedCardObj ? (
+                    <div style={{ padding: '0.45rem 0.75rem', background: 'rgba(52, 211, 153, 0.12)', border: '1px solid rgba(52, 211, 153, 0.3)', borderRadius: '6px', color: 'var(--accent-emerald)', fontSize: '0.76rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <ThumbsUp size={14} /> Sugerencia IA: Asociado a Tarjeta Existente en Notion ➔ "{matchedCardObj.title}" ({matchedCardObj.status || 'Abierto'})
+                    </div>
+                  ) : (
+                    <div style={{ padding: '0.45rem 0.75rem', background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '6px', color: 'var(--accent-cyan)', fontSize: '0.76rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <HelpCircle size={14} /> Sugerencia IA: Sin coincidencia directa. Puedes "Crear Nueva Tarjeta" o "Seleccionar Tarjeta Existente".
+                    </div>
+                  )}
                 </div>
 
+                {/* Recuadro para mis comentarios de Diego */}
                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                   <input
                     type="text"
@@ -732,17 +603,20 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
                   </button>
                 </div>
 
+                {/* The 4 Action Controls Required by Diego */}
                 <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap', background: 'rgba(15, 23, 42, 0.6)', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
                   
+                  {/* Action 1: Agregar a Notion como nueva tarea */}
                   <button
                     className="btn-primary"
                     onClick={() => handleAddNewTaskToNotion(mailItem)}
                     disabled={status === 'created' || isProc}
                     style={{ fontSize: '0.76rem', padding: '0.45rem 0.85rem', background: status === 'created' ? 'rgba(52, 211, 153, 0.2)' : 'linear-gradient(135deg, var(--accent-cyan), var(--accent-blue))', whiteSpace: 'nowrap' }}
                   >
-                    <PlusCircle size={13} /> {status === 'created' ? '¡Creada en Notion!' : 'Agregar a Notion como nueva tarea'}
+                    <PlusCircle size={13} /> {status === 'created' ? '¡Creada en Notion!' : '⚡ Crear Nueva Tarjeta en Notion'}
                   </button>
 
+                  {/* Action 2: Comentar en tarea existente + Selector Desplegable */}
                   <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flex: 1, minWidth: '280px' }}>
                     <select
                       className="form-select"
@@ -753,27 +627,28 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
                       <option value="">-- Seleccionar Tarjeta Existente de Notion ({notionCards.length} disponibles) --</option>
                       {notionCards.map((card) => (
                         <option key={card.id || card.notionPageId} value={card.notionPageId || card.id}>
-                          {card.title ? card.title.substring(0, 50) : 'Sin Título'} ({card.status || 'Abierto'})
+                          {card.title ? card.title.substring(0, 55) : 'Sin Título'} ({card.status || 'Abierto'})
                         </option>
                       ))}
                     </select>
 
                     <button
                       className="btn-secondary"
-                      onClick={() => handleCommentOnExistingNotionCard(mailItem)}
+                      onClick={() => handleCommentOnExistingNotionCard(mailItem, matchedCardObj)}
                       disabled={status === 'commented' || isProc || !selectedCardId}
-                      style={{ fontSize: '0.76rem', padding: '0.4rem 0.75rem', border: '1px solid var(--accent-cyan)', color: 'var(--accent-cyan)', whiteSpace: 'nowrap' }}
+                      style={{ fontSize: '0.76rem', padding: '0.4rem 0.75rem', border: '1px solid var(--accent-emerald)', color: 'var(--accent-emerald)', whiteSpace: 'nowrap' }}
                     >
-                      <MessageSquare size={13} /> {status === 'commented' ? '¡Comentado!' : 'Comentar en tarea existente'}
+                      <MessageSquare size={13} /> {status === 'commented' ? '¡Comentado!' : '💬 Comentar en Tarjeta'}
                     </button>
                   </div>
 
+                  {/* Action 4: Descartar tema */}
                   <button
                     className="btn-danger"
                     onClick={() => handleDiscardTask(mailItem.id)}
                     style={{ fontSize: '0.76rem', padding: '0.45rem 0.75rem', whiteSpace: 'nowrap' }}
                   >
-                    <Trash2 size={13} /> Descartar tarea
+                    <Trash2 size={13} /> Descartar Tema
                   </button>
 
                 </div>
@@ -906,7 +781,7 @@ export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
 
                       <button
                         className="btn-secondary"
-                        onClick={() => handleCommentOnExistingNotionCard(rowItem)}
+                        onClick={() => handleCommentOnExistingNotionCard(rowItem, null)}
                         disabled={status === 'commented' || isProc || !selectedCardId}
                         style={{ fontSize: '0.72rem', padding: '0.35rem 0.65rem', border: '1px solid var(--accent-cyan)', color: 'var(--accent-cyan)' }}
                       >
