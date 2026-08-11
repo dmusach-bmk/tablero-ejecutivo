@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileText, CheckCircle2, Copy, Send, Sparkles, Clock, Layers, ExternalLink, Video, Award, Target, ChevronRight, MessageSquare, Mic, Plus, Check, Zap, RefreshCw, User, ShieldCheck, PlusCircle, CheckSquare, DollarSign, Activity, Edit3, SendHorizontal, History, X, Cloud, Server, Eye, Calendar } from 'lucide-react';
+import { FileText, CheckCircle2, Copy, Send, Sparkles, Clock, Layers, ExternalLink, Video, Award, Target, ChevronRight, MessageSquare, Mic, Plus, Check, Zap, RefreshCw, User, ShieldCheck, PlusCircle, CheckSquare, DollarSign, Activity, Edit3, SendHorizontal, History, X, Cloud, Server, Eye, Calendar, AlertTriangle, ListChecks } from 'lucide-react';
 import { postCommentToNotion, createNotionPage, updateNotionPageStatus } from '../services/notionService';
 
 export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCards = [], credentials }) {
@@ -12,7 +12,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
   // Today's Live Meeting Date String (Formatted for Fathom Matching)
   const todayMeetingDateObj = new Date();
   const todayFormattedDate = todayMeetingDateObj.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-  const todayShortDate = todayMeetingDateObj.toLocaleDateString('es-ES'); // e.g. 11/08/2026
+  const todayShortDate = todayMeetingDateObj.toLocaleDateString('es-ES');
 
   // MODAL INSPECTOR STATE FOR CLICKABLE CARDS
   const [activeModalType, setActiveModalType] = useState(null);
@@ -38,6 +38,8 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     ];
   });
 
+  // PRE-EXECUTION AUDIT MODAL STATE (VISTA PREVIA DE CONFIRMACIÓN IA)
+  const [proposedAiActions, setProposedAiActions] = useState(null); // Array of proposed actions before execution
   const [isProcessingScratchpad, setIsProcessingScratchpad] = useState(false);
   const [scratchpadSuccessMessage, setScratchpadSuccessMessage] = useState('');
 
@@ -68,51 +70,82 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     recognition.start();
   };
 
-  // SUBMIT SCRATCHPAD TO AI ASSISTANT DIEGO PAOLO MUSACH
-  const handleSubmitScratchpadToAI = async () => {
+  // STEP 1: PRE-ANALYZE SCRATCHPAD AND SHOW PRE-EXECUTION AUDIT MODAL
+  const handlePreAnalyzeScratchpad = () => {
     if (!scratchpadText.trim()) {
       alert('Por favor escribe al menos un tema o nota en tu bloc de notas antes de presionar Submit.');
       return;
     }
-
-    setIsProcessingScratchpad(true);
-    setScratchpadSuccessMessage('');
 
     const lines = scratchpadText
       .split('\n')
       .map(l => l.trim().replace(/^[-•*]\s*/, ''))
       .filter(l => l.length > 3);
 
-    let processedCount = 0;
-
-    for (const line of lines) {
+    const proposals = lines.map((line, idx) => {
       const lineLower = line.toLowerCase();
-      
       const matchedCard = notionCards.find(c => {
         const cTitle = (c.title || '').toLowerCase();
         return lineLower.includes(cTitle) || (lineLower.includes('edemsa') && cTitle.includes('edemsa')) || (lineLower.includes('tecsys') && cTitle.includes('tecsys')) || (lineLower.includes('heroku') && cTitle.includes('heroku')) || (lineLower.includes('wind') && cTitle.includes('wind'));
       });
 
       if (matchedCard) {
-        const comment = `[Bloc de Notas Call CEO ${todayShortDate}]: "${line}"`;
-        await postCommentToNotion(credentials?.notionToken, matchedCard.notionPageId || matchedCard.id, comment);
+        return {
+          id: `prop-${idx}`,
+          approved: true,
+          actionType: 'comment',
+          rawLine: line,
+          targetCardTitle: matchedCard.title,
+          targetPageId: matchedCard.notionPageId || matchedCard.id,
+          proposedContent: `[Bloc de Notas Call CEO ${todayShortDate}]: "${line}"`
+        };
       } else {
+        return {
+          id: `prop-${idx}`,
+          approved: true,
+          actionType: 'create',
+          rawLine: line,
+          targetCardTitle: `[Call CEO ${todayShortDate}] ${line.substring(0, 100)}`,
+          targetPageId: null,
+          proposedContent: line
+        };
+      }
+    });
+
+    setProposedAiActions(proposals);
+  };
+
+  // STEP 2: EXECUTE ONLY APPROVED PROPOSALS IN NOTION API
+  const handleExecuteApprovedAiProposals = async () => {
+    if (!proposedAiActions || proposedAiActions.length === 0) return;
+
+    setIsProcessingScratchpad(true);
+    setScratchpadSuccessMessage('');
+
+    const approvedList = proposedAiActions.filter(p => p.approved);
+    let executedCount = 0;
+
+    for (const prop of approvedList) {
+      if (prop.actionType === 'comment' && prop.targetPageId) {
+        await postCommentToNotion(credentials?.notionToken, prop.targetPageId, prop.proposedContent);
+      } else if (prop.actionType === 'create') {
         await createNotionPage(credentials?.notionToken, null, {
-          title: `[Call CEO ${todayShortDate}] ${line.substring(0, 120)}`,
+          title: prop.targetCardTitle,
           responsable: 'Diego Musach (CTO)',
           status: 'Abierto',
           priority: 'P1 - CRITICA'
         });
       }
-      processedCount++;
+      executedCount++;
     }
 
+    // Save to historical record for Fathom matching
     const newRecord = {
       id: `hist-${Date.now()}`,
       date: `${todayFormattedDate} (${todayShortDate})`,
       rawText: scratchpadText,
-      processedItemsCount: processedCount,
-      status: '✅ Ingestado a Notion & Matcheado con Fathom'
+      processedItemsCount: executedCount,
+      status: '✅ Aprobado, Ingestado a Notion & Matcheado con Fathom'
     };
 
     const updatedHistory = [newRecord, ...scratchpadHistory];
@@ -121,8 +154,9 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     localStorage.removeItem('dm_ceo_scratchpad_draft');
     setScratchpadText('');
 
+    setProposedAiActions(null);
     setIsProcessingScratchpad(false);
-    setScratchpadSuccessMessage(`¡Éxito! El Asistente IA procesó ${processedCount} temas de tu bloc de notas del ${todayShortDate}, gestionó las tarjetas en Notion y los vinculó para matchear con la transcripción de Fathom.`);
+    setScratchpadSuccessMessage(`¡Aprobación Confirmada! Se ejecutaron ${executedCount} acciones auditadas en Notion API y quedaron registradas para matchear con la transcripción Fathom del ${todayShortDate}.`);
   };
 
   // Exhaustive July-August Fathom Topics
@@ -458,7 +492,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
         </div>
 
         <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
-          Escribe un tema o compromiso por línea (Enter por tema). Al finalizar la call del <strong>{todayFormattedDate}</strong>, presiona el botón para procesar en Notion y guardar el registro etiquetado con fecha <strong>{todayShortDate}</strong> para matchear con la grabación Fathom:
+          Escribe un tema o compromiso por línea (Enter por tema). Al finalizar la call del <strong>{todayFormattedDate}</strong>, presiona el botón para procesar y auditar la vista previa antes de impactar en Notion API:
         </p>
 
         <textarea
@@ -480,12 +514,11 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
 
           <button
             className="btn-primary"
-            onClick={handleSubmitScratchpadToAI}
+            onClick={handlePreAnalyzeScratchpad}
             disabled={isProcessingScratchpad || !scratchpadText.trim()}
             style={{ fontSize: '0.82rem', padding: '0.55rem 1.2rem', background: 'linear-gradient(135deg, var(--accent-cyan), var(--accent-purple))', fontWeight: 700 }}
           >
-            <SendHorizontal size={15} className={isProcessingScratchpad ? 'spin' : ''} />
-            {isProcessingScratchpad ? '🤖 Procesando Notas con Asistente IA...' : `🤖 Submit a Asistente Diego Paolo Musach (${todayShortDate})`}
+            <SendHorizontal size={15} /> 🤖 Submit a Asistente Diego Paolo Musach (Ver Vista Previa)
           </button>
         </div>
 
@@ -713,6 +746,91 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
           );
         })}
       </div>
+
+      {/* MODAL AUDITORÍA DE VISTA PREVIA Y CONFIRMACIÓN IA (PRE-EXECUTION AUDIT MODAL) */}
+      {proposedAiActions && (
+        <div className="modal-overlay" onClick={() => setProposedAiActions(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '850px' }}>
+            <div className="modal-header">
+              <h2>
+                <ListChecks className="text-cyan" size={22} /> 🛡️ Vista Previa & Confirmación de Acciones IA ({todayShortDate})
+              </h2>
+              <button className="btn-icon" onClick={() => setProposedAiActions(null)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+              Revisa y edita las acciones propuestas por el Asistente IA antes de ejecutarlas en Notion API. Puedes desmarcar cualquier ítem que no desees impactar:
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', marginBottom: '1.2rem', maxHeight: '420px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+              {proposedAiActions.map((prop, idx) => (
+                <div key={prop.id} style={{ background: 'rgba(30, 41, 59, 0.9)', border: prop.approved ? '1px solid var(--accent-purple)' : '1px solid var(--border-subtle)', borderRadius: '10px', padding: '0.85rem 1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem', flexWrap: 'wrap' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.88rem', color: '#fff', fontWeight: 700 }}>
+                      <input
+                        type="checkbox"
+                        checked={prop.approved}
+                        onChange={(e) => {
+                          const updated = [...proposedAiActions];
+                          updated[idx].approved = e.target.checked;
+                          setProposedAiActions(updated);
+                        }}
+                      />
+                      {prop.actionType === 'comment' ? '💬 Comentar en Tarjeta Existente' : '⚡ Crear Nueva Tarjeta en Notion'}
+                    </label>
+
+                    {prop.targetCardTitle && (
+                      <span style={{ fontSize: '0.74rem', color: 'var(--accent-purple)', background: 'rgba(192, 132, 252, 0.15)', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>
+                        🎯 Tarjeta: {prop.targetCardTitle}
+                      </span>
+                    )}
+                  </div>
+
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontStyle: 'italic', marginBottom: '0.4rem' }}>
+                    Nota Original: "{prop.rawLine}"
+                  </div>
+
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={prop.proposedContent}
+                    onChange={(e) => {
+                      const updated = [...proposedAiActions];
+                      updated[idx].proposedContent = e.target.value;
+                      setProposedAiActions(updated);
+                    }}
+                    style={{ fontSize: '0.8rem', padding: '0.4rem 0.65rem', width: '100%' }}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <span style={{ fontSize: '0.76rem', color: 'var(--accent-cyan)' }}>
+                Selected: {proposedAiActions.filter(p => p.approved).length} de {proposedAiActions.length} acciones listas para ejecutar.
+              </span>
+
+              <div style={{ display: 'flex', gap: '0.6rem' }}>
+                <button className="btn-secondary" onClick={() => setProposedAiActions(null)}>
+                  Cancelar
+                </button>
+
+                <button
+                  className="btn-primary"
+                  onClick={handleExecuteApprovedAiProposals}
+                  disabled={isProcessingScratchpad || proposedAiActions.filter(p => p.approved).length === 0}
+                  style={{ fontSize: '0.82rem', padding: '0.5rem 1.2rem', background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-blue))' }}
+                >
+                  <CheckCircle2 size={16} />
+                  {isProcessingScratchpad ? 'Ejecutando en Notion API...' : `✅ Aprobar & Ejecutar ${proposedAiActions.filter(p => p.approved).length} Acciones en Notion`}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL 1: CLOUD SAVINGS DETAILED BREAKDOWN MODAL */}
       {activeModalType === 'cloud_savings' && (

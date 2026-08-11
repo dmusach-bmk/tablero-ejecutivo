@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Shield, Key, Mail, Database, X, Check, RefreshCw } from 'lucide-react';
+import { Settings, Shield, Key, Mail, Database, X, Check, RefreshCw, Bot, Cpu } from 'lucide-react';
 
 export default function SettingsModal({ isOpen, onClose, credentials, onSaveCredentials }) {
   const [notionToken, setNotionToken] = useState(credentials?.notionToken || '');
@@ -9,12 +9,26 @@ export default function SettingsModal({ isOpen, onClose, credentials, onSaveCred
   const [smtpPort, setSmtpPort] = useState(credentials?.smtpPort || '587');
   const [smtpUser, setSmtpUser] = useState(credentials?.smtpUser || 'diegomusach@empresa.com');
   const [smtpPass, setSmtpPass] = useState(credentials?.smtpPass || '');
+
+  // AI Model & Agent Settings Configurable by Diego Directly from UI
+  const [aiProvider, setAiProvider] = useState(() => localStorage.getItem('dm_ai_provider') || 'google_gemini');
+  const [aiApiKey, setAiApiKey] = useState(() => localStorage.getItem('dm_ai_api_key') || '');
+  const [aiModelName, setAiModelName] = useState(() => localStorage.getItem('dm_ai_model_name') || 'gemini-2.5-pro');
+  const [aiSystemPrompt, setAiSystemPrompt] = useState(() => {
+    return localStorage.getItem('dm_ai_system_prompt') || `Eres el Asistente Ejecutivo del CTO (Diego Paolo Musach). Analiza cada nota escrita en la call con Alejandro Cubino (CEO), busca coincidencias semánticas con las 165 tarjetas de Notion, propone la creación o actualización de tarjetas y genera un reporte previo de vista previa para aprobación de Diego antes de ejecutar cualquier acción en Notion API.`;
+  });
+
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   if (!isOpen) return null;
 
   const handleSave = (e) => {
     e.preventDefault();
+    localStorage.setItem('dm_ai_provider', aiProvider);
+    localStorage.setItem('dm_ai_api_key', aiApiKey);
+    localStorage.setItem('dm_ai_model_name', aiModelName);
+    localStorage.setItem('dm_ai_system_prompt', aiSystemPrompt);
+
     onSaveCredentials({
       notionToken,
       notionDbId,
@@ -22,7 +36,11 @@ export default function SettingsModal({ isOpen, onClose, credentials, onSaveCred
       smtpHost,
       smtpPort,
       smtpUser,
-      smtpPass
+      smtpPass,
+      aiProvider,
+      aiApiKey,
+      aiModelName,
+      aiSystemPrompt
     });
     setSaveSuccess(true);
     setTimeout(() => {
@@ -32,17 +50,20 @@ export default function SettingsModal({ isOpen, onClose, credentials, onSaveCred
   };
 
   const handleLoadDemoCreds = () => {
-    setNotionToken('secret_notion_demo_token_diego_musach_2026');
-    setNotionDbId('db_exec_board_99218471');
-    setSmtpHost('smtp.company.com');
+    setNotionToken('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');
+    setNotionDbId('34ace95d-6a9a-8054-b33b-cad2cbaf4c70');
+    setFathomApiKey('fath_live_584192039104');
+    setSmtpHost('smtp.gmail.com');
     setSmtpPort('587');
-    setSmtpUser('diego.musach@empresa.com');
+    setSmtpUser('dmusach@bromteck.com');
     setSmtpPass('••••••••••••••••');
+    setAiProvider('google_gemini');
+    setAiModelName('gemini-2.5-pro');
   };
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content">
+      <div className="modal-content" style={{ maxWidth: '750px' }}>
         <div className="modal-header">
           <h2>
             <Settings className="text-cyan" size={22} />
@@ -55,107 +76,107 @@ export default function SettingsModal({ isOpen, onClose, credentials, onSaveCred
 
         {saveSuccess && (
           <div style={{ padding: '0.75rem', background: 'rgba(16, 185, 129, 0.2)', border: '1px solid var(--accent-emerald)', borderRadius: '10px', color: '#fff', fontSize: '0.85rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Check size={16} /> Credenciales guardadas de forma segura en local.
+            <Check size={16} /> Credenciales y Configuración de IA guardadas de forma segura.
           </div>
         )}
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', background: 'rgba(255,255,255,0.03)', padding: '0.75rem 1rem', borderRadius: '10px' }}>
           <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-            ⚡ Carga rápida de credenciales preconfiguradas en 1-click:
+            ⚡ Carga rápida de credenciales de Diego Musach en 1-click:
           </span>
           <button type="button" className="btn-secondary" onClick={handleLoadDemoCreds}>
-            <RefreshCw size={14} /> Cargar Datos Demo
+            <RefreshCw size={14} /> Cargar Credenciales Directivas
           </button>
         </div>
 
         <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           
-          {/* Notion Section */}
-          <div style={{ background: 'rgba(0,0,0,0.25)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
-            <h3 style={{ fontSize: '0.92rem', color: 'var(--accent-cyan)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <Database size={16} /> Integración con Notion API
+          {/* AI MODEL & AGENT PROVIDER CONFIGURATION (FLEXIBLE AI ENGINE) */}
+          <div style={{ background: 'rgba(168, 85, 247, 0.12)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--accent-purple)' }}>
+            <h3 style={{ fontSize: '0.94rem', color: 'var(--accent-purple)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: '0 0 0.75rem 0' }}>
+              <Bot size={18} /> 🤖 Seleccionar Motor de IA & Agente Asistente
             </h3>
 
-            <div className="form-group">
-              <label>Notion Integration Internal Token (secret_...):</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem', marginBottom: '0.85rem' }}>
+              <div className="form-group">
+                <label style={{ fontSize: '0.78rem' }}>Proveedor de IA (AI Provider):</label>
+                <select
+                  className="form-select"
+                  value={aiProvider}
+                  onChange={(e) => setAiProvider(e.target.value)}
+                  style={{ fontSize: '0.8rem', padding: '0.45rem 0.65rem' }}
+                >
+                  <option value="google_gemini">Google Gemini API (Gemini 2.5 Pro / Flash)</option>
+                  <option value="openai">OpenAI (GPT-4o / GPT-4o-mini)</option>
+                  <option value="anthropic">Anthropic Claude (Claude 3.5 Sonnet)</option>
+                  <option value="local_proxy">Local LLM / Proxy Personalizado (Ollama / VLLM)</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label style={{ fontSize: '0.78rem' }}>Modelo Específico (Model Name):</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={aiModelName}
+                  onChange={(e) => setAiModelName(e.target.value)}
+                  placeholder="gemini-2.5-pro, gpt-4o, claude-3-5-sonnet"
+                  style={{ fontSize: '0.8rem', padding: '0.45rem 0.65rem' }}
+                />
+              </div>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: '0.85rem' }}>
+              <label style={{ fontSize: '0.78rem' }}>API Key Personal de IA (Si vence la cuenta o usas propia):</label>
               <input
                 type="password"
                 className="form-input"
-                placeholder="secret_xxxxxxxxxxxxxxxxxxxxxxxx"
-                value={notionToken}
-                onChange={(e) => setNotionToken(e.target.value)}
+                value={aiApiKey}
+                onChange={(e) => setAiApiKey(e.target.value)}
+                placeholder="Ingresa tu API Key de Gemini, OpenAI o Claude..."
+                style={{ fontSize: '0.8rem', padding: '0.45rem 0.65rem' }}
               />
             </div>
 
             <div className="form-group">
-              <label>Notion Database ID de Tarjetas y Tareas:</label>
-              <input
-                type="text"
+              <label style={{ fontSize: '0.78rem' }}>System Prompt / Script de Criterios del Agente (Editable):</label>
+              <textarea
                 className="form-input"
-                placeholder="32-character database id"
-                value={notionDbId}
-                onChange={(e) => setNotionDbId(e.target.value)}
-              />
-            </div>
-
-            <div className="form-group">
-              <label style={{ color: 'var(--accent-purple)', fontWeight: 700 }}>Fathom Video API Key (Cuenta dmusach@bromteck.com):</label>
-              <input
-                type="password"
-                className="form-input"
-                placeholder="API Key Diego desde Fathom Settings"
-                value={fathomApiKey}
-                onChange={(e) => setFathomApiKey(e.target.value)}
+                rows={3}
+                value={aiSystemPrompt}
+                onChange={(e) => setAiSystemPrompt(e.target.value)}
+                style={{ fontSize: '0.78rem', lineHeight: '1.4', padding: '0.5rem' }}
               />
             </div>
           </div>
 
-          {/* Email / SMTP Section */}
+          {/* Notion Section */}
           <div style={{ background: 'rgba(0,0,0,0.25)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
-            <h3 style={{ fontSize: '0.92rem', color: 'var(--accent-violet)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <Mail size={16} /> Servidor de Correo Saliente (SMTP / Resend API)
+            <h3 style={{ fontSize: '0.92rem', color: 'var(--accent-cyan)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: '0 0 0.75rem 0' }}>
+              <Database size={16} /> Integración con Notion API
             </h3>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px', gap: '0.75rem' }}>
-              <div className="form-group">
-                <label>Servidor SMTP (Host):</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={smtpHost}
-                  onChange={(e) => setSmtpHost(e.target.value)}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Puerto:</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={smtpPort}
-                  onChange={(e) => setSmtpPort(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>Usuario / Email Saliente:</label>
+            <div className="form-group" style={{ marginBottom: '0.75rem' }}>
+              <label style={{ fontSize: '0.78rem' }}>Notion Integration Internal Token (secret_...):</label>
               <input
-                type="email"
+                type="password"
                 className="form-input"
-                value={smtpUser}
-                onChange={(e) => setSmtpUser(e.target.value)}
+                value={notionToken}
+                onChange={(e) => setNotionToken(e.target.value)}
+                placeholder="secret_..."
+                style={{ fontSize: '0.8rem', padding: '0.45rem 0.65rem' }}
               />
             </div>
 
             <div className="form-group">
-              <label>Contraseña / App Token de Email:</label>
+              <label style={{ fontSize: '0.78rem' }}>Database ID (Tablero Directivo):</label>
               <input
-                type="password"
+                type="text"
                 className="form-input"
-                placeholder="••••••••••••••••"
-                value={smtpPass}
-                onChange={(e) => setSmtpPass(e.target.value)}
+                value={notionDbId}
+                onChange={(e) => setNotionDbId(e.target.value)}
+                placeholder="34ace95d-6a9a-8054-b33b-cad2cbaf4c70"
+                style={{ fontSize: '0.8rem', padding: '0.45rem 0.65rem' }}
               />
             </div>
           </div>
@@ -164,8 +185,9 @@ export default function SettingsModal({ isOpen, onClose, credentials, onSaveCred
             <button type="button" className="btn-secondary" onClick={onClose}>
               Cancelar
             </button>
-            <button type="submit" className="btn-primary">
-              <Shield size={16} /> Guardar Credenciales
+
+            <button type="submit" className="btn-primary" style={{ padding: '0.5rem 1.25rem' }}>
+              <Check size={16} /> Guardar Configuración
             </button>
           </div>
 
