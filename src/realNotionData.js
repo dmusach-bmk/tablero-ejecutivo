@@ -1,5 +1,21 @@
 export const REAL_NOTION_CARDS = [
   {
+    "id": "notion-real-catelsa",
+    "notionPageId": "catelsa-page-id-9999",
+    "notionId": "catelsa-page-id-9999",
+    "title": "Pendientes Catelsa",
+    "project": "Control de Gestión CTO",
+    "status": "Abierto",
+    "priority": "P1 - CRITICA",
+    "responsable": "Diego Paolo Musach (CTO)",
+    "assignedTo": "Diego Paolo Musach (CTO)",
+    "deadline": "2026-08-20",
+    "missingDeadline": false,
+    "summary": "Control de temas pendientes y responsabilidades para el despliegue de CATELSA HN.",
+    "transcript": "Planilla de Pendientes Catelsa:\n1. Transcoder Multicable: Validar fuente redundante (Responsable: Enrique Bevilacqua)\n2. Activar estatus de conexión del cliente en panel Catelsa (Responsable: Enrique Bevilacqua)\n3. Validar versión Android TV y bug de licencias concurrentes (Responsable: Enrique Bevilacqua)\n4. Entorno Beta optimizado para Samsung/LG y Android (Responsable: Equipo Técnico Bromteck)\n5. Habilitar monitoreo de Smartcards (Responsable: Enrique Bevilacqua)\n6. Negociar aumento de tarifas e infraestructura Catelsa (Responsable: Diego Paolo Musach / Sabrina)",
+    "comments": []
+  },
+  {
     "id": "notion-real-1",
     "notionPageId": "34ace95d-6a9a-8054-b33b-cad2cbaf4c70",
     "notionId": "34ace95d-6a9a-8054-b33b-cad2cbaf4c70",

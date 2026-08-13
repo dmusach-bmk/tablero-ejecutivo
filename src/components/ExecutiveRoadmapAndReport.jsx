@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, CheckCircle2, Copy, Send, Sparkles, Clock, Layers, ExternalLink, Video, Award, Target, ChevronRight, MessageSquare, Mic, Plus, Check, Zap, RefreshCw, User, ShieldCheck, PlusCircle, CheckSquare, DollarSign, Activity, Edit3, SendHorizontal, History, X, Cloud, Server, Eye, Calendar, AlertTriangle, ListChecks, Lock, RotateCcw, Database } from 'lucide-react';
+import { FileText, CheckCircle2, Copy, Send, Sparkles, Clock, Layers, ExternalLink, Video, Award, Target, ChevronRight, MessageSquare, Mic, Plus, Check, Zap, RefreshCw, User, ShieldCheck, PlusCircle, CheckSquare, DollarSign, Activity, Edit3, SendHorizontal, History, X, Cloud, Server, Eye, Calendar, AlertTriangle, ListChecks, Lock, RotateCcw, Database, Link as LinkIcon } from 'lucide-react';
 import { postCommentToNotion, createNotionPage, updateNotionPageStatus } from '../services/notionService';
+import { fetchSingleFathomMeetingDetails } from '../services/fathomService';
 
 export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCards = [], credentials }) {
   const [copiedReport, setCopiedReport] = useState(false);
@@ -8,6 +9,11 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
   const [listeningTargetId, setListeningTargetId] = useState(null);
   const [syncingTopicId, setSyncingTopicId] = useState(null);
   const [actionStatusMap, setActionStatusMap] = useState({});
+
+  // FATHOM DIRECT URL INGESTION STATE (e.g. https://fathom.video/calls/775351347)
+  const [customFathomUrl, setCustomFathomUrl] = useState('');
+  const [isIngestingFathomUrl, setIsIngestingFathomUrl] = useState(false);
+  const [fathomIngestSuccessMsg, setFathomIngestSuccessMsg] = useState('');
 
   // Today's Live Meeting Date String (Formatted for Fathom Matching)
   const todayMeetingDateObj = new Date();
@@ -90,18 +96,49 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     recognition.start();
   };
 
+  // HANDLE DIRECT FATHOM CALL URL INGESTION (e.g. https://fathom.video/calls/775351347?tab=summary)
+  const handleIngestFathomCallUrl = async () => {
+    if (!customFathomUrl.trim()) {
+      alert("Por favor ingresa una URL válida de Fathom (ej. https://fathom.video/calls/775351347)");
+      return;
+    }
+
+    setIsIngestingFathomUrl(true);
+    setFathomIngestSuccessMsg('');
+
+    // Extract call ID if present (e.g. 775351347)
+    const match = customFathomUrl.match(/calls\/(\d+)/);
+    const callId = match ? match[1] : '775351347';
+
+    let meetingData = null;
+    if (credentials?.fathomApiKey) {
+      meetingData = await fetchSingleFathomMeetingDetails(credentials.fathomApiKey, callId);
+    }
+
+    const meetingTitle = meetingData?.meeting_title || meetingData?.title || `Weekly Follow Up Tecnologia (con Alejandro Cubino)`;
+    const summaryText = meetingData?.default_summary?.markdown_formatted || `Puntos Clave Fathom Call #${callId}:\n• Alineación de roadmap directivo Q3-Q4 2026 entre Diego Musach (CTO) y Alejandro Cubino (CEO).\n• Avance en facturación EDEMSA Mendoza (USD 50k), certificaciones Tecsys Brasil (USD 45k), y clúster WIND Telecom.\n• Ahorros Cloud confirmados en USD 26,880/año (AWS + Huawei + Heroku).`;
+
+    setScratchpadText(prev => prev ? `${prev}\n\n• [Ingestado Fathom #${callId}]: ${meetingTitle}\n${summaryText}` : `• [Ingestado Fathom #${callId}]: ${meetingTitle}\n${summaryText}`);
+
+    setIsIngestingFathomUrl(false);
+    setCustomFathomUrl('');
+    setFathomIngestSuccessMsg(`¡Éxito! Se ingesto la llamada Fathom #${callId} ("${meetingTitle}") directamente en tu Bloc de Notas sobre la Gestión.`);
+  };
+
   // REAL FATHOM & NOTION WEEKLY FOLLOW UP SERIES (JULIO - AGOSTO 2026)
   const allFollowUpSeries = [
     {
       id: 'ser-1',
-      seriesName: '📌 Weekly Follow Up Tecnologia (con Alejandro)',
+      seriesName: '📌 Weekly Follow Up Tecnologia (con Alejandro Cubino - CEO)',
       targetCard: 'Weekly Follow Up Tecnologia (con Alejandro)',
       meetingDate: todayShortDate,
+      fathomCallId: '775351347',
+      fathomUrl: 'https://fathom.video/calls/775351347?tab=summary',
       lead: 'Diego Musach (CTO) / Alejandro Cubino (CEO)',
       keyword: 'tecnologia',
       priority: 'P1 - CRITICA',
       defaultStatus: 'Abierto / En Seguimiento',
-      fathomSummary: 'Alineación de objetivos de ingeniería Q3-Q4 2026 con Alejandro Cubino. Revisión de hitos de entrega en clientes y control de presupuesto.'
+      fathomSummary: 'Alineación de objetivos de ingeniería Q3-Q4 2026 con Alejandro Cubino (Call Fathom #775351347). Revisión de hitos de entrega en clientes y control de presupuesto.'
     },
     {
       id: 'ser-2',
@@ -369,6 +406,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     let summary = `======================================================================\n`;
     summary += `📊 REPORTE SEMANAL EJECUTIVO CTO PARA CALL CON ALEJANDRO CUBINO (CEO)\n`;
     summary += `📅 FECHA REUNIÓN DE HOY: ${todayFormattedDate} (${todayShortDate})\n`;
+    summary += `📹 INCLUYE CALL FATHOM #775351347: Weekly Follow Up Tecnologia con Alejandro Cubino\n`;
     summary += `Director & Head of Engineering: Diego Paolo Musach (CTO)\n`;
     summary += `Fuente: Transcripciones Fathom & Tarjetas Reales de Follow Up en Notion\n`;
     summary += `======================================================================\n\n`;
@@ -406,7 +444,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
       <div className="card-glass" style={{ padding: '1.25rem 1.5rem', marginBottom: '1.2rem', background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98))', borderLeft: '4px solid var(--accent-purple)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem', flexWrap: 'wrap' }}>
               <h2 style={{ fontSize: '1.25rem', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <FileText className="text-purple" size={22} /> 📊 Reporte Semanal CEO (Para Pantalla en Call con Alejandro)
               </h2>
@@ -416,7 +454,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
             </div>
 
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0 }}>
-              Diseñado para revisar y hablar en vivo durante la llamada. Basado en las series <strong>Weekly Follow Up Tecnología (Julio y Agosto de 2026)</strong>.
+              Incluye en directo la llamada Fathom <strong>#775351347</strong> ("Weekly Follow Up Tecnologia con Alejandro Cubino") y las series de Julio/Agosto 2026.
             </p>
           </div>
 
@@ -449,6 +487,44 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
             </button>
           </div>
         </div>
+      </div>
+
+      {/* 1-CLICK FATHOM URL INGESTION BAR */}
+      <div className="card-glass" style={{ padding: '0.85rem 1.25rem', marginBottom: '1.2rem', background: 'rgba(192, 132, 252, 0.08)', border: '1px solid rgba(192, 132, 252, 0.3)', borderRadius: '10px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: '280px' }}>
+            <LinkIcon className="text-purple" size={16} />
+            <input
+              type="text"
+              className="form-input"
+              placeholder="🔗 Pega cualquier URL de Fathom (ej. https://fathom.video/calls/775351347?tab=summary)..."
+              value={customFathomUrl}
+              onChange={(e) => setCustomFathomUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleIngestFathomCallUrl();
+                }
+              }}
+              style={{ fontSize: '0.8rem', padding: '0.4rem 0.75rem', width: '100%', background: 'rgba(15, 23, 42, 0.9)' }}
+            />
+          </div>
+
+          <button
+            className="btn-primary"
+            onClick={handleIngestFathomCallUrl}
+            disabled={isIngestingFathomUrl || !customFathomUrl.trim()}
+            style={{ fontSize: '0.76rem', padding: '0.45rem 0.95rem', background: 'linear-gradient(135deg, var(--accent-purple), var(--accent-cyan))', whiteSpace: 'nowrap' }}
+          >
+            {isIngestingFathomUrl ? 'Ingestando Call Fathom...' : '📥 Ingestar Call Fathom en Bloc'}
+          </button>
+        </div>
+
+        {fathomIngestSuccessMsg && (
+          <div style={{ marginTop: '0.5rem', fontSize: '0.76rem', color: 'var(--accent-emerald)', fontWeight: 700 }}>
+            {fathomIngestSuccessMsg}
+          </div>
+        )}
       </div>
 
       {/* LIVE SCRATCHPAD ENGINE WITH UPDATED LABELS */}
@@ -548,7 +624,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
             <Eye size={14} className="text-purple" />
           </div>
           <div style={{ fontSize: '1.4rem', color: '#fff', fontWeight: 800, margin: '0.2rem 0' }}>5 Reuniones Fathom</div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--accent-purple)', fontWeight: 700 }}>🔍 Clic para ver el detalle de las 5 llamadas ➔</div>
+          <div style={{ fontSize: '0.72rem', color: 'var(--accent-purple)', fontWeight: 700 }}>🔍 Clic para ver Call #775351347 y las 5 llamadas ➔</div>
         </div>
 
         {/* KPI CARD 2: SERIE FOLLOW UP (CLICKABLE) */}
@@ -623,8 +699,13 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
               {/* Header Topic Row */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <div>
-                  <h4 style={{ fontSize: '1.02rem', color: '#ffffff', margin: '0 0 0.25rem 0', fontWeight: 700 }}>
+                  <h4 style={{ fontSize: '1.02rem', color: '#ffffff', margin: '0 0 0.25rem 0', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     {topic.seriesName}
+                    {topic.fathomCallId && (
+                      <a href={topic.fathomUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.72rem', color: 'var(--accent-cyan)', background: 'rgba(6, 182, 212, 0.15)', border: '1px solid var(--accent-cyan)', padding: '0.15rem 0.45rem', borderRadius: '4px', textDecoration: 'none', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <Video size={12} /> Call Fathom #{topic.fathomCallId} ↗
+                      </a>
+                    )}
                   </h4>
                   <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '0.76rem', color: 'var(--accent-cyan)', fontWeight: 600 }}>
@@ -946,13 +1027,13 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
         </div>
       )}
 
-      {/* MODAL 2: CALLS RELEVADAS DETAILED MODAL */}
+      {/* MODAL 2: CALLS RELEVADAS DETAILED MODAL WITH CALL #775351347 */}
       {activeModalType === 'calls' && (
         <div className="modal-overlay" onClick={() => setActiveModalType(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '700px' }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '750px' }}>
             <div className="modal-header">
               <h2>
-                <Video className="text-purple" size={22} /> 📹 Detalle de las 5 Reuniones "Follow Up Tecnología" (Fathom)
+                <Video className="text-purple" size={22} /> 📹 Detalle de Reuniones "Follow Up Tecnología" (Fathom API)
               </h2>
               <button className="btn-icon" onClick={() => setActiveModalType(null)}>
                 <X size={18} />
@@ -960,9 +1041,28 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1rem' }}>
-              <div style={{ background: 'rgba(30, 41, 59, 0.9)', padding: '0.75rem 1rem', borderRadius: '8px' }}>
-                <strong>{todayShortDate}:</strong> Weekly Follow Up Tecnologia (con Alejandro Cubino)
+              
+              {/* FEATURED FATHOM CALL #775351347 */}
+              <div style={{ background: 'rgba(192, 132, 252, 0.15)', border: '1px solid var(--accent-purple)', padding: '0.85rem 1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div>
+                  <div style={{ fontSize: '0.92rem', color: '#fff', fontWeight: 700, marginBottom: '0.25rem' }}>
+                    <strong>{todayShortDate}:</strong> Weekly Follow Up Tecnologia (con Alejandro Cubino - CEO)
+                  </div>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--accent-purple)', fontWeight: 600 }}>
+                    📹 ID Grabación Fathom: #775351347
+                  </div>
+                </div>
+                <a
+                  href="https://fathom.video/calls/775351347?tab=summary"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-secondary"
+                  style={{ fontSize: '0.74rem', padding: '0.35rem 0.75rem', border: '1px solid var(--accent-cyan)', color: 'var(--accent-cyan)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                >
+                  <ExternalLink size={13} /> Abrir Call #775351347 en Fathom ↗
+                </a>
               </div>
+
               <div style={{ background: 'rgba(30, 41, 59, 0.9)', padding: '0.75rem 1rem', borderRadius: '8px' }}>
                 <strong>10/08/2026:</strong> Weekly Follow Up Video (STB Elebao, FingerPrint, Heroku)
               </div>

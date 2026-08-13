@@ -17,6 +17,9 @@ import ActionHub from './components/ActionHub';
 import LeadershipAdvisor from './components/LeadershipAdvisor';
 import DeadlineModal from './components/DeadlineModal';
 import SettingsModal from './components/SettingsModal';
+import CriteriosYReglas from './components/CriteriosYReglas';
+import RecursosHub from './components/RecursosHub';
+import DelegacionHub from './components/DelegacionHub';
 
 import { REAL_NOTION_CARDS, REAL_TEAM_TRACKING } from './realNotionData';
 import { INITIAL_EXCEL_DATA } from './mockData';
@@ -186,11 +189,25 @@ export default function App() {
           />
         )}
 
+        {activeTab === 'delegador' && (
+          <DelegacionHub
+            notionCards={notionCards}
+            setNotionCards={setNotionCards}
+            onAddNotionCard={(newCard) => setNotionCards(prev => [newCard, ...prev])}
+            teamTracking={teamTracking}
+            setTeamTracking={setTeamTracking}
+          />
+        )}
+
         {activeTab === 'google_workspace' && (
           <GoogleWorkspaceHub
             credentials={credentials}
             notionCards={notionCards}
           />
+        )}
+
+        {activeTab === 'recursos' && (
+          <RecursosHub credentials={credentials} />
         )}
 
         {activeTab === 'financials' && (
@@ -218,6 +235,10 @@ export default function App() {
 
         {activeTab === 'scorecard' && (
           <TeamScorecard teamTracking={teamTracking} />
+        )}
+
+        {activeTab === 'criterios' && (
+          <CriteriosYReglas />
         )}
 
         {activeTab === 'deadlines' && (

@@ -1,29 +1,30 @@
 /* Executive Dashboard Main Design System - Modern Dark Slate Aesthetic */
 
 :root {
-  --bg-dark: #0b0f19;
-  --bg-dark-glow: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #0b0f19 80%);
-  --bg-card: rgba(30, 41, 59, 0.7);
-  --bg-card-hover: rgba(51, 65, 85, 0.8);
-  --bg-card-solid: #1e293b;
+  --bg-dark: #0d1117;
+  --bg-dark-glow: radial-gradient(circle at 50% 0%, #161b22 0%, #0d1117 100%);
+  --bg-card: rgba(22, 27, 34, 0.75);
+  --bg-card-hover: rgba(33, 38, 45, 0.9);
+  --bg-card-solid: #161b22;
   
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-accent: rgba(192, 132, 252, 0.4);
+  --border-subtle: #21262d;
+  --border-accent: rgba(88, 166, 255, 0.3);
 
-  --accent-purple: #c084fc;
-  --accent-cyan: #38bdf8;
-  --accent-blue: #60a5fa;
-  --accent-emerald: #34d399;
-  --accent-amber: #fbbf24;
-  --accent-rose: #fb7185;
-  --accent-violet: #a78bfa;
+  --accent-purple: #bc8cff;
+  --accent-cyan: #39d353;
+  --accent-blue: #58a6ff;
+  --accent-emerald: #3fb950;
+  --accent-amber: #d29922;
+  --accent-rose: #f85149;
+  --accent-violet: #8957e5;
+  --accent-indigo: #1f6feb;
 
-  --text-main: #f8fafc;
-  --text-body: #e2e8f0;
-  --text-muted: #94a3b8;
+  --text-main: #f0f6fc;
+  --text-body: #c9d1d9;
+  --text-muted: #8b949e;
 
-  --shadow-card: 0 10px 30px -5px rgba(0, 0, 0, 0.4);
-  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --shadow-card: 0 8px 24px rgba(0,0,0,0.5);
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
 }
 
 body {
@@ -35,6 +36,7 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
+  font-size: 16.5px;
 }
 
 /* NAVBAR & HEADER WRAPPER STYLING */

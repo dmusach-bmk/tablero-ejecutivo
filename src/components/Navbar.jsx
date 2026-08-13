@@ -1,5 +1,4 @@
-import React from 'react';
-import { LayoutDashboard, Crown, AlertCircle, Video, Mail, DollarSign, Calendar, Bot, Award, Users, FileText, BarChart3, Compass, Bell, Settings, FileSpreadsheet } from 'lucide-react';
+import { LayoutDashboard, Crown, AlertCircle, Video, Mail, DollarSign, Calendar, Bot, Award, Users, FileText, BarChart3, Compass, Bell, Settings, FileSpreadsheet, Folder } from 'lucide-react';
 
 export default function Navbar({ activeTab, setActiveTab, missingDeadlinesCount, onOpenDeadlineModal, onOpenSettings }) {
   const navTabs = [
@@ -7,11 +6,14 @@ export default function Navbar({ activeTab, setActiveTab, missingDeadlinesCount,
     { id: 'diego_ejecutivo', label: '👑 Diego Ejecutivo', icon: Crown, inDevelopment: false },
     { id: 'followup', label: '🚨 Follow Up Diario', icon: AlertCircle, inDevelopment: false },
     { id: 'fathom', label: '🎥 Fathom Calls AI', icon: Video, inDevelopment: false },
+    { id: 'delegador', label: '🤝 Delegación AI', icon: Users, inDevelopment: false },
     { id: 'google_workspace', label: '📧 Gmail & Drive AI', icon: Mail, inDevelopment: false },
+    { id: 'recursos', label: '📂 Recursos', icon: Folder, inDevelopment: false },
     { id: 'financials', label: '💵 Control Financiero', icon: DollarSign, inDevelopment: false },
     { id: 'roadmap_report', label: '📊 Reporte Semanal CEO', icon: FileText, inDevelopment: false },
     { id: 'asesor', label: '🧠 ASESOR EJECUTIVO', icon: Bot, inDevelopment: false },
     { id: 'scorecards', label: '📊 Scorecard Equipo', icon: Award, inDevelopment: false },
+    { id: 'criterios', label: '⚙️ Criterios y Reglas', icon: Settings, inDevelopment: false },
     
     // Secondary items marked as (En desarrollo)
     { id: 'micromanagement', label: 'Equipo Real (En desarrollo)', icon: Users, inDevelopment: true },

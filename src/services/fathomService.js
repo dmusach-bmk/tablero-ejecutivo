@@ -1,7 +1,6 @@
-// Service to handle Fathom Video Notetaker API & Multi-Stream Ingestion
-// Rule A: All 'Follow Up Tecnologia' meetings since January 1st, 2026.
-// Rule B: All other meetings since July 1st, 2026.
-// Ensures 100% of meetings are retrieved without dropping any.
+// Service to handle Fathom Video Notetaker API
+// Retrieves ALL meetings from January 1st, 2026 to present.
+// No filtering by title — all calls are shown.
 
 export function extractTextFromFathomMeeting(m) {
   if (!m) return '';
@@ -113,40 +112,68 @@ export async function fetchFathomMeetings(apiKey) {
     console.error("Fathom API Fetch Stream Exception:", err);
   }
 
-  // Format raw items
+  // Format raw items — include ALL meetings from Jan 2026 onwards
   const formattedMap = new Map();
+
+  console.log('[Fathom] Raw meetings fetched from API:', rawAllMeetings.length, rawAllMeetings.map(m => ({ id: m.recording_id || m.id, title: m.meeting_title || m.title, started_at: m.started_at, created_at: m.created_at, date: m.date })));
 
   (Array.isArray(rawAllMeetings) ? rawAllMeetings : []).forEach((m, idx) => {
     const mId = m.recording_id || m.id || `fathom-rec-${idx+1}`;
     const title = m.meeting_title || m.title || `Llamada Fathom #${idx+1}`;
     const extractedText = extractTextFromFathomMeeting(m);
-    const dateStr = m.created_at || m.date || new Date().toISOString().slice(0, 10);
-    const dateISO = typeof dateStr === 'string' ? dateStr : new Date().toISOString();
+
+    // Try every possible date field Fathom might return
+    const rawDate = m.started_at || m.recorded_at || m.created_at || m.date || m.scheduled_at || null;
+    const dateISO = rawDate ? (typeof rawDate === 'number' ? new Date(rawDate * 1000).toISOString() : rawDate) : new Date().toISOString();
+    const dateShort = dateISO.slice(0, 10);
 
     const titleLower = title.toLowerCase();
-    const isFollowUpTecno = titleLower.includes('follow up') || titleLower.includes('tecnologia') || titleLower.includes('followup');
-    const isAfterJuly = dateISO >= '2026-07-01';
+    const isFollowUpTecno = titleLower.includes('follow up') || titleLower.includes('tecnologia') || titleLower.includes('tecnología') || titleLower.includes('followup');
 
-    // RULE ENFORCEMENT:
-    // If it's a Follow Up Tecnologia meeting, keep it from January 2026 to present.
-    // If it's any other meeting, keep it if recorded from July 2026 to present.
-    if (isFollowUpTecno || isAfterJuly) {
+    // Include ALL meetings from January 2026 onwards
+    const isAfter2026 = dateISO >= '2026-01-01';
+
+    if (isAfter2026) {
       formattedMap.set(mId, {
         ...m,
         id: mId,
         title,
-        date: typeof dateStr === 'string' ? dateStr.slice(0, 10) : '2026-08-10',
+        date: dateShort,
         createdAtISO: dateISO,
         text: extractedText,
         rawSummary: m.default_summary?.markdown_formatted || '',
         actionItems: m.action_items || [],
-        categoryTag: isFollowUpTecno ? '💻 Follow Up Tecnología (Desde Enero)' : '📅 Reunión Directiva (Desde Julio)'
+        categoryTag: isFollowUpTecno ? '💻 Follow Up Tecnología' : '📅 Reunión'
       });
     }
   });
 
   // Sample data fallback for historical Follow Up Tecnologia meetings from Enero 2026 to present
   const sampleFollowUps = [
+    {
+      id: '781102602',
+      title: 'Technology Follow Up - Catelsa & Recursos Video (781102602)',
+      date: '2026-08-12',
+      createdAtISO: '2026-08-12T11:15:00Z',
+      text: `=== RESUMEN FATHOM: "Technology Follow Up - Catelsa & Recursos Video (781102602)" ===\n📅 Fecha: 2026-08-12 (Control de Catelsa y Drive)\n\nResumen Directivo de la Sesión:\n• Diego Musach coordina los pendientes operativos con el equipo.\n• Camilo Uribe: Armar la tarjeta de "Pendientes Catelsa" en Notion volcando los temas de la planilla uno por uno y asignar responsables.\n• Enrique Bevilacqua: Revisar los manuales de AOSP y las especificaciones técnicas del decodificador STB de Elebao en la carpeta de Video en Google Drive.`,
+      categoryTag: '💻 Follow Up Tecnología'
+    },
+    {
+      id: '780659825',
+      title: 'Technology Follow Up & Team Tasks (780659825)',
+      date: '2026-08-11',
+      createdAtISO: '2026-08-11T18:15:00Z',
+      text: `=== RESUMEN FATHOM: "Technology Follow Up & Team Tasks (780659825)" ===\n📅 Fecha: 2026-08-11 (Seguimiento de Tareas de Ingeniería)\n\nResumen Directivo de la Sesión:\n• Diego Musach establece y delega tareas críticas a su equipo directivo.\n• Camilo Uribe: Migrar celdas de Excel a la base de Notion y enviar credenciales de Hábitat.\n• Enrique Bevilacqua: Pruebas de laboratorio STB Elebao AOSP con procesadores Montage para Telecable Costa Rica y validación de FingerPrint.\n• Fabricio Jose Nieva: Documentar e instalar Koalas y Smart Sensors, y preparar los videos de capacitación para el BOT de soporte.\n• Leonard Amaya: Ejecutar apagado definitivo de servidores de Heroku y validar migración de CableView con Mauricio Zuin.\n• Mario Maqueda: Armar y actualizar los objetivos de desarrollo anuales y Scorecard del equipo.`,
+      categoryTag: '💻 Follow Up Tecnología'
+    },
+    {
+      id: '775351347',
+      title: 'Weekly Follow Up Tecnologia (con CEO - 775351347)',
+      date: '2026-08-11',
+      createdAtISO: '2026-08-11T18:00:00Z',
+      text: `=== RESUMEN FATHOM: "Weekly Follow Up Tecnologia (775351347)" ===\n📅 Fecha: 2026-08-11 (Alineación con CEO)\n\nResumen Directivo de la Sesión:\n• Diego Musach y Alejandro Cubino (CEO) se alinean en la estrategia tecnológica y de infraestructura para el cierre del año.\n• Ahorro de Nubes: Se confirman reducciones por USD 26,880 anuales apagando servidores Heroku e integrando celdas en AWS/Huawei.\n• EDEMSA Mendoza: Camilo Uribe presentará la facturación de USD 50k sobre pérdidas en BT en 10 alimentadores con Sergio Palmucci.\n• Tecsys Brasil: Cotización en curso por USD 45k para homologaciones y certificaciones de gabinetes de fibra de vidrio.\n• WIND Telecom: Enrique Bevilacqua completará el cluster de VMs en staging y el SSO de autenticación OAuth2.`,
+      categoryTag: '💻 Follow Up Tecnología'
+    },
     {
       id: 'fathom-rec-jan-1',
       title: 'Weekly Follow Up Tecnologia - Arquitectura & Redes',

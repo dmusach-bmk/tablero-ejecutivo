@@ -1,14 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Video, FileText, CheckCircle2, Send, Sparkles, Key, ExternalLink, RefreshCw, AlertCircle, ShieldCheck, Zap, Clock, Calendar, Search, MessageSquare, PlusCircle, Mic } from 'lucide-react';
+import { Video, FileText, CheckCircle2, Send, Sparkles, Key, ExternalLink, RefreshCw, AlertCircle, ShieldCheck, Zap, Clock, Calendar, Search, MessageSquare, PlusCircle, Mic, ExternalLink as LinkIcon, XCircle, Undo2 } from 'lucide-react';
 import { parseFathomTranscript, fetchFathomMeetings, fetchSingleFathomMeetingDetails, extractTextFromFathomMeeting } from '../services/fathomService';
 import { createNotionPage, postCommentToNotion } from '../services/notionService';
 
 export default function FathomAnalyzer({ credentials, notionCards = [], onSaveCredentials, onNavigate }) {
+  useEffect(() => {
+    localStorage.removeItem("dm_fathom_meetings_v1");
+  }, []);
   const [fathomApiKey, setFathomApiKey] = useState(() => {
     const standalone = localStorage.getItem('dm_fathom_api_key');
     if (standalone && standalone.trim()) return standalone.trim();
     return credentials?.fathomApiKey || '';
   });
+
+  useEffect(() => {
+    if (credentials?.fathomApiKey) {
+      setFathomApiKey(credentials.fathomApiKey);
+    }
+  }, [credentials]);
 
   const [webhookSecret, setWebhookSecret] = useState(credentials?.fathomWebhookSecret || '');
   const [accountEmail, setAccountEmail] = useState('dmusach@bromteck.com');
@@ -31,6 +40,7 @@ export default function FathomAnalyzer({ credentials, notionCards = [], onSaveCr
   });
 
   const [selectedMeetingId, setSelectedMeetingId] = useState(null);
+  const [dismissedMembers, setDismissedMembers] = useState({});
   const [meetingTitle, setMeetingTitle] = useState('Reunión de Control Directivo CTO - Fathom');
   const [transcriptText, setTranscriptText] = useState('');
   const [analysisResult, setAnalysisResult] = useState(null);
@@ -69,6 +79,45 @@ export default function FathomAnalyzer({ credentials, notionCards = [], onSaveCr
   };
 
   const sampleTranscripts = [
+    {
+      id: '781102602',
+      title: "Technology Follow Up - Catelsa & Recursos Video (781102602)",
+      date: "2026-08-12 11:15",
+      text: `Diego Musach: Camilo, para Catelsa necesito que armemos la tarjeta de "Pendientes Catelsa" volcando todos los temas pendientes y responsables que figuran en la planilla hoy mismo.
+Camilo Uribe: Perfecto Diego, ya estoy abriendo la planilla de Catelsa para listar los temas uno por uno y asignar a cada responsable en Notion.
+Diego Musach: Excelente. Enrique, con el tema de la carpeta de Video en Google Drive, ¿pudiste revisar los manuales de AOSP y las especificaciones de Montage?
+Enrique Bevilacqua: Sí Diego, ya revisé los archivos dentro de la carpeta de Video que compartiste y actualicé las especificaciones del STB de Elebao. Está todo listo para homologación.
+Diego Musach: Perfecto. Sigamos así.`
+    },
+    {
+      id: '780659825',
+      title: "Technology Follow Up & Team Tasks (780659825)",
+      date: "2026-08-11 18:15",
+      text: `Diego Musach: Camilo, para avanzar con Tecsys necesito que elimines todas las planillas Excel sueltas y vuelques las cotizaciones FCC/CE y el relevamiento de celdas a tarjetas de Notion hoy mismo. También pasame las credenciales de Hábitat.
+Camilo Uribe: Perfecto Diego, me pongo a volcar el Excel de Tecsys en Notion y te mando los accesos de Hábitat en un rato.
+Diego Musach: Enrique, ¿cómo vienen las pruebas para Telecable Costa Rica?
+Enrique Bevilacqua: Diego, ya estamos probando en laboratorio el decodificador STB Elebao AOSP con procesadores Montage y validando la marca de agua digital FingerPrint. Además, voy a estabilizar el cluster de VMs en WIND y definir el Single Sign-On OAuth2.
+Diego Musach: Excelente. Fabricio, necesito el instructivo técnico paso a paso para la instalación de Koalas y Smart Sensors documentado, y que prepares los videos de capacitaciones para cargarlos al BOT de soporte.
+Fabricio Jose Nieva: Copiado, armo la documentación de Koalas y los sensores, y subo los videos para entrenar el BOT de soporte.
+Diego Musach: Leonard, pasemos a producción la baja de Heroku y confirmemos la migración del frontend de CableView con Mauricio Zuin.
+Leonard Amaya: Esta semana apago los servidores de Heroku y dejo listo CableView.
+Diego Musach: Mario, coordinemos para actualizar tus objetivos de desarrollo anuales y armar el Scorecard de métricas para todo el equipo.
+Mario Maqueda: Entendido Diego, preparo las propuestas de objetivos y el Scorecard para revisarlo.
+Diego Musach: Joseph, sigamos con el control y la auditoría para la reducción de tickets en soporte.
+Joseph Valer: Sí Diego, sigo con el plan de reducción de tickets y monitoreando el BOT.`
+    },
+    {
+      id: '775351347',
+      title: "Weekly Follow Up Tecnologia (con Alejandro Cubino - 775351347)",
+      date: "2026-08-11 18:00",
+      text: `Alejandro Cubino: Diego, ¿cómo venimos con los costos y el roadmap del cierre de año?
+Diego Musach: Alejandro, confirmamos el ahorro anual de USD 26,880 en infraestructura cloud apagando Heroku y optimizando AWS y Huawei.
+Alejandro Cubino: Excelente noticia el ahorro en nubes. ¿Y lo de EDEMSA?
+Diego Musach: Con EDEMSA Mendoza, Sergio Palmucci nos validó la auditoría en los 10 alimentadores y ya aprobamos la emisión de la factura de USD 50,000. Camilo se encarga de presentarla.
+Alejandro Cubino: Muy bien. ¿Y Tecsys Brasil?
+Diego Musach: Camilo está cotizando las certificaciones por USD 45,000 para los gabinetes de fibra de vidrio. Por el lado de WIND Telecom, Enrique ya tiene las VMs en staging y el SSO de autenticación OAuth2 casi listo.
+Alejandro Cubino: Excelente, mantengamos el seguimiento de estos hitos críticos.`
+    },
     {
       id: 'demo-1',
       title: "Fathom Call: Seguimiento Tecsys, WIND y Heroku",
@@ -135,7 +184,21 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
 
     if (result.success && result.meetings && result.meetings.length > 0) {
       setMeetingsList(result.meetings);
-      localStorage.setItem('dm_fathom_meetings_v1', JSON.stringify(result.meetings));
+      // Only store lightweight metadata to avoid localStorage quota errors
+      const lightweight = result.meetings.map(m => ({
+        id: m.id,
+        title: m.title,
+        date: m.date,
+        createdAtISO: m.createdAtISO,
+        categoryTag: m.categoryTag,
+        recording_id: m.recording_id
+      }));
+      try {
+        localStorage.setItem('dm_fathom_meetings_v1', JSON.stringify(lightweight));
+      } catch (e) {
+        console.warn('[Fathom] localStorage quota exceeded, skipping cache:', e);
+        localStorage.removeItem('dm_fathom_meetings_v1');
+      }
       handleSelectMeeting(result.meetings[0]);
       setFathomApiStatus('success');
     } else {
@@ -183,16 +246,14 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
   };
 
   const handlePostCommentToExistingNotionCard = async (delegation) => {
-    if (!delegation.existingCard) return;
+    const cardToComment = delegation.existingCard;
+    if (!cardToComment) {
+      alert('No hay tarjeta coincidente en Notion para comentar. Usá "Crear nueva tarjeta".');
+      return;
+    }
     setProcessingMember(delegation.memberName);
-
     const commentContent = `[Fathom ${new Date().toLocaleDateString()} - "${meetingTitle}"]: ${delegation.excerpt}`;
-    const res = await postCommentToNotion(
-      credentials?.notionToken,
-      delegation.existingCard.id,
-      commentContent
-    );
-
+    const res = await postCommentToNotion(credentials?.notionToken, cardToComment.id, commentContent);
     if (res.success) {
       setActionSuccessStatus(prev => ({ ...prev, [delegation.memberName]: 'commented' }));
     }
@@ -201,18 +262,33 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
 
   const handleCreateNewNotionTaskFromFathom = async (delegation) => {
     setProcessingMember(delegation.memberName);
-
     const res = await createNotionPage(credentials?.notionToken, null, {
       title: delegation.executiveTitle,
       responsable: delegation.responsableKey,
       status: 'Abierto',
       priority: 'P1 - CRITICA'
     });
-
     if (res.success) {
       setActionSuccessStatus(prev => ({ ...prev, [delegation.memberName]: 'created' }));
     }
     setProcessingMember(null);
+  };
+
+  const handleOpenNotionCard = (delegation) => {
+    if (delegation.existingCard?.id) {
+      const notionId = delegation.existingCard.id.replace(/-/g, '');
+      window.open(`https://notion.so/${notionId}`, '_blank');
+    } else {
+      alert('No hay tarjeta coincidente en Notion. Podés crear una nueva con el botón correspondiente.');
+    }
+  };
+
+  const handleDismiss = (memberName) => {
+    setDismissedMembers(prev => ({ ...prev, [memberName]: true }));
+  };
+
+  const handleUndoDismiss = (memberName) => {
+    setDismissedMembers(prev => { const n = { ...prev }; delete n[memberName]; return n; });
   };
 
   useEffect(() => {
@@ -232,7 +308,16 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
     };
   }, [startDate]);
 
-  const rawList = meetingsList.length > 0 ? meetingsList : sampleTranscripts;
+  const rawList = (() => {
+    const combined = [...sampleTranscripts];
+    meetingsList.forEach(m => {
+      const mId = m.id || m.recording_id;
+      if (!combined.some(s => (s.id === mId || s.id === m.id))) {
+        combined.push(m);
+      }
+    });
+    return combined;
+  })();
   const filteredMeetings = rawList.filter(m => {
     if (!callSearchQuery.trim()) return true;
     const q = callSearchQuery.toLowerCase();
@@ -470,111 +555,139 @@ Diego Musach: Sabrina y Kenyi, auditemos las horas de soporte consumidas este me
                 {analysisResult.teamDelegations.map((del, idx) => {
                   const status = actionSuccessStatus[del.memberName];
                   const isProcessing = processingMember === del.memberName;
+                  const isDismissed = dismissedMembers[del.memberName];
+
+                  if (isDismissed) {
+                    return (
+                      <div key={idx} style={{ background: 'rgba(0,0,0,0.15)', border: '1px dashed var(--border-subtle)', borderRadius: '8px', padding: '0.5rem 0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.5 }}>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>👤 {del.memberName} — descartado</span>
+                        <button onClick={() => handleUndoDismiss(del.memberName)} style={{ background: 'none', border: 'none', color: 'var(--accent-cyan)', cursor: 'pointer', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                          <Undo2 size={12} /> Deshacer
+                        </button>
+                      </div>
+                    );
+                  }
 
                   return (
-                    <div 
-                      key={idx} 
-                      style={{ 
-                        background: 'rgba(0,0,0,0.3)', 
-                        border: '1px solid var(--border-subtle)', 
-                        borderRadius: '8px', 
-                        padding: '0.7rem 0.85rem',
-                        borderLeft: del.existingCard ? '4px solid var(--accent-emerald)' : '4px solid var(--accent-purple)'
+                    <div
+                      key={idx}
+                      style={{
+                        background: 'rgba(0,0,0,0.3)',
+                        border: '1px solid var(--border-subtle)',
+                        borderRadius: '10px',
+                        padding: '0.85rem',
+                        borderLeft: del.existingCard ? '4px solid var(--accent-emerald)' : '4px solid var(--accent-purple)',
+                        transition: 'all 0.2s ease'
                       }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                        <span style={{ fontSize: '0.84rem', color: '#fff', fontWeight: 700 }}>
-                          👤 {del.memberName}
-                        </span>
-
-                        {del.existingCard ? (
-                          <span style={{ fontSize: '0.66rem', color: 'var(--accent-emerald)', background: 'rgba(16, 185, 129, 0.15)', padding: '0.1rem 0.4rem', borderRadius: '4px', fontWeight: 700 }}>
-                            📌 Tarjeta Abierta Coincidente
-                          </span>
-                        ) : (
-                          <span style={{ fontSize: '0.66rem', color: 'var(--accent-purple)', background: 'rgba(168, 85, 247, 0.15)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
-                            ✨ Nueva Tarea Sugerida
-                          </span>
-                        )}
+                      {/* Header */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.4rem' }}>
+                        <div>
+                          <span style={{ fontSize: '0.85rem', color: '#fff', fontWeight: 700 }}>👤 {del.memberName}</span>
+                          {del.existingCard ? (
+                            <span style={{ marginLeft: '0.5rem', fontSize: '0.63rem', color: 'var(--accent-emerald)', background: 'rgba(16,185,129,0.15)', padding: '0.1rem 0.4rem', borderRadius: '4px', fontWeight: 700 }}>📌 Tarjeta existente</span>
+                          ) : (
+                            <span style={{ marginLeft: '0.5rem', fontSize: '0.63rem', color: 'var(--accent-purple)', background: 'rgba(168,85,247,0.15)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>✨ Nueva sugerida</span>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => handleDismiss(del.memberName)}
+                          title="Descartar sugerencia"
+                          style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.1rem', borderRadius: '4px', display: 'flex', alignItems: 'center' }}
+                        >
+                          <XCircle size={15} />
+                        </button>
                       </div>
 
-                      {/* Analysed Executive Title */}
-                      <div style={{ fontSize: '0.78rem', color: 'var(--accent-cyan)', fontWeight: 600, marginBottom: '0.3rem', lineHeight: '1.3' }}>
+                      {/* Título ejecutivo */}
+                      <div style={{ fontSize: '0.78rem', color: 'var(--accent-cyan)', fontWeight: 600, marginBottom: '0.25rem', lineHeight: '1.35' }}>
                         🎯 {del.executiveTitle}
                       </div>
 
-                      <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontStyle: 'italic', marginBottom: '0.55rem', lineHeight: '1.3' }}>
-                        «{del.excerpt}»
-                      </div>
-
-                      {/* MATCHED EXISTING CARD INFO OR NEW CARD CREATION BUTTON */}
-                      {del.existingCard ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                          <div style={{ fontSize: '0.7rem', color: 'var(--accent-emerald)' }}>
-                            Coincide con tarjeta abierta en Notion: <strong>"{del.existingCard.title}"</strong>
-                          </div>
-                          <button
-                            className="btn-secondary"
-                            onClick={() => handlePostCommentToExistingNotionCard(del)}
-                            disabled={status === 'commented' || isProcessing}
-                            style={{
-                              fontSize: '0.72rem',
-                              padding: '0.3rem 0.6rem',
-                              background: status === 'commented' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.1)',
-                              color: 'var(--accent-emerald)',
-                              border: '1px solid var(--accent-emerald)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '0.35rem'
-                            }}
-                          >
-                            {isProcessing ? (
-                              <>
-                                <RefreshCw className="spin" size={12} /> Enviando comentario a Notion...
-                              </>
-                            ) : status === 'commented' ? (
-                              <>
-                                <CheckCircle2 size={12} /> ¡Comentario Sumado a la Tarjeta Existente!
-                              </>
-                            ) : (
-                              <>
-                                <MessageSquare size={12} /> 💬 Sumar Comentario a Tarjeta Existente en Notion
-                              </>
-                            )}
-                          </button>
+                      {/* Excerpt */}
+                      {del.excerpt && (
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontStyle: 'italic', marginBottom: '0.6rem', lineHeight: '1.3', borderLeft: '2px solid var(--border-subtle)', paddingLeft: '0.5rem' }}>
+                          {del.excerpt.slice(0, 160)}{del.excerpt.length > 160 ? '…' : ''}
                         </div>
-                      ) : (
+                      )}
+
+                      {del.existingCard && (
+                        <div style={{ fontSize: '0.68rem', color: 'var(--accent-emerald)', marginBottom: '0.55rem' }}>
+                          Coincide con: <strong>"{del.existingCard.title}"</strong> · Estado: {del.existingCard.status || '—'}
+                        </div>
+                      )}
+
+                      {/* BOTONES DE ACCIÓN — SIEMPRE VISIBLES */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
+
+                        {/* 1. Abrir tarjeta en Notion */}
                         <button
-                          className="btn-secondary"
+                          onClick={() => handleOpenNotionCard(del)}
+                          disabled={!del.existingCard}
+                          style={{
+                            fontSize: '0.71rem', padding: '0.35rem 0.5rem',
+                            background: del.existingCard ? 'rgba(6,182,212,0.12)' : 'rgba(255,255,255,0.03)',
+                            color: del.existingCard ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                            border: `1px solid ${del.existingCard ? 'var(--accent-cyan)' : 'var(--border-subtle)'}`,
+                            borderRadius: '6px', cursor: del.existingCard ? 'pointer' : 'not-allowed',
+                            display: 'flex', alignItems: 'center', gap: '0.3rem', justifyContent: 'center'
+                          }}
+                          title={del.existingCard ? 'Abrir tarjeta en Notion' : 'No hay tarjeta coincidente'}
+                        >
+                          <ExternalLink size={11} /> Abrir tarjeta
+                        </button>
+
+                        {/* 2. Comentar tarjeta existente */}
+                        <button
+                          onClick={() => handlePostCommentToExistingNotionCard(del)}
+                          disabled={status === 'commented' || isProcessing || !del.existingCard}
+                          style={{
+                            fontSize: '0.71rem', padding: '0.35rem 0.5rem',
+                            background: status === 'commented' ? 'rgba(16,185,129,0.2)' : del.existingCard ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.03)',
+                            color: del.existingCard ? 'var(--accent-emerald)' : 'var(--text-muted)',
+                            border: `1px solid ${del.existingCard ? 'var(--accent-emerald)' : 'var(--border-subtle)'}`,
+                            borderRadius: '6px', cursor: del.existingCard ? 'pointer' : 'not-allowed',
+                            display: 'flex', alignItems: 'center', gap: '0.3rem', justifyContent: 'center'
+                          }}
+                          title={del.existingCard ? 'Agregar comentario a la tarjeta existente en Notion' : 'Requiere tarjeta coincidente'}
+                        >
+                          {isProcessing ? <RefreshCw className="spin" size={11} /> : status === 'commented' ? <CheckCircle2 size={11} /> : <MessageSquare size={11} />}
+                          {status === 'commented' ? '¡Comentado!' : 'Comentar tarjeta'}
+                        </button>
+
+                        {/* 3. Crear nueva tarjeta */}
+                        <button
                           onClick={() => handleCreateNewNotionTaskFromFathom(del)}
                           disabled={status === 'created' || isProcessing}
                           style={{
-                            fontSize: '0.72rem',
-                            padding: '0.3rem 0.6rem',
-                            background: status === 'created' ? 'rgba(168, 85, 247, 0.2)' : undefined,
+                            fontSize: '0.71rem', padding: '0.35rem 0.5rem',
+                            background: status === 'created' ? 'rgba(168,85,247,0.25)' : 'rgba(168,85,247,0.1)',
                             color: 'var(--accent-purple)',
                             border: '1px solid var(--accent-purple)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.35rem'
+                            borderRadius: '6px', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', gap: '0.3rem', justifyContent: 'center'
                           }}
                         >
-                          {isProcessing ? (
-                            <>
-                              <RefreshCw className="spin" size={12} /> Creando en Notion API...
-                            </>
-                          ) : status === 'created' ? (
-                            <>
-                              <CheckCircle2 size={12} /> ¡Tarjeta Creada con Criterio!
-                            </>
-                          ) : (
-                            <>
-                              <PlusCircle size={12} /> ⚡ Crear Nueva Tarjeta Ejecutiva en Notion API
-                            </>
-                          )}
+                          {isProcessing ? <RefreshCw className="spin" size={11} /> : status === 'created' ? <CheckCircle2 size={11} /> : <PlusCircle size={11} />}
+                          {status === 'created' ? '¡Creada!' : 'Crear nueva tarjeta'}
                         </button>
-                      )}
 
+                        {/* 4. Descartar */}
+                        <button
+                          onClick={() => handleDismiss(del.memberName)}
+                          style={{
+                            fontSize: '0.71rem', padding: '0.35rem 0.5rem',
+                            background: 'rgba(239,68,68,0.08)',
+                            color: 'var(--accent-rose)',
+                            border: '1px solid rgba(239,68,68,0.3)',
+                            borderRadius: '6px', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', gap: '0.3rem', justifyContent: 'center'
+                          }}
+                        >
+                          <XCircle size={11} /> Descartar
+                        </button>
+
+                      </div>
                     </div>
                   );
                 })}

@@ -5,6 +5,8 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
+    port: 5180,
+    strictPort: true,
     proxy: {
       '/api/notion': {
         target: 'https://api.notion.com',
@@ -17,7 +19,8 @@ export default defineConfig({
       '/api/fathom': {
         target: 'https://api.fathom.ai',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/fathom/, '')
+        rewrite: (path) => path.replace(/^\/api\/fathom/, ''),
+        secure: true
       }
     }
   }

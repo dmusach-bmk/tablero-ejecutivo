@@ -150,6 +150,30 @@ export default function SettingsModal({ isOpen, onClose, credentials, onSaveCred
             </div>
           </div>
 
+          {/* Fathom Section */}
+          <div style={{ background: 'rgba(6, 182, 212, 0.08)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--accent-cyan)' }}>
+            <h3 style={{ fontSize: '0.92rem', color: 'var(--accent-cyan)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: '0 0 0.75rem 0' }}>
+              <Key size={16} /> 🎙️ Fathom Video Notetaker — API Key
+            </h3>
+            <div className="form-group" style={{ marginBottom: '0.5rem' }}>
+              <label style={{ fontSize: '0.78rem' }}>
+                Fathom API Key (fath_live_...):
+              </label>
+              <input
+                type="password"
+                className="form-input"
+                value={fathomApiKey}
+                onChange={(e) => setFathomApiKey(e.target.value)}
+                placeholder="fath_live_..."
+                style={{ fontSize: '0.8rem', padding: '0.45rem 0.65rem' }}
+              />
+            </div>
+            <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', margin: 0 }}>
+              Obtené tu clave en: <strong>fathom.video → Settings → Integrations → API Keys</strong>. 
+              Se guarda permanentemente en el navegador. La app leerá todas tus calls automáticamente (Follow Up Tecnología desde Enero 2026, otras desde Julio 2026).
+            </p>
+          </div>
+
           {/* Notion Section */}
           <div style={{ background: 'rgba(0,0,0,0.25)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
             <h3 style={{ fontSize: '0.92rem', color: 'var(--accent-cyan)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: '0 0 0.75rem 0' }}>
