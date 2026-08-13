@@ -560,14 +560,21 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
                   </div>
                 </div>
 
-                {/* LATEST NOTION COMMENT DISPLAY WITH DATE (STRICTLY NEWEST) */}
-                {lastComment ? (
-                  <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.45rem 0.75rem', borderRadius: '6px', fontSize: '0.76rem', borderLeft: '3px solid var(--accent-cyan)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', fontSize: '0.7rem', marginBottom: '0.15rem' }}>
-                      <strong>💬 Último comentario por {lastComment.author}</strong>
-                      <span>📅 {lastComment.date}</span>
+                {/* FULL CHRONOLOGICAL COMMENTS HISTORY */}
+                {sortedComments.length > 0 ? (
+                  <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.55rem 0.85rem', borderRadius: '6px', fontSize: '0.76rem', borderLeft: '3px solid var(--accent-cyan)', display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                    <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 700, borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '0.3rem' }}>
+                      💬 Historial de Notas y Comentarios ({sortedComments.length}):
                     </div>
-                    <div style={{ color: '#fff', fontSize: '0.8rem' }}>"{lastComment.text}"</div>
+                    {sortedComments.map((cmt, cIdx) => (
+                      <div key={cIdx} style={{ paddingBottom: cIdx < sortedComments.length - 1 ? '0.4rem' : '0', borderBottom: cIdx < sortedComments.length - 1 ? '1px dashed rgba(255,255,255,0.05)' : 'none' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#58a6ff', fontWeight: 600, fontSize: '0.72rem', marginBottom: '0.1rem' }}>
+                          <span>👤 {cmt.author}</span>
+                          <span style={{ color: 'var(--text-muted)', fontWeight: 'normal', fontSize: '0.68rem' }}>{cmt.date}</span>
+                        </div>
+                        <div style={{ color: 'var(--text-body)', fontSize: '0.78rem', lineHeight: '1.3' }}>{cmt.text}</div>
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', fontStyle: 'italic' }}>
