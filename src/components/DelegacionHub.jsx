@@ -493,21 +493,19 @@ export default function DelegacionHub({ notionCards, setNotionCards, onAddNotion
                 lineHeight: 1.4
               }}
             />
-            {alreadyExists && (
-              <button
-                onClick={() => handleAddCommentToCard(item)}
-                className="action-btn"
-                style={{
-                  alignSelf: 'flex-end',
-                  fontSize: '0.8rem',
-                  padding: '0.4rem 0.8rem',
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.1)'
-                }}
-              >
-                Guardar Comentario Directo
-              </button>
-            )}
+            <button
+              onClick={() => handleAddCommentToCard(item)}
+              className="action-btn"
+              style={{
+                alignSelf: 'flex-end',
+                fontSize: '0.8rem',
+                padding: '0.4rem 0.8rem',
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)'
+              }}
+            >
+              {alreadyExists ? 'Guardar Comentario Directo en Notion' : 'Guardar Nota en Historial'}
+            </button>
           </div>
         </div>
 
@@ -1092,7 +1090,13 @@ Abrí una ventana dedicada con las tarjetas correspondientes para que las revise
         </div>
       ) : (
         <button 
-          onClick={() => setIsChatOpen(true)}
+          onClick={(e) => {
+            if (e.ctrlKey || e.metaKey) {
+              window.open(window.location.href, '_blank');
+            } else {
+              setIsChatOpen(true);
+            }
+          }}
           style={{
             position: 'fixed',
             bottom: '25px',

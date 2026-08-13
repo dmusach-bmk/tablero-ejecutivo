@@ -73,8 +73,12 @@ export default function Navbar({ activeTab, setActiveTab, missingDeadlinesCount,
             <button
               key={tab.id}
               className={`nav-tab-btn ${isActive ? 'active' : ''}`}
-              onClick={() => {
-                if (!isDisabled) setActiveTab(tab.id);
+              onClick={(e) => {
+                if (e.ctrlKey || e.metaKey) {
+                  window.open(window.location.origin + window.location.pathname + `#${tab.id}`, '_blank');
+                } else if (!isDisabled) {
+                  setActiveTab(tab.id);
+                }
               }}
               disabled={isDisabled}
               style={{
