@@ -20,6 +20,7 @@ import SettingsModal from './components/SettingsModal';
 import CriteriosYReglas from './components/CriteriosYReglas';
 import RecursosHub from './components/RecursosHub';
 import DelegacionHub from './components/DelegacionHub';
+import ReportesExternos from './components/ReportesExternos';
 
 import { REAL_NOTION_CARDS, REAL_TEAM_TRACKING } from './realNotionData';
 import { INITIAL_EXCEL_DATA } from './mockData';
@@ -222,6 +223,10 @@ export default function App() {
             teamTracking={teamTracking}
             notionCards={notionCards}
           />
+        )}
+
+        {activeTab === 'reportes' && (
+          <ReportesExternos />
         )}
 
         {activeTab === 'diego_ejecutivo' && (
