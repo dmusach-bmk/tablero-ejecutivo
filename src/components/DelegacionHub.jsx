@@ -786,7 +786,8 @@ export default function DelegacionHub({ notionCards, setNotionCards, onAddNotion
       setCommentInputs(prev => ({ ...prev, [item.id]: '' }));
     }
 
-    setDelegatedItems(prev => ({ ...prev, [item.id]: true }));
+    // Remove the card from the Delegación AI list as requested
+    setCustomTopics(prev => prev.filter(t => t.id !== item.id));
     setActionAlert({
       type: 'success',
       text: `🚀 ¡Tema "${item.title}" asignado con éxito a la base de Notion de ${item.assignee}! Ya figura en el Follow Up.`
