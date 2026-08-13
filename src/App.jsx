@@ -21,6 +21,7 @@ import CriteriosYReglas from './components/CriteriosYReglas';
 import RecursosHub from './components/RecursosHub';
 import DelegacionHub from './components/DelegacionHub';
 import ReportesExternos from './components/ReportesExternos';
+import Estrategia306090 from './components/Estrategia306090';
 
 import { REAL_NOTION_CARDS, REAL_TEAM_TRACKING } from './realNotionData';
 import { INITIAL_EXCEL_DATA } from './mockData';
@@ -227,6 +228,10 @@ export default function App() {
 
         {activeTab === 'reportes' && (
           <ReportesExternos />
+        )}
+
+        {activeTab === 'estrategia' && (
+          <Estrategia306090 />
         )}
 
         {activeTab === 'diego_ejecutivo' && (
