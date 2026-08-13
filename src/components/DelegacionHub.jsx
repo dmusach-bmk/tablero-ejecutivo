@@ -288,14 +288,14 @@ export default function DelegacionHub({ notionCards, setNotionCards, onAddNotion
   ];
 
   const [customTopics, setCustomTopics] = useState(() => {
-    const saved = localStorage.getItem('dm_custom_delegations_v1');
+    const saved = localStorage.getItem('dm_custom_delegations_v2');
     return saved ? JSON.parse(saved) : initialTopics;
   });
 
   const assigneesList = ['ALL', 'Diego Musach', 'Camilo Uribe', 'Enrique Bevilacqua', 'Fabricio Jose Nieva', 'Leonard Amaya', 'Mario Maqueda'];
 
   useEffect(() => {
-    localStorage.setItem('dm_custom_delegations_v1', JSON.stringify(customTopics));
+    localStorage.setItem('dm_custom_delegations_v2', JSON.stringify(customTopics));
   }, [customTopics]);
 
   useEffect(() => {
