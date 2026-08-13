@@ -710,13 +710,13 @@ export default function DelegacionHub({ notionCards, setNotionCards, onAddNotion
     const uniqueId = `notion-delegated-${Date.now()}`;
     const pageId = `del-${item.id}-${Date.now().toString().slice(-4)}`;
     
-    const commentsList = userNote ? [
-      {
-        author: 'Diego Musach (CTO)',
-        date: new Date().toISOString().replace('T', ' ').slice(0, 16),
-        text: userNote
-      }
-    ] : [];
+    const prevSavedComments = item.comments || [];
+    const currentInputComment = userNote.trim() ? [{
+      author: 'Diego Musach (CTO)',
+      date: new Date().toISOString().replace('T', ' ').slice(0, 16),
+      text: userNote.trim()
+    }] : [];
+    const commentsList = [...prevSavedComments, ...currentInputComment];
 
     const newCard = {
       id: uniqueId,
