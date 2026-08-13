@@ -786,10 +786,6 @@ export default function DelegacionHub({ notionCards, setNotionCards, onAddNotion
       setCommentInputs(prev => ({ ...prev, [item.id]: '' }));
     }
 
-    // Open Notion page automatically in a new window/tab
-    const notionUrl = `https://notion.so/${pageId.replace(/-/g, '')}`;
-    window.open(notionUrl, '_blank');
-
     setDelegatedItems(prev => ({ ...prev, [item.id]: true }));
     setActionAlert({
       type: 'success',
