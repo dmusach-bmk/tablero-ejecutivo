@@ -6,6 +6,8 @@ import {
   Lightbulb, HelpCircle, Bot, ArrowRight, Edit3, Save, Trash2
 } from 'lucide-react';
 
+import { extractDateFromText } from '../utils/dateParser';
+
 export default function DelegacionHub({ notionCards, setNotionCards, onAddNotionCard, teamTracking, setTeamTracking }) {
   const [selectedAssignee, setSelectedAssignee] = useState('ALL');
   const [delegatedItems, setDelegatedItems] = useState({});
@@ -531,9 +533,31 @@ export default function DelegacionHub({ notionCards, setNotionCards, onAddNotion
 
         {/* Bottom Actions Bar */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.2rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '1rem' }}>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-            <Clock size={14} style={{ display: 'inline', marginRight: '0.3rem', verticalAlign: 'middle' }} />
-            Plazo: <strong>{item.deadline}</strong>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+            <Clock size={14} style={{ color: 'var(--accent-cyan)' }} />
+            <span style={{ fontWeight: 600 }}>Plazo:</span>
+            <input
+              type="date"
+              value={item.deadline && item.deadline.match(/^\d{4}-\d{2}-\d{2}$/) ? item.deadline : ''}
+              onChange={(e) => handleQuickUpdateDeadline(item.id, e.target.value)}
+              title="Haz clic aquí para modificar el plazo de entrega directamente"
+              style={{
+                background: 'rgba(0,0,0,0.6)',
+                border: '1px solid #30363d',
+                color: '#38bdf8',
+                padding: '0.25rem 0.5rem',
+                borderRadius: '6px',
+                fontSize: '0.82rem',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                outline: 'none'
+              }}
+            />
+            {(!item.deadline || !item.deadline.match(/^\d{4}-\d{2}-\d{2}$/)) && (
+              <span style={{ fontSize: '0.82rem', color: '#f59e0b', fontWeight: 'bold' }}>
+                ({item.deadline})
+              </span>
+            )}
           </div>
 
           <div style={{ display: 'flex', gap: '0.6rem' }}>
@@ -578,6 +602,21 @@ export default function DelegacionHub({ notionCards, setNotionCards, onAddNotion
     );
   };
 
+  const handleQuickUpdateDeadline = (itemId, newDeadline) => {
+    if (!newDeadline) return;
+    setCustomTopics(prev => prev.map(t => {
+      if (t.id === itemId) {
+        return { ...t, deadline: newDeadline };
+      }
+      return t;
+    }));
+    setActionAlert({
+      type: 'info',
+      text: `📅 Plazo actualizado a ${newDeadline}`
+    });
+    setTimeout(() => setActionAlert(null), 2500);
+  };
+
   const handleStartEdit = (item) => {
     setEditingItemId(item.id);
     setEditTitle(item.title);
@@ -614,19 +653,23 @@ export default function DelegacionHub({ notionCards, setNotionCards, onAddNotion
     const text = commentInputs[item.id];
     if (!text || !text.trim()) return;
 
+    // Automatic Intelligent Date Extraction from comment text
+    const extractedDate = extractDateFromText(text.trim());
+
     const newComment = {
       author: 'Diego Musach (CTO)',
       date: new Date().toISOString().replace('T', ' ').slice(0, 16),
       text: text.trim()
     };
 
-    // 1. If it already exists in Notion, update the main state
+    // 1. If it already exists in Notion, update the main state (and deadline if date detected)
     const matched = findMatchedNotionCard(item.title);
     if (matched) {
       setNotionCards(prev => prev.map(card => {
         if (card.id === matched.id) {
           return {
             ...card,
+            deadline: extractedDate || card.deadline,
             comments: [...(card.comments || []), newComment]
           };
         }
@@ -634,11 +677,12 @@ export default function DelegacionHub({ notionCards, setNotionCards, onAddNotion
       }));
     }
 
-    // 2. Also save to local customTopics state comments history
+    // 2. Save to local customTopics state comments history & update deadline automatically if date detected
     setCustomTopics(prev => prev.map(t => {
       if (t.id === item.id) {
         return {
           ...t,
+          deadline: extractedDate || t.deadline,
           comments: [...(t.comments || []), newComment]
         };
       }
@@ -646,11 +690,19 @@ export default function DelegacionHub({ notionCards, setNotionCards, onAddNotion
     }));
 
     setCommentInputs(prev => ({ ...prev, [item.id]: '' }));
-    setActionAlert({
-      type: 'success',
-      text: '💬 Comentario guardado con éxito.'
-    });
-    setTimeout(() => setActionAlert(null), 2500);
+    
+    if (extractedDate) {
+      setActionAlert({
+        type: 'success',
+        text: `✨ Comentario guardado. Plazo actualizado automáticamente a ${extractedDate}`
+      });
+    } else {
+      setActionAlert({
+        type: 'success',
+        text: '💬 Comentario guardado con éxito.'
+      });
+    }
+    setTimeout(() => setActionAlert(null), 3000);
   };
 
   const handleNotionDelegate = (item) => {

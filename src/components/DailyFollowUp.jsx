@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, MessageSquare, ShieldAlert, CheckCircle2, Send, RefreshCw, Search, Layers, ExternalLink, Archive, CheckSquare, Mic } from 'lucide-react';
 import { postCommentToNotion, updateNotionPageStatus, fetchNotionComments } from '../services/notionService';
 
+import { extractDateFromText } from '../utils/dateParser';
+
 export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamTracking, onOpenEmailWithAgenda, onNavigate }) {
   const [activeMemberId, setActiveMemberId] = useState('all');
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
@@ -12,6 +14,7 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
   const [showClosedSection, setShowClosedSection] = useState(false);
   const [cardStatusMap, setCardStatusMap] = useState({});
   const [localCommentsMap, setLocalCommentsMap] = useState({});
+  const [localDeadlineMap, setLocalDeadlineMap] = useState({});
   const [isFetchingNotionComments, setIsFetchingNotionComments] = useState(false);
   const [listeningTargetId, setListeningTargetId] = useState(null);
 
@@ -175,6 +178,24 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
     setIsFetchingNotionComments(false);
   };
 
+  const handleDeadlineChange = (topicId, newDeadline) => {
+    if (!newDeadline) return;
+    setLocalDeadlineMap(prev => ({ ...prev, [topicId]: newDeadline }));
+    if (onUpdateTeamTracking) {
+      onUpdateTeamTracking(prevTeam => {
+        return prevTeam.map(mem => ({
+          ...mem,
+          topics: (mem.topics || []).map(top => {
+            if (top.id === topicId) {
+              return { ...top, deadline: newDeadline };
+            }
+            return top;
+          })
+        }));
+      });
+    }
+  };
+
   const handlePostCommentForTopic = async (topicId, notionPageId, memberName) => {
     const text = commentInputs[topicId];
     if (!text || !text.trim()) return;
@@ -182,6 +203,12 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
     setSyncStatus(prev => ({ ...prev, [topicId]: 'syncing' }));
     const nowFormatted = new Date().toISOString().replace('T', ' ').substring(0, 16);
     const newCommentObj = { author: 'Diego Musach (CTO)', date: nowFormatted, text: text.trim() };
+
+    // Automatic Date Extraction from comment text
+    const extractedDate = extractDateFromText(text.trim());
+    if (extractedDate) {
+      setLocalDeadlineMap(prev => ({ ...prev, [topicId]: extractedDate }));
+    }
 
     // 1. Immediately update React local state (0ms UI feedback)
     const existingTopic = allCardsCross.find(c => c.id === topicId);
@@ -203,6 +230,7 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
             if (top.id === topicId) {
               return {
                 ...top,
+                deadline: extractedDate || top.deadline,
                 comments: updatedComments
               };
             }
@@ -489,6 +517,32 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
                       <span className={`tag ${topic.priority?.includes('P1') ? 'critical' : 'high'}`} style={{ fontSize: '0.62rem', padding: '0.1rem 0.35rem' }}>
                         {topic.priority}
                       </span>
+
+                      {/* INLINE EDITABLE DEADLINE CONTROL */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.68rem', color: 'var(--text-muted)', background: 'rgba(0,0,0,0.4)', padding: '0.1rem 0.45rem', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                        <Calendar size={11} style={{ color: 'var(--accent-cyan)' }} />
+                        <span style={{ fontWeight: 600 }}>Plazo:</span>
+                        <input
+                          type="date"
+                          value={(localDeadlineMap[topic.id] || topic.deadline || '').match(/^\d{4}-\d{2}-\d{2}$/) ? (localDeadlineMap[topic.id] || topic.deadline) : ''}
+                          onChange={(e) => handleDeadlineChange(topic.id, e.target.value)}
+                          title="Haz clic aquí para modificar el plazo de entrega"
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#38bdf8',
+                            fontSize: '0.68rem',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                            outline: 'none'
+                          }}
+                        />
+                        {!((localDeadlineMap[topic.id] || topic.deadline || '').match(/^\d{4}-\d{2}-\d{2}$/)) && (
+                          <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>
+                            ({localDeadlineMap[topic.id] || topic.deadline || 'Sin Fecha'})
+                          </span>
+                        )}
+                      </div>
 
                       {/* LIVE NOTION STATUS DROPDOWN */}
                       <select
