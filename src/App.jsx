@@ -149,6 +149,7 @@ export default function App() {
             excelData={excelData}
             teamTracking={teamTracking}
             onNavigate={handleTabChange}
+            credentials={credentials}
           />
         )}
 

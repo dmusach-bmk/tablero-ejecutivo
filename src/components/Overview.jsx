@@ -1,7 +1,8 @@
 import React from 'react';
 import { AlertCircle, ArrowUpRight, CheckCircle2, Clock, ShieldAlert, Zap, TrendingUp, Users, Cpu, FileSpreadsheet, Crown, Bot, Award, Calendar } from 'lucide-react';
+import GlobalAiInbox from './GlobalAiInbox';
 
-export default function Overview({ notionCards, excelData, teamTracking, onNavigate, onOpenDeadlineModal }) {
+export default function Overview({ notionCards, excelData, teamTracking, onNavigate, onOpenDeadlineModal, credentials }) {
   const missingCount = notionCards.filter(c => c.missingDeadline).length;
   const criticalCount = notionCards.filter(c => c.priority?.includes('P1') || c.priority === 'Crítica').length;
   const totalCardsCount = notionCards.length;
@@ -9,6 +10,12 @@ export default function Overview({ notionCards, excelData, teamTracking, onNavig
   return (
     <div className="overview-container">
       
+      <GlobalAiInbox 
+        sectionName="Vista General (Overview)" 
+        notionCards={notionCards} 
+        credentials={credentials} 
+      />
+
       {/* Executive Quick Access Hub Banners */}
       <div className="card-glass" style={{ marginBottom: '1.5rem', background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.18), rgba(6, 182, 212, 0.15))', borderLeft: '4px solid var(--accent-violet)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>

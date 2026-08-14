@@ -3,6 +3,7 @@ import { Calendar, MessageSquare, ShieldAlert, CheckCircle2, Send, RefreshCw, Se
 import { postCommentToNotion, updateNotionPageStatus, fetchNotionComments } from '../services/notionService';
 
 import { extractDateFromText } from '../utils/dateParser';
+import GlobalAiInbox from './GlobalAiInbox';
 
 export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamTracking, onOpenEmailWithAgenda, onNavigate }) {
   const [activeMemberId, setActiveMemberId] = useState('all');
@@ -327,6 +328,12 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
   return (
     <div className="daily-followup-container">
       
+      <GlobalAiInbox 
+        sectionName="Follow Up Diario" 
+        notionCards={teamTracking} 
+        credentials={credentials} 
+      />
+
       {/* Compact Header Banner */}
       <div className="card-glass" style={{ marginBottom: '0.85rem', padding: '0.75rem 1rem', background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(15, 23, 42, 0.95))', borderLeft: '4px solid var(--accent-cyan)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>

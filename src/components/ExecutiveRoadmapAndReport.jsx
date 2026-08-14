@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FileText, CheckCircle2, Copy, Send, Sparkles, Clock, Layers, ExternalLink, Video, Award, Target, ChevronRight, MessageSquare, Mic, Plus, Check, Zap, RefreshCw, User, ShieldCheck, PlusCircle, CheckSquare, DollarSign, Activity, Edit3, SendHorizontal, History, X, Cloud, Server, Eye, Calendar, AlertTriangle, ListChecks, Lock, RotateCcw, Database, Link as LinkIcon } from 'lucide-react';
 import { postCommentToNotion, createNotionPage, updateNotionPageStatus } from '../services/notionService';
 import { fetchSingleFathomMeetingDetails } from '../services/fathomService';
+import GlobalAiInbox from './GlobalAiInbox';
 
 export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCards = [], credentials }) {
   const [copiedReport, setCopiedReport] = useState(false);
@@ -435,6 +436,12 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
   return (
     <div className="executive-roadmap-container">
       
+      <GlobalAiInbox 
+        sectionName="Reporte Semanal CEO" 
+        notionCards={notionCards} 
+        credentials={credentials} 
+      />
+
       {/* Executive Header Banner with MANDATORY LIVE MEETING DATE */}
       <div className="card-glass" style={{ padding: '1.25rem 1.5rem', marginBottom: '1.2rem', background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98))', borderLeft: '4px solid var(--accent-purple)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
