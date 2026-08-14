@@ -22,6 +22,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
 
   // MODAL INSPECTOR STATE FOR CLICKABLE CARDS
   const [activeModalType, setActiveModalType] = useState(null);
+  const [inspectingNotionCard, setInspectingNotionCard] = useState(null); // Added for related cards modal
 
   // CLOSED TOPICS DATABASE PERSISTENCE (PERSISTED IN LOCALSTORAGE FOR DIEGO)
   const [closedTopicsDb, setClosedTopicsDb] = useState(() => {
@@ -125,96 +126,90 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     setFathomIngestSuccessMsg(`¡Éxito! Se ingesto la llamada Fathom #${callId} ("${meetingTitle}") directamente en tu Bloc de Notas sobre la Gestión.`);
   };
 
-  // REAL FATHOM & NOTION WEEKLY FOLLOW UP SERIES (JULIO - AGOSTO 2026)
-  const allFollowUpSeries = [
-    {
-      id: 'ser-1',
-      seriesName: '📌 Weekly Follow Up Tecnologia (con Alejandro Cubino - CEO)',
-      targetCard: 'Weekly Follow Up Tecnologia (con Alejandro)',
-      meetingDate: todayShortDate,
-      fathomCallId: '775351347',
-      fathomUrl: 'https://fathom.video/calls/775351347?tab=summary',
-      lead: 'Diego Musach (CTO) / Alejandro Cubino (CEO)',
-      keyword: 'tecnologia',
-      priority: 'P1 - CRITICA',
-      defaultStatus: 'Abierto / En Seguimiento',
-      fathomSummary: 'Alineación de objetivos de ingeniería Q3-Q4 2026 con Alejandro Cubino (Call Fathom #775351347). Revisión de hitos de entrega en clientes y control de presupuesto.'
-    },
-    {
-      id: 'ser-2',
-      seriesName: '📹 Weekly Follow Up Video (STB Elebao & FingerPrint)',
-      targetCard: 'Weekly Follow Up Video',
-      meetingDate: '10/08/2026',
-      lead: 'Enrique Bevilacqua',
-      keyword: 'telecable',
-      priority: 'P1 - CRITICA',
-      defaultStatus: 'Laboratorio OK',
-      fathomSummary: 'Pruebas de laboratorio en decodificadores STB Elebao AOSP completadas con procesadores Montage para Telecable Costa Rica. Marca de agua digital FingerPrint validada sobre HLS/DASH.'
-    },
-    {
-      id: 'ser-3',
-      seriesName: '⚡ Weekly Follow Up Energia (EDEMSA Mendoza & Pérdidas BT)',
-      targetCard: 'Weekly Follow Up Energia',
-      meetingDate: '27/07/2026',
-      lead: 'Camilo Uribe / Diego Musach',
-      keyword: 'edemsa',
-      priority: 'P1 - CRITICA',
-      defaultStatus: 'Facturación Autorizada (USD 50k)',
-      fathomSummary: 'Auditoría técnica de pérdidas en BT en 10 alimentadores validada con Sergio Palmucci, Nicolás y Zuin. Emisión de factura por USD 50,000 aprobada.'
-    },
-    {
-      id: 'ser-4',
-      seriesName: '📊 Weekly Follow Up con Camilo (Tecsys Brasil & Gabinetes)',
-      targetCard: 'Weekly Follow Up con Camilo',
-      meetingDate: '03/08/2026',
-      lead: 'Camilo Uribe',
-      keyword: 'tecsys',
-      priority: 'P1 - CRITICA',
-      defaultStatus: 'En Traspaso Notion (USD 45k)',
-      fathomSummary: 'Cotización desglosada de USD 45,000 en certificaciones FCC/CE. Traspaso de celdas Excel a Notion API. Relevamiento operativo de 2,300 gabinetes de fibra de vidrio en Argentina y Colombia.'
-    },
-    {
-      id: 'ser-5',
-      seriesName: '🌐 Weekly Follow Up Enrique (WIND Telecom & SSO OAuth2)',
-      targetCard: 'Weekly Follow Up Enrique',
-      meetingDate: '03/08/2026',
-      lead: 'Enrique Bevilacqua',
-      keyword: 'wind',
-      priority: 'P1 - CRITICA',
-      fathomSummary: 'Reinstalación de microservicios en Cluster de VMs en staging para WIND Telecom. Configuración del flujo OAuth2 para Single Sign-On (SSO). Ingesta de mediciones cosf/pact en reconectadores.'
-    },
-    {
-      id: 'ser-6',
-      seriesName: '📱 Follow Up Mario (Vega OS & Firestick 4K Select)',
-      targetCard: 'Follow Up Mario',
-      meetingDate: '10/08/2026',
-      lead: 'Mario Maqueda',
-      keyword: 'vega',
-      priority: 'P2 - ALTA',
-      fathomSummary: 'Pruebas de la app en hardware Amazon Fire TV Stick 4K Select con sistema Vega OS. Auditoría al 100% de claves de firma de desarrollador Android 2026.'
-    },
-    {
-      id: 'ser-7',
-      seriesName: '🤖 Soporte AI Gemini & Capacitaciones Filmadas',
-      targetCard: 'Soporte AI BOT Gemini',
-      meetingDate: '13/07/2026',
-      lead: 'Fabricio Jose Nieva / Joseph Valer',
-      keyword: 'bot',
-      priority: 'P2 - ALTA',
-      fathomSummary: 'Entrenamiento del Bot AI Gemini de soporte utilizando el repositorio de capacitaciones filmadas en Fathom. Reducción estimada del 35% de tickets Nivel 1. Tiempo medio de respuesta reducido a 14 min.'
-    },
-    {
-      id: 'ser-8',
-      seriesName: '☁️ Infraestructura Cloud & Ahorro Anual (AWS + Huawei + Heroku)',
-      targetCard: 'Apagado Servidores Heroku & CableView',
-      meetingDate: '10/08/2026',
-      lead: 'Leonard Amaya / Diego Musach',
-      keyword: 'heroku',
-      priority: 'P2 - ALTA',
-      defaultStatus: 'Ahorro USD 26,880/año',
-      fathomSummary: 'Desmantelamiento de servidores Heroku y optimizaciones en AWS y Huawei Cloud. Ahorro mensual de USD 2,240/mes (USD 26,880/año: AWS $1,800/mes, Huawei $400/mes, Heroku $40/mes).'
+  const generateDynamicTopics = (cards) => {
+    if (!Array.isArray(cards) || cards.length === 0) return [];
+    
+    const stopWords = new Set(['tarea', 'notion', 'responsable', 'estado', 'abierto', 'contexto', 'registro', 'diego', 'musach', 'para', 'como', 'sobre', 'desde', 'hasta', 'este', 'esta', 'todo', 'nada', 'pero', 'porque', 'cuando', 'donde', 'quien', 'cual', 'hacer', 'tener', 'poder', 'decir', 'estar', 'ser', 'tienen', 'estamos', 'todos']);
+    const keywordCounts = {};
+    const cardKeywords = new Map();
+
+    cards.forEach(c => {
+      const text = ((c.title || '') + ' ' + (c.summary || '') + ' ' + (c.transcript || '')).toLowerCase();
+      const tokens = text.match(/[a-záéíóúñ]{5,}/g) || [];
+      const cardKeys = new Set();
+      tokens.forEach(w => {
+        if (!stopWords.has(w)) {
+          keywordCounts[w] = (keywordCounts[w] || 0) + 1;
+          cardKeys.add(w);
+        }
+      });
+      cardKeywords.set(c.id || c.notionPageId, Array.from(cardKeys));
+    });
+
+    const topKeywords = Object.entries(keywordCounts)
+      .filter(([kw, count]) => count >= 2)
+      .sort((a, b) => b[1] - a[1])
+      .map(entry => entry[0]);
+
+    const strategicKeywords = ['edemsa', 'tecsys', 'wind', 'heroku', 'telecable', 'catelsa', 'panaccess', 'poc', 'cluster'];
+    const clusterKeywords = [...new Set([...strategicKeywords, ...topKeywords.slice(0, 15)])];
+
+    const clusters = {};
+    const unclustered = [];
+
+    cards.forEach(c => {
+      const cKeys = cardKeywords.get(c.id || c.notionPageId) || [];
+      const assignedCluster = clusterKeywords.find(kw => cKeys.includes(kw));
+      if (assignedCluster) {
+        if (!clusters[assignedCluster]) clusters[assignedCluster] = [];
+        clusters[assignedCluster].push(c);
+      } else {
+        unclustered.push(c);
+      }
+    });
+
+    const dynamicSeries = [];
+    let idCounter = 1;
+
+    Object.entries(clusters).forEach(([kw, clusterCards]) => {
+      clusterCards.sort((a, b) => (a.priority === 'P1 - CRITICA' ? -1 : 1));
+      const leadCard = clusterCards[0];
+      dynamicSeries.push({
+        id: `dyn-${idCounter++}`,
+        seriesName: `📌 Tema: ${kw.toUpperCase()} (${clusterCards.length} tarjetas)`,
+        targetCard: leadCard.title,
+        meetingDate: todayShortDate,
+        lead: leadCard.responsable || 'Equipo',
+        keyword: kw,
+        priority: clusterCards.some(c => c.priority === 'P1 - CRITICA') ? 'P1 - CRITICA' : (clusterCards.some(c => c.priority === 'P2 - ALTA') ? 'P2 - ALTA' : 'P3 - MEDIA'),
+        defaultStatus: leadCard.status || 'En Seguimiento',
+        fathomSummary: `Agrupación automática IA de ${clusterCards.length} tareas relacionadas a "${kw.toUpperCase()}". Responsable principal: ${leadCard.responsable || 'Varios'}.`,
+        clusterCards: clusterCards
+      });
+    });
+
+    if (unclustered.length > 0) {
+      dynamicSeries.push({
+        id: `dyn-others`,
+        seriesName: `📂 Otros Pendientes (${unclustered.length} tarjetas)`,
+        targetCard: 'Varios',
+        meetingDate: todayShortDate,
+        lead: 'Múltiples',
+        keyword: '__unclustered__',
+        priority: 'P3 - MEDIA',
+        defaultStatus: 'Varios',
+        fathomSummary: `Agrupación de ${unclustered.length} tarjetas sin un tema predominante en común.`,
+        clusterCards: unclustered
+      });
     }
-  ];
+
+    // Sort series by length (biggest clusters first)
+    dynamicSeries.sort((a, b) => b.clusterCards.length - a.clusterCards.length);
+
+    return dynamicSeries;
+  };
+
+  const allFollowUpSeries = React.useMemo(() => generateDynamicTopics(notionCards), [notionCards]);
 
   // FILTER ACTIVE VS CLOSED TOPICS FROM THE DATABASE
   const isTopicClosed = (topicId) => closedTopicsDb.some(c => c.topicId === topicId);
@@ -445,16 +440,16 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem', flexWrap: 'wrap' }}>
-              <h2 style={{ fontSize: '1.25rem', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <FileText className="text-purple" size={22} /> 📊 Reporte Semanal CEO (Para Pantalla en Call con Alejandro)
-              </h2>
+              <h2 style={{ fontSize: '1.1rem', margin: '0 0 0.5rem 0', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Layers size={18} className="text-purple" /> Temas Clave Encontrados ({activeFollowUpSeries.length})
+            </h2>
               <span style={{ fontSize: '0.78rem', color: 'var(--accent-emerald)', background: 'rgba(52, 211, 153, 0.15)', border: '1px solid var(--accent-emerald)', padding: '0.2rem 0.65rem', borderRadius: '6px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                 <Calendar size={13} /> REUNIÓN HOY: {todayFormattedDate} ({todayShortDate})
               </span>
             </div>
 
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0 }}>
-              Incluye en directo la llamada Fathom <strong>#775351347</strong> ("Weekly Follow Up Tecnologia con Alejandro Cubino") y las series de Julio/Agosto 2026.
+              Los temas son auto-generados agrupando tus {notionCards.length} tarjetas activas según palabras clave recurrentes.
             </p>
           </div>
 
@@ -730,6 +725,52 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
                   </div>
                 )}
               </div>
+
+              {/* RELATED TEAM DELEGATION CARDS (NEW FEATURE) */}
+              {(() => {
+                const relatedCards = topic.clusterCards || [];
+                if (relatedCards.length > 0) {
+                  return (
+                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <LinkIcon size={14} className="text-cyan" /> 🖇️ Tarjetas de Seguimiento de Equipo Vinculadas ({relatedCards.length})
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                        {relatedCards.map(rc => (
+                          <div
+                            key={rc.id || rc.notionPageId}
+                            onClick={() => setInspectingNotionCard(rc)}
+                            style={{ 
+                              background: 'rgba(15, 23, 42, 0.8)', 
+                              padding: '0.5rem 0.75rem', 
+                              borderRadius: '6px', 
+                              display: 'flex', 
+                              justifyContent: 'space-between', 
+                              alignItems: 'center',
+                              cursor: 'pointer',
+                              borderLeft: '2px solid var(--accent-cyan)',
+                              transition: 'background 0.2s ease'
+                            }}
+                            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(30, 41, 59, 1)'}
+                            onMouseOut={(e) => e.currentTarget.style.background = 'rgba(15, 23, 42, 0.8)'}
+                          >
+                            <span style={{ fontSize: '0.78rem', color: '#fff', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '60%' }}>
+                              {rc.title}
+                            </span>
+                            <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>👤 {rc.responsable?.split('/')[0]?.trim()}</span>
+                              <span style={{ fontSize: '0.68rem', padding: '0.15rem 0.4rem', borderRadius: '4px', background: rc.status === 'Completado' ? 'rgba(52, 211, 153, 0.15)' : 'rgba(239, 68, 68, 0.15)', color: rc.status === 'Completado' ? 'var(--accent-emerald)' : 'var(--accent-rose)' }}>
+                                {rc.status || 'Abierto'}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
 
               {/* Fathom Key Takeaways */}
               <div style={{ fontSize: '0.8rem', color: 'var(--text-body)', lineHeight: '1.45', background: 'rgba(15, 23, 42, 0.6)', padding: '0.65rem 0.85rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
@@ -1124,6 +1165,57 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
 
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <button className="btn-primary" onClick={() => setActiveModalType(null)}>
+                Cerrar Detalle
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DETALLE RÁPIDO DE TARJETA VINCULADA */}
+      {inspectingNotionCard && (
+        <div className="modal-overlay" onClick={() => setInspectingNotionCard(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+            <div className="modal-header">
+              <h2 style={{ fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <FileText className="text-cyan" size={20} /> Detalle de Tarjeta Vinculada
+              </h2>
+              <button className="btn-icon" onClick={() => setInspectingNotionCard(null)}>
+                <X size={18} />
+              </button>
+            </div>
+            
+            <div style={{ marginBottom: '1rem' }}>
+              <div style={{ fontSize: '1.2rem', color: '#fff', fontWeight: 800, marginBottom: '0.5rem' }}>
+                {inspectingNotionCard.title}
+              </div>
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                <span className="tag critical">{inspectingNotionCard.priority || 'P1'}</span>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>👤 {inspectingNotionCard.responsable}</span>
+                <span style={{ fontSize: '0.8rem', color: 'var(--accent-emerald)', fontWeight: 700 }}>Estado: {inspectingNotionCard.status || 'Abierto'}</span>
+              </div>
+            </div>
+
+            {inspectingNotionCard.summary && (
+              <div style={{ marginBottom: '1rem' }}>
+                <h4 style={{ fontSize: '0.85rem', color: 'var(--accent-cyan)', marginBottom: '0.3rem' }}>Resumen</h4>
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-body)', background: 'rgba(15, 23, 42, 0.6)', padding: '0.75rem', borderRadius: '6px' }}>
+                  {inspectingNotionCard.summary}
+                </p>
+              </div>
+            )}
+
+            {inspectingNotionCard.transcript && (
+              <div style={{ marginBottom: '1rem' }}>
+                <h4 style={{ fontSize: '0.85rem', color: 'var(--accent-cyan)', marginBottom: '0.3rem' }}>Contexto / Transcripción Original</h4>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', background: 'rgba(0,0,0,0.3)', padding: '0.75rem', borderRadius: '6px', whiteSpace: 'pre-line' }}>
+                  {inspectingNotionCard.transcript}
+                </p>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+              <button className="btn-primary" onClick={() => setInspectingNotionCard(null)}>
                 Cerrar Detalle
               </button>
             </div>

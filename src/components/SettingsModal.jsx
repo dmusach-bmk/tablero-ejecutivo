@@ -50,7 +50,7 @@ export default function SettingsModal({ isOpen, onClose, credentials, onSaveCred
   };
 
   const handleLoadDemoCreds = () => {
-    setNotionToken('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');
+    setNotionToken('');
     setNotionDbId('34ace95d-6a9a-8054-b33b-cad2cbaf4c70');
     setFathomApiKey('fath_live_584192039104');
     setSmtpHost('smtp.gmail.com');

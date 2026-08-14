@@ -5,7 +5,7 @@ import { createNotionPage, postCommentToNotion } from '../services/notionService
 
 export default function GoogleWorkspaceHub({ credentials, notionCards = [] }) {
   const [googleAccessToken, setGoogleAccessToken] = useState(() => {
-    return localStorage.getItem('dm_google_oauth_token') || '';
+    return localStorage.getItem('dm_google_oauth_token') || import.meta.env.VITE_GOOGLE_TOKEN || '';
   });
 
   const [accountEmail, setAccountEmail] = useState('dmusach@bromteck.com');

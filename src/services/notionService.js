@@ -11,7 +11,7 @@ function formatNotionUuid(id) {
 }
 
 export async function fetchNotionComments(token, pageId) {
-  const authToken = token || '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';
+  const authToken = token || import.meta.env.VITE_NOTION_TOKEN || 'YOUR_NOTION_TOKEN';
   const targetPageId = formatNotionUuid(pageId);
   if (!targetPageId) return [];
 
@@ -70,7 +70,7 @@ export async function fetchNotionDatabase(token, databaseId) {
 }
 
 export async function postCommentToNotion(token, pageId, commentText) {
-  const authToken = token || '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';
+  const authToken = token || import.meta.env.VITE_NOTION_TOKEN || 'YOUR_NOTION_TOKEN';
   const targetPageId = formatNotionUuid(pageId);
 
   if (!targetPageId) {
@@ -112,7 +112,7 @@ export async function postCommentToNotion(token, pageId, commentText) {
 }
 
 export async function updateNotionPageStatus(token, pageId, newStatus) {
-  const authToken = token || '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';
+  const authToken = token || import.meta.env.VITE_NOTION_TOKEN || 'YOUR_NOTION_TOKEN';
   const targetPageId = formatNotionUuid(pageId);
 
   if (!targetPageId) {
@@ -151,7 +151,7 @@ export async function updateNotionPageStatus(token, pageId, newStatus) {
 
 export async function createNotionPage(token, databaseId, pageData) {
   const cleanDbId = (databaseId || '34ace95d-6a9a-8054-b33b-cad2cbaf4c70').replace(/-/g, '');
-  const authToken = token || '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';
+  const authToken = token || import.meta.env.VITE_NOTION_TOKEN || 'YOUR_NOTION_TOKEN';
 
   try {
     const response = await fetch('/api/notion/v1/pages', {
