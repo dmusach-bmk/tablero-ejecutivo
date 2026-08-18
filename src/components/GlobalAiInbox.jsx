@@ -1,22 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { Bot, Mic, Send, MessageSquare, PlusCircle, Check, X, History, FileText, Zap } from 'lucide-react';
-import { postCommentToNotion, createNotionPage } from '../services/notionService';
+import { Bot, Mic, Send, MessageSquare, PlusCircle, Check, X, History, FileText, Zap, ChevronRight, ChevronLeft } from 'lucide-react';
+import { postCommentToNotion, createNotionPage, fetchNotionComments } from '../services/notionService';
 
 export default function GlobalAiInbox({ sectionName, notionCards = [], credentials }) {
+  const [isOpen, setIsOpen] = useState(false);
   const [inputText, setInputText] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   
+  // Modal State
+  const [proposedAction, setProposedAction] = useState(null);
+  const [cardContextLoading, setCardContextLoading] = useState(false);
+  const [cardComments, setCardComments] = useState([]);
+
+  // Contacts Directory State
+  const [contactsDirectory, setContactsDirectory] = useState(() => {
+    const saved = localStorage.getItem('dm_contacts_directory');
+    return saved ? JSON.parse(saved) : {};
+  });
+  const [sendEmailCopy, setSendEmailCopy] = useState(false);
+  const [newEmailInput, setNewEmailInput] = useState('');
+
   // History state per section
   const storageKey = `dm_ai_inbox_history_${sectionName.replace(/\s+/g, '_')}`;
   const [history, setHistory] = useState(() => {
     const saved = localStorage.getItem(storageKey);
     return saved ? JSON.parse(saved) : [];
   });
-
-  // Modal State
-  const [proposedAction, setProposedAction] = useState(null);
 
   useEffect(() => {
     localStorage.setItem(storageKey, JSON.stringify(history));
@@ -47,9 +58,23 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
   };
 
   const analyzeNoteWithAI = (note) => {
+    const isQuestion = note.trim().endsWith('?') || /^(qué|que|quién|quien|cómo|como|cuál|cual|dónde|donde|estado de|tareas de|tiene)\b/i.test(note.trim());
+
     const stopWords = new Set(['el', 'la', 'los', 'las', 'un', 'una', 'con', 'para', 'por', 'sobre', 'decir', 'hacer']);
     const tokens = note.toLowerCase().match(/[a-záéíóúñ]{4,}/g) || [];
     const keywords = tokens.filter(w => !stopWords.has(w));
+
+    if (isQuestion) {
+      const matches = notionCards.filter(card => {
+        const targetText = ((card.title || '') + ' ' + (card.summary || '') + ' ' + (card.responsable || '') + ' ' + (card.status || '')).toLowerCase();
+        return keywords.some(kw => targetText.includes(kw));
+      });
+      return {
+        type: 'search',
+        text: note,
+        results: matches
+      };
+    }
 
     let bestMatch = null;
     let maxScore = 0;
@@ -71,7 +96,7 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
         type: 'comment',
         text: note,
         targetCard: bestMatch,
-        rationale: `Se encontraron ${maxScore} coincidencias clave con la tarjeta "${bestMatch.title}".`
+        rationale: `Se encontraron coincidencias clave con la tarjeta "${bestMatch.title}".`
       };
     } else {
       return {
@@ -86,10 +111,38 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
   const handleAnalyze = () => {
     if (!inputText.trim()) return;
     setIsAnalyzing(true);
-    setTimeout(() => {
+    
+    setTimeout(async () => {
       const action = analyzeNoteWithAI(inputText);
-      setProposedAction(action);
-      setIsAnalyzing(false);
+      
+      if (action.type === 'search') {
+        setProposedAction(null);
+        setIsAnalyzing(false);
+        // Extract the search keywords from the query
+        const stopWords = new Set(['el', 'la', 'los', 'las', 'un', 'una', 'con', 'para', 'por', 'sobre', 'decir', 'hacer']);
+        const tokens = inputText.toLowerCase().match(/[a-záéíóúñ]{4,}/g) || [];
+        const keywords = tokens.filter(w => !stopWords.has(w)).join(' ');
+        
+        // Open new tab with the search query
+        window.open(window.location.origin + '/#overview?q=' + encodeURIComponent(keywords), '_blank');
+        setInputText('');
+      } else {
+        setProposedAction(action);
+        setIsAnalyzing(false);
+
+        if (action.type === 'comment' && action.targetCard) {
+          setCardContextLoading(true);
+          try {
+            const targetId = action.targetCard.notionPageId || action.targetCard.id;
+            const comments = await fetchNotionComments(credentials?.notionToken, targetId);
+            setCardComments(comments || []);
+          } catch(e) {
+            console.error("Error fetching context comments", e);
+          } finally {
+            setCardContextLoading(false);
+          }
+        }
+      }
     }, 600);
   };
 
@@ -109,6 +162,24 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
         newRecord.status = 'success';
         newRecord.actionTaken = 'Comentario Agregado';
         newRecord.targetTitle = proposedAction.targetCard.title;
+
+        // EMAIL LOGIC
+        if (sendEmailCopy) {
+          const responsableName = proposedAction.targetCard.responsable || '';
+          let emailToSend = contactsDirectory[responsableName] || newEmailInput;
+          
+          if (!contactsDirectory[responsableName] && newEmailInput) {
+            const updatedDir = { ...contactsDirectory, [responsableName]: newEmailInput };
+            setContactsDirectory(updatedDir);
+            localStorage.setItem('dm_contacts_directory', JSON.stringify(updatedDir));
+          }
+          
+          if (emailToSend) {
+            const subject = encodeURIComponent(`Seguimiento: ${proposedAction.targetCard.title}`);
+            const body = encodeURIComponent(proposedAction.text);
+            window.open(`mailto:${emailToSend}?subject=${subject}&body=${body}`, '_blank');
+          }
+        }
       } catch (err) {
         newRecord.status = 'error';
         newRecord.actionTaken = 'Error al comentar';
@@ -130,117 +201,242 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
     setHistory(prev => [newRecord, ...prev]);
     setProposedAction(null);
     setInputText('');
+    setSendEmailCopy(false);
+    setNewEmailInput('');
   };
 
   return (
-    <div style={{ marginBottom: '1.5rem', background: 'rgba(15, 23, 42, 0.6)', border: '1px solid var(--border-subtle)', borderRadius: '12px', overflow: 'hidden' }}>
-      
-      {/* HEADER */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1.25rem', background: 'rgba(30, 41, 59, 0.5)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-        <h3 style={{ margin: 0, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-cyan)' }}>
-          <Bot size={18} /> AI Inbox: Anotaciones Inteligentes
-        </h3>
-        <button 
-          onClick={() => setShowHistory(!showHistory)}
-          style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem' }}
+    <>
+      {/* FLOATING TOGGLE BUTTON (Visible when sidebar is closed) */}
+      {!isOpen && (
+        <button
+          onClick={() => setIsOpen(true)}
+          style={{
+            position: 'fixed',
+            right: 0,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            background: 'linear-gradient(135deg, var(--accent-purple), var(--accent-cyan))',
+            color: '#fff',
+            border: 'none',
+            padding: '1rem 0.5rem',
+            borderTopLeftRadius: '8px',
+            borderBottomLeftRadius: '8px',
+            cursor: 'pointer',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.25rem',
+            boxShadow: '-2px 0 10px rgba(0,0,0,0.3)',
+            transition: 'all 0.2s ease',
+          }}
+          title="Abrir AI Inbox"
         >
-          <History size={14} /> {showHistory ? 'Ocultar Historial' : 'Ver Historial'}
+          <ChevronLeft size={16} />
+          <Bot size={18} />
         </button>
-      </div>
+      )}
 
-      {/* INPUT AREA */}
-      <div style={{ padding: '1rem 1.25rem', display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-        <div style={{ flex: 1, position: 'relative' }}>
-          <textarea 
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            placeholder={`Escribe o dicta tu anotación para la sección ${sectionName}... La IA la ruteará a la tarjeta correcta.`}
-            style={{ width: '100%', minHeight: '60px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '0.75rem 2.5rem 0.75rem 0.75rem', color: '#fff', fontSize: '0.9rem', resize: 'vertical' }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleAnalyze();
-              }
-            }}
-          />
+      {/* FIXED SIDEBAR OVERLAY (Optional, you can remove this if you don't want dimming) */}
+      {isOpen && (
+        <div 
+          onClick={() => setIsOpen(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 9998 }}
+        />
+      )}
+
+      {/* FIXED SIDEBAR PANEL */}
+      <div style={{
+        position: 'fixed',
+        right: 0,
+        top: 0,
+        height: '100vh',
+        width: '380px',
+        maxWidth: '100vw',
+        background: 'rgba(15, 23, 42, 0.95)',
+        backdropFilter: 'blur(16px)',
+        borderLeft: '1px solid rgba(255,255,255,0.1)',
+        zIndex: 9999,
+        transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
+        transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+        display: 'flex',
+        flexDirection: 'column',
+        boxShadow: '-5px 0 20px rgba(0,0,0,0.5)'
+      }}>
+        
+        {/* HEADER */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem', background: 'rgba(30, 41, 59, 0.6)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          <h3 style={{ margin: 0, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-cyan)' }}>
+            <Bot size={20} /> AI Inbox: Anotaciones
+          </h3>
+          <button className="btn-icon" onClick={() => setIsOpen(false)}><X size={20} /></button>
+        </div>
+
+        {/* INPUT AREA */}
+        <div style={{ padding: '1.25rem', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.1)' }}>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
+            Sección Actual: <strong>{sectionName}</strong>
+          </div>
+          
+          <div style={{ position: 'relative', marginBottom: '1rem' }}>
+            <textarea 
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              placeholder="Escribe o dicta tu anotación..."
+              style={{ width: '100%', minHeight: '120px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '0.75rem 2.5rem 0.75rem 0.75rem', color: '#fff', fontSize: '0.95rem', resize: 'vertical' }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleAnalyze();
+                }
+              }}
+            />
+            <button 
+              onClick={handleStartVoiceDictation}
+              style={{ position: 'absolute', right: '0.5rem', top: '0.75rem', background: 'transparent', border: 'none', color: isListening ? 'var(--accent-rose)' : 'var(--text-muted)', cursor: 'pointer' }}
+              title="Dictar por voz"
+            >
+              <Mic size={20} className={isListening ? 'pulse' : ''} />
+            </button>
+          </div>
+          
           <button 
-            onClick={handleStartVoiceDictation}
-            style={{ position: 'absolute', right: '0.5rem', top: '0.75rem', background: 'transparent', border: 'none', color: isListening ? 'var(--accent-rose)' : 'var(--text-muted)', cursor: 'pointer' }}
-            title="Dictar por voz"
+            onClick={handleAnalyze}
+            disabled={!inputText.trim() || isAnalyzing}
+            className="btn-primary"
+            style={{ width: '100%', padding: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', background: 'linear-gradient(135deg, var(--accent-cyan), var(--accent-blue))' }}
           >
-            <Mic size={18} className={isListening ? 'pulse' : ''} />
+            {isAnalyzing ? <Zap size={18} className="pulse" /> : <Send size={18} />}
+            <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{isAnalyzing ? 'Procesando Inteligencia...' : 'Procesar / Preguntar'}</span>
           </button>
         </div>
-        
-        <button 
-          onClick={handleAnalyze}
-          disabled={!inputText.trim() || isAnalyzing}
-          className="btn-primary"
-          style={{ padding: '0.75rem 1.25rem', height: '60px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.2rem', background: 'linear-gradient(135deg, var(--accent-cyan), var(--accent-blue))' }}
-        >
-          {isAnalyzing ? <Zap size={18} className="pulse" /> : <Send size={18} />}
-          <span style={{ fontSize: '0.7rem', fontWeight: 600 }}>{isAnalyzing ? 'Analizando...' : 'Procesar'}</span>
-        </button>
-      </div>
 
-      {/* HISTORY PANEL */}
-      {showHistory && (
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '1rem 1.25rem', background: 'rgba(0,0,0,0.15)', maxHeight: '300px', overflowY: 'auto' }}>
-          <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Historial de Anotaciones en {sectionName}</h4>
-          {history.length === 0 ? (
-            <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: '1rem' }}>No hay anotaciones previas en esta sección.</div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {history.map(record => (
-                <div key={record.id} style={{ background: 'rgba(30, 41, 59, 0.6)', padding: '0.75rem', borderRadius: '6px', borderLeft: record.status === 'success' ? '2px solid var(--accent-emerald)' : '2px solid var(--accent-rose)' }}>
-                  <div style={{ fontSize: '0.8rem', color: '#fff', marginBottom: '0.35rem' }}>"{record.text}"</div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                    <span>📅 {record.date}</span>
-                    <span style={{ color: record.status === 'success' ? 'var(--accent-emerald)' : 'var(--accent-rose)', fontWeight: 600 }}>
-                      {record.actionTaken}: {record.targetTitle}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+        {/* HISTORY TOGGLE */}
+        <div style={{ padding: '1rem 1.25rem', borderBottom: showHistory ? 'none' : '1px solid rgba(255,255,255,0.05)' }}>
+          <button 
+            onClick={() => setShowHistory(!showHistory)}
+            style={{ width: '100%', background: 'transparent', border: '1px dashed rgba(255,255,255,0.15)', borderRadius: '6px', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.85rem' }}
+          >
+            <History size={16} /> {showHistory ? 'Ocultar Historial' : 'Ver Historial de Anotaciones'}
+          </button>
         </div>
-      )}
+
+        {/* HISTORY PANEL */}
+        {showHistory && (
+          <div style={{ flex: 1, overflowY: 'auto', padding: '0 1.25rem 1.25rem 1.25rem' }}>
+            {history.length === 0 ? (
+              <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: '2rem 0' }}>No hay anotaciones previas.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {history.map(record => (
+                  <div key={record.id} style={{ background: 'rgba(30, 41, 59, 0.4)', padding: '0.85rem', borderRadius: '8px', borderLeft: record.status === 'success' ? '3px solid var(--accent-emerald)' : '3px solid var(--accent-rose)' }}>
+                    <div style={{ fontSize: '0.85rem', color: '#fff', marginBottom: '0.5rem', fontStyle: 'italic' }}>"{record.text}"</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>📅 {record.date}</div>
+                    <div style={{ fontSize: '0.8rem', color: record.status === 'success' ? 'var(--accent-emerald)' : 'var(--accent-rose)', fontWeight: 600 }}>
+                      {record.actionTaken}: {record.targetTitle}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+      </div>
 
       {/* PROPOSED ACTION MODAL */}
       {proposedAction && (
-        <div className="modal-overlay" onClick={() => setProposedAction(null)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', borderTop: '4px solid var(--accent-cyan)' }}>
+        <div className="modal-overlay" onClick={() => setProposedAction(null)} style={{ zIndex: 10000 }}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '650px', borderTop: '4px solid var(--accent-cyan)' }}>
             <div className="modal-header">
               <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.2rem' }}>
-                <Bot size={22} className="text-cyan" /> Sugerencia de la IA
+                <Bot size={22} className="text-cyan" /> Sugerencia IA: Confirma Acción
               </h2>
               <button className="btn-icon" onClick={() => setProposedAction(null)}><X size={18} /></button>
             </div>
             
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-              He analizado tu anotación y propongo la siguiente acción. ¿Deseas confirmarla?
-            </p>
-
-            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '1.5rem' }}>
-              <div style={{ marginBottom: '1rem' }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>📝 Tu Anotación Original:</span>
-                <div style={{ fontSize: '0.9rem', color: '#fff', marginTop: '0.25rem', fontStyle: 'italic' }}>"{proposedAction.text}"</div>
+            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.25rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '1.5rem' }}>
+              <div style={{ marginBottom: '1.25rem' }}>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>📝 Tu Anotación:</span>
+                <div style={{ fontSize: '1rem', color: '#fff', marginTop: '0.35rem', fontStyle: 'italic', background: 'rgba(255,255,255,0.05)', padding: '0.75rem', borderRadius: '6px' }}>"{proposedAction.text}"</div>
               </div>
 
               {proposedAction.type === 'comment' ? (
                 <div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '1px' }}>🎯 Tarjeta Encontrada:</span>
-                  <div style={{ fontSize: '1rem', color: '#fff', fontWeight: 600, marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <FileText size={16} /> {proposedAction.targetCard.title}
+                  <span style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '1px' }}>🎯 Tarjeta Asociada Encontrada:</span>
+                  <div style={{ fontSize: '1.1rem', color: '#fff', fontWeight: 600, marginTop: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <FileText size={18} /> {proposedAction.targetCard.title}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>💡 {proposedAction.rationale}</div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem', marginBottom: '1rem' }}>💡 {proposedAction.rationale}</div>
+                  
+                  {/* EXISTING CARD CONTEXT */}
+                  <div style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '1rem', marginTop: '1rem' }}>
+                    <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <History size={14} /> Contexto Actual de la Tarjeta
+                    </h4>
+                    {cardContextLoading ? (
+                      <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><RefreshCw size={14} className="spin" /> Recuperando historial de comentarios de Notion...</div>
+                    ) : (
+                      <div style={{ maxHeight: '180px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingRight: '0.5rem' }}>
+                        {cardComments.length === 0 ? (
+                          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>La tarjeta aún no tiene comentarios. Tu anotación será la primera.</div>
+                        ) : (
+                          cardComments.map((c, idx) => (
+                            <div key={idx} style={{ background: 'rgba(0,0,0,0.2)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.85rem' }}>
+                              <span style={{ color: 'var(--accent-cyan)', fontWeight: 600, marginRight: '0.5rem', fontSize: '0.75rem' }}>{c.author}:</span>
+                              <span style={{ color: 'var(--text-body)' }}>{c.text}</span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* EMAIL SUGGESTION */}
+                  <div style={{ background: 'rgba(147, 51, 234, 0.1)', border: '1px solid var(--accent-purple)', borderRadius: '8px', padding: '1rem', marginTop: '1rem' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: '#fff', fontSize: '0.9rem' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={sendEmailCopy}
+                        onChange={(e) => setSendEmailCopy(e.target.checked)}
+                        style={{ accentColor: 'var(--accent-purple)' }}
+                      />
+                      📬 Enviar también una copia rápida por Email al Responsable
+                    </label>
+                    
+                    {sendEmailCopy && (
+                      <div style={{ marginTop: '0.75rem', paddingLeft: '1.5rem' }}>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                          Responsable: <strong>{proposedAction.targetCard.responsable || 'Sin Asignar'}</strong>
+                        </span>
+                        {contactsDirectory[proposedAction.targetCard.responsable || ''] ? (
+                          <div style={{ fontSize: '0.85rem', color: 'var(--accent-cyan)', marginTop: '0.25rem' }}>
+                            ✓ Email conocido: {contactsDirectory[proposedAction.targetCard.responsable || '']}
+                          </div>
+                        ) : (
+                          <div style={{ marginTop: '0.5rem' }}>
+                            <input 
+                              type="email" 
+                              placeholder="Ingresa su email para aprenderlo..."
+                              value={newEmailInput}
+                              onChange={(e) => setNewEmailInput(e.target.value)}
+                              style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: '#fff', fontSize: '0.85rem' }}
+                            />
+                            <div style={{ fontSize: '0.75rem', color: 'var(--accent-amber)', marginTop: '0.25rem' }}>
+                              Al enviar, el sistema recordará este correo para futuras ocasiones.
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--accent-amber)', textTransform: 'uppercase', letterSpacing: '1px' }}>⚠️ Sin Coincidencias:</span>
-                  <div style={{ fontSize: '0.9rem', color: '#fff', marginTop: '0.25rem' }}>
-                    💡 {proposedAction.rationale} Se sugiere crear una tarjeta nueva.
+                  <span style={{ fontSize: '0.75rem', color: 'var(--accent-amber)', textTransform: 'uppercase', letterSpacing: '1px' }}>⚠️ Nueva Iniciativa:</span>
+                  <div style={{ fontSize: '0.95rem', color: '#fff', marginTop: '0.35rem' }}>
+                    💡 {proposedAction.rationale}<br/><br/>
+                    Se sugiere crear una <strong>nueva tarjeta</strong> en Notion con esta anotación como objetivo principal.
                   </div>
                 </div>
               )}
@@ -250,10 +446,10 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
               {proposedAction.type === 'comment' && (
                 <>
                   <button className="btn-secondary" onClick={() => executeAction('create')} style={{ borderColor: 'var(--accent-purple)', color: 'var(--accent-purple)' }}>
-                    <PlusCircle size={14} /> Forzar Crear Nueva
+                    <PlusCircle size={14} /> Forzar Nueva Tarjeta
                   </button>
-                  <button className="btn-primary" onClick={() => executeAction('comment')}>
-                    <MessageSquare size={14} /> Confirmar Comentario
+                  <button className="btn-primary" onClick={() => executeAction('comment')} disabled={cardContextLoading}>
+                    <MessageSquare size={14} /> Confirmar Añadir a Tarjeta
                   </button>
                 </>
               )}
@@ -273,6 +469,6 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
         </div>
       )}
 
-    </div>
+    </>
   );
 }

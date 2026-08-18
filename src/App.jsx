@@ -22,17 +22,22 @@ import RecursosHub from './components/RecursosHub';
 import DelegacionHub from './components/DelegacionHub';
 import ReportesExternos from './components/ReportesExternos';
 import Estrategia306090 from './components/Estrategia306090';
+import LlamadosEjecutivos from './components/LlamadosEjecutivos';
 
 import { REAL_NOTION_CARDS, REAL_TEAM_TRACKING } from './realNotionData';
 import { INITIAL_EXCEL_DATA } from './mockData';
 
 export default function App() {
   const getTabFromHash = () => {
-    const hash = window.location.hash.replace('#', '');
+    let hash = window.location.hash.replace('#', '');
+    if (hash.includes('?')) {
+      hash = hash.split('?')[0];
+    }
     return hash || 'overview';
   };
 
   const [activeTab, setActiveTab] = useState(getTabFromHash());
+  const [searchQuery, setSearchQuery] = useState('');
   
   // Use REAL_NOTION_CARDS from Notion API
   const [notionCards, setNotionCards] = useState(() => {
@@ -76,7 +81,15 @@ export default function App() {
   useEffect(() => {
     const handleHashChange = () => {
       setActiveTab(getTabFromHash());
+      const hash = window.location.hash;
+      if (hash.includes('?q=')) {
+        const queryParams = new URLSearchParams(hash.split('?')[1]);
+        setSearchQuery(queryParams.get('q') || '');
+      } else {
+        setSearchQuery('');
+      }
     };
+    handleHashChange(); // Run once to initialize
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
@@ -144,12 +157,14 @@ export default function App() {
 
       <main className="main-content">
         {activeTab === 'overview' && (
-          <Overview
+          <Overview 
             notionCards={notionCards}
             excelData={excelData}
             teamTracking={teamTracking}
             onNavigate={handleTabChange}
+            onOpenDeadlineModal={() => setIsDeadlineModalOpen(true)}
             credentials={credentials}
+            searchQuery={searchQuery}
           />
         )}
 
@@ -190,6 +205,10 @@ export default function App() {
             onSaveCredentials={setCredentials}
             onNavigate={handleTabChange}
           />
+        )}
+
+        {activeTab === 'llamados' && (
+          <LlamadosEjecutivos credentials={credentials} />
         )}
 
         {activeTab === 'delegador' && (

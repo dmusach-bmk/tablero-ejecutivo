@@ -1,4 +1,4 @@
-import { LayoutDashboard, Crown, AlertCircle, Video, Mail, DollarSign, Calendar, Bot, Award, Users, FileText, BarChart3, Compass, Bell, Settings, FileSpreadsheet, Folder } from 'lucide-react';
+import { LayoutDashboard, Crown, AlertCircle, Video, Mail, DollarSign, Calendar, Bot, Award, Users, FileText, BarChart3, Compass, Bell, Settings, FileSpreadsheet, Folder, PhoneCall } from 'lucide-react';
 
 export default function Navbar({ activeTab, setActiveTab, missingDeadlinesCount, onOpenDeadlineModal, onOpenSettings }) {
   const navTabs = [
@@ -6,6 +6,7 @@ export default function Navbar({ activeTab, setActiveTab, missingDeadlinesCount,
     { id: 'diego_ejecutivo', label: '👑 Diego Ejecutivo', icon: Crown, inDevelopment: false },
     { id: 'followup', label: '🚨 Follow Up Diario', icon: AlertCircle, inDevelopment: false },
     { id: 'fathom', label: '🎥 Fathom Calls AI', icon: Video, inDevelopment: false },
+    { id: 'llamados', label: '📞 Llamados Ejecutivos', icon: PhoneCall, inDevelopment: false },
     { id: 'delegador', label: '🤝 Delegación AI', icon: Users, inDevelopment: false },
     { id: 'google_workspace', label: '📧 Gmail & Drive AI', icon: Mail, inDevelopment: false },
     { id: 'recursos', label: '📂 Recursos', icon: Folder, inDevelopment: false },

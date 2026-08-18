@@ -2,13 +2,34 @@ import React from 'react';
 import { AlertCircle, ArrowUpRight, CheckCircle2, Clock, ShieldAlert, Zap, TrendingUp, Users, Cpu, FileSpreadsheet, Crown, Bot, Award, Calendar } from 'lucide-react';
 import GlobalAiInbox from './GlobalAiInbox';
 
-export default function Overview({ notionCards, excelData, teamTracking, onNavigate, onOpenDeadlineModal, credentials }) {
-  const missingCount = notionCards.filter(c => c.missingDeadline).length;
-  const criticalCount = notionCards.filter(c => c.priority?.includes('P1') || c.priority === 'Crítica').length;
-  const totalCardsCount = notionCards.length;
+export default function Overview({ notionCards, excelData, teamTracking, onNavigate, onOpenDeadlineModal, credentials, searchQuery }) {
+  const [filteredCards, setFilteredCards] = React.useState(notionCards);
+
+  React.useEffect(() => {
+    if (!searchQuery) {
+      setFilteredCards(notionCards);
+      return;
+    }
+    const keywords = searchQuery.toLowerCase().split(' ').filter(k => k.length > 2);
+    
+    setFilteredCards(notionCards.filter(c => {
+      const txt = ((c.title || '') + ' ' + (c.summary || '') + ' ' + (c.responsable || '') + ' ' + (c.status || '')).toLowerCase();
+      // Match if at least one meaningful keyword is found in the text
+      return keywords.some(kw => txt.includes(kw));
+    }));
+  }, [searchQuery, notionCards]);
+
+  const missingCount = filteredCards.filter(c => c.missingDeadline).length;
+  const criticalCount = filteredCards.filter(c => c.priority?.includes('P1') || c.priority === 'Crítica').length;
+  const totalCardsCount = filteredCards.length;
 
   return (
     <div className="overview-container">
+      {searchQuery && (
+        <div style={{ background: 'var(--accent-cyan)', color: '#000', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem', fontWeight: 'bold' }}>
+          🔍 Mostrando resultados para: "{searchQuery}"
+        </div>
+      )}
       
       <GlobalAiInbox 
         sectionName="Vista General (Overview)" 
@@ -129,7 +150,7 @@ export default function Overview({ notionCards, excelData, teamTracking, onNavig
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', maxHeight: '520px', overflowY: 'auto' }}>
-            {notionCards.slice(0, 8).map((card) => (
+            {filteredCards.slice(0, 8).map((card) => (
               <div 
                 key={card.id}
                 style={{
