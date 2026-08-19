@@ -2,6 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { Bot, Mic, Send, MessageSquare, PlusCircle, Check, X, History, FileText, Zap, ChevronRight, ChevronLeft, RefreshCw } from 'lucide-react';
 import { postCommentToNotion, createNotionPage, fetchNotionComments } from '../services/notionService';
 
+const defaultContacts = {
+  'Joseph Valer': 'jvaler@bromteck.com',
+  'Joseph': 'jvaler@bromteck.com',
+  'Diego Musach (CTO)': 'dmusach@bromteck.com',
+  'Diego': 'dmusach@bromteck.com',
+  'Mario Maqueda': 'sw1@bromteck.com',
+  'Mario': 'sw1@bromteck.com',
+  'Leonard Amaya': 'sw4@bromteck.com',
+  'Leonard': 'sw4@bromteck.com',
+  'Leo': 'sw4@bromteck.com',
+  'Fabricio Jose Nieva': 'fjnieva@bromteck.com',
+  'Fabricio': 'fjnieva@bromteck.com',
+  'Camilo Uribe': 'preventa@bromteck.com',
+  'Camilo': 'preventa@bromteck.com',
+  'Enrique Bevilacqua': 'ebevilacqua@bromteck.com',
+  'Enrique': 'ebevilacqua@bromteck.com'
+};
+
 export default function GlobalAiInbox({ sectionName, notionCards = [], credentials, onAddCommentAndSync, onAddNotionCard }) {
   const [isOpen, setIsOpen] = useState(false);
   const [inputText, setInputText] = useState('');
@@ -73,6 +91,7 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         setProposedAction(null);
+        setIsOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -311,7 +330,8 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
             rationale: st.rationale,
             assignee: st.suggestedAssignee,
             addToDailyFollowUp: st.suggestedAddToDailyFollowUp,
-            addToCeoReport: st.suggestedAddToCeoReport
+            addToCeoReport: st.suggestedAddToCeoReport,
+            sendEmail: false
           })));
         } else {
           setSubTasksState([{
@@ -322,7 +342,8 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
             rationale: action.rationale,
             assignee: action.suggestedAssignee,
             addToDailyFollowUp: action.suggestedAddToDailyFollowUp,
-            addToCeoReport: action.suggestedAddToCeoReport
+            addToCeoReport: action.suggestedAddToCeoReport,
+            sendEmail: false
           }]);
         }
       }
@@ -376,6 +397,22 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
           targetTitles.push(`Creó "${title}"`);
         } catch (e) {
           console.error("Error creating subtask card", e);
+        }
+      }
+
+      // SEND EMAIL IF CHECKED
+      if (subTask.sendEmail) {
+        const toEmail = defaultContacts[subTask.assignee] || contactsDirectory[subTask.assignee] || '';
+        const ccEmail = 'dmusach@bromteck.com';
+        
+        if (toEmail) {
+          const emailSubject = `Seguimiento: ${subTask.targetCard ? subTask.targetCard.title : subTask.text.split(' ').slice(0, 6).join(' ')}`;
+          const emailBody = `${subTask.text}\n\n--\nEnviado desde Tablero Ejecutivo (Diego Musach)`;
+          
+          const mailtoUrl = `mailto:${toEmail}?cc=${ccEmail}&subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+          
+          // Open mailto link
+          window.open(mailtoUrl, '_blank');
         }
       }
     }
@@ -507,52 +544,47 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
           </button>
         </div>
 
-        {/* HISTORY TOGGLE */}
-        <div style={{ padding: '1rem 1.25rem', borderBottom: showHistory ? 'none' : '1px solid rgba(255,255,255,0.05)' }}>
-          <button 
-            onClick={() => setShowHistory(!showHistory)}
-            style={{ width: '100%', background: 'transparent', border: '1px dashed rgba(255,255,255,0.15)', borderRadius: '6px', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.85rem' }}
-          >
-            <History size={16} /> {showHistory ? 'Ocultar Historial' : 'Ver Historial de Anotaciones'}
-          </button>
+        {/* HISTORY HEADER */}
+        <div style={{ padding: '1rem 1.25rem 0.5rem 1.25rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+          <h4 style={{ margin: 0, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            <History size={14} /> Historial de Anotaciones
+          </h4>
         </div>
 
-        {/* HISTORY PANEL */}
-        {showHistory && (
-          <div style={{ flex: 1, overflowY: 'auto', padding: '0 1.25rem 1.25rem 1.25rem' }}>
-            {history.length === 0 ? (
-              <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: '2rem 0' }}>No hay anotaciones previas.</div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {history.map(record => (
-                  <div 
-                    key={record.id} 
-                    onClick={() => {
-                      setInputText(record.text);
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(30, 41, 59, 0.8)'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(30, 41, 59, 0.4)'}
-                    style={{ 
-                      background: 'rgba(30, 41, 59, 0.4)', 
-                      padding: '0.85rem', 
-                      borderRadius: '8px', 
-                      borderLeft: record.status === 'success' ? '3px solid var(--accent-emerald)' : '3px solid var(--accent-rose)',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                    }}
-                    title="Haz clic para volver a cargar esta nota en la caja de entrada"
-                  >
-                    <div style={{ fontSize: '0.85rem', color: '#fff', marginBottom: '0.5rem', fontStyle: 'italic' }}>"{record.text}"</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>📅 {record.date}</div>
-                    <div style={{ fontSize: '0.8rem', color: record.status === 'success' ? 'var(--accent-emerald)' : 'var(--accent-rose)', fontWeight: 600 }}>
-                      {record.actionTaken}: {record.targetTitle}
-                    </div>
+        {/* PERMANENT HISTORY PANEL */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem 1.25rem 1.25rem 1.25rem' }}>
+          {history.length === 0 ? (
+            <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.25)', textAlign: 'center', padding: '2rem 0' }}>No hay anotaciones previas en el historial.</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {history.map(record => (
+                <div 
+                  key={record.id} 
+                  onClick={() => {
+                    setInputText(record.text);
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(30, 41, 59, 0.8)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(30, 41, 59, 0.4)'}
+                  style={{ 
+                    background: 'rgba(30, 41, 59, 0.4)', 
+                    padding: '0.85rem', 
+                    borderRadius: '8px', 
+                    borderLeft: record.status === 'success' ? '3px solid var(--accent-emerald)' : '3px solid var(--accent-rose)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                  }}
+                  title="Haz clic para volver a cargar esta nota en la caja de entrada"
+                >
+                  <div style={{ fontSize: '0.85rem', color: '#fff', marginBottom: '0.5rem', fontStyle: 'italic' }}>"{record.text}"</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>📅 {record.date}</div>
+                  <div style={{ fontSize: '0.8rem', color: record.status === 'success' ? 'var(--accent-emerald)' : 'var(--accent-rose)', fontWeight: 600 }}>
+                    {record.actionTaken}: {record.targetTitle}
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
       </div>
 
