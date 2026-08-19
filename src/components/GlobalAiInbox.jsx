@@ -100,6 +100,16 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
 
   useEffect(() => {
     const handleKeyDown = (e) => {
+      // Cmd+K or Option+I to toggle the sidebar
+      const isCmdK = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k';
+      const isOptI = e.altKey && e.key.toLowerCase() === 'i';
+      
+      if (isCmdK || isOptI) {
+        e.preventDefault();
+        setIsOpen(prev => !prev);
+        return;
+      }
+
       if (e.key === 'Escape') {
         setProposedAction(null);
         setIsOpen(false);
