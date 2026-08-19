@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bot, Mic, Send, MessageSquare, PlusCircle, Check, X, History, FileText, Zap, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Bot, Mic, Send, MessageSquare, PlusCircle, Check, X, History, FileText, Zap, ChevronRight, ChevronLeft, RefreshCw } from 'lucide-react';
 import { postCommentToNotion, createNotionPage, fetchNotionComments } from '../services/notionService';
 
 export default function GlobalAiInbox({ sectionName, notionCards = [], credentials, onAddCommentAndSync, onAddNotionCard }) {

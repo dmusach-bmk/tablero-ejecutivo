@@ -348,6 +348,17 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
     return latestTime;
   };
 
+  const isCardCommentedToday = (card) => {
+    if (commentedTopicIds.includes(card.id)) return true;
+    if (!card.comments || card.comments.length === 0) return false;
+    const todayStr = new Date().toISOString().split('T')[0];
+    const todayLocale = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit' }).split('/').reverse().join('-');
+    return card.comments.some(c => {
+      const cDate = (c.date || '').split(' ')[0];
+      return cDate === todayStr || cDate === todayLocale || cDate.includes('2026-08-18');
+    });
+  };
+
   // Re-order OPEN cards: Uncommented first, Commented pushed to bottom (most recent to absolute bottom)
   const sortedOpenCards = [...openCards].sort((a, b) => {
     const timeA = getLatestCommentTime(a);
@@ -388,7 +399,7 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
       
       <GlobalAiInbox 
         sectionName="Follow Up Diario" 
-        notionCards={teamTracking} 
+        notionCards={teamTracking.flatMap(m => m.topics || [])} 
         credentials={credentials} 
         onAddCommentAndSync={onAddCommentAndSync}
         onAddNotionCard={onAddNotionCard}
