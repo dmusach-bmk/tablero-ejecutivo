@@ -15,12 +15,12 @@ export default function Overview({ notionCards, excelData, teamTracking, onNavig
     setFilteredCards(notionCards.filter(c => {
       const commentsText = c.comments ? c.comments.map(comm => comm.text || '').join(' ') : '';
       const txt = ((c.title || '') + ' ' + (c.summary || '') + ' ' + (c.responsable || '') + ' ' + (c.status || '') + ' ' + commentsText).toLowerCase();
-      // Typo tolerance (aficia/afinia)
-      const normTxt = txt.replace(/aficia/g, 'afinia');
       
       return keywords.some(kw => {
-        const normKw = kw.replace(/aficia/g, 'afinia');
-        return txt.includes(kw) || normTxt.includes(normKw);
+        if (txt.includes(kw)) return true;
+        if (kw.includes('afinia') && txt.includes(kw.replace(/afinia/g, 'aficia'))) return true;
+        if (kw.includes('aficia') && txt.includes(kw.replace(/aficia/g, 'afinia'))) return true;
+        return false;
       });
     }));
   }, [searchQuery, notionCards]);

@@ -278,17 +278,24 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
 
   if (globalSearchQuery.trim()) {
     const q = globalSearchQuery.toLowerCase();
-    const normQ = q.replace(/aficia/g, 'afinia');
+    const hasAfinia = q.includes('afinia');
+    const hasAficia = q.includes('aficia');
     
-    memberFilteredCards = allCardsCross.filter(c => {
-      const matchTitle = (c.title || '').toLowerCase().includes(q) || (c.title || '').toLowerCase().includes(normQ);
-      const matchMember = (c.memberName || '').toLowerCase().includes(q);
-      const matchLog = (c.log || '').toLowerCase().includes(q);
-      const matchSummary = (c.summary || '').toLowerCase().includes(q) || (c.summary || '').toLowerCase().includes(normQ);
-      const matchComments = c.comments && c.comments.some(comm => 
-        (comm.text || '').toLowerCase().includes(q) || 
-        (comm.text || '').toLowerCase().includes(normQ)
-      );
+    memberFilteredCards = memberFilteredCards.filter(c => {
+      const checkMatch = (text) => {
+        if (!text) return false;
+        const t = text.toLowerCase();
+        if (t.includes(q)) return true;
+        if (hasAfinia && t.includes(q.replace(/afinia/g, 'aficia'))) return true;
+        if (hasAficia && t.includes(q.replace(/aficia/g, 'afinia'))) return true;
+        return false;
+      };
+      
+      const matchTitle = checkMatch(c.title);
+      const matchMember = checkMatch(c.memberName);
+      const matchLog = checkMatch(c.log);
+      const matchSummary = checkMatch(c.summary);
+      const matchComments = c.comments && c.comments.some(comm => checkMatch(comm.text));
       
       return matchTitle || matchMember || matchLog || matchSummary || matchComments;
     });
