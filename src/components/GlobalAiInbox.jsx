@@ -25,6 +25,8 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
   const [selectedAssignee, setSelectedAssignee] = useState('Diego Musach (CTO)');
   const [addToDailyFollowUp, setAddToDailyFollowUp] = useState(false);
   const [subTasksState, setSubTasksState] = useState([]);
+  const [loadedComments, setLoadedComments] = useState({});
+  const [collapsedComments, setCollapsedComments] = useState({});
 
   // Unified global history across all sections
   const storageKey = 'dm_ai_inbox_history_global';
@@ -290,203 +292,97 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
         // Open new tab with the search query
         window.open(window.location.origin + '/#overview?q=' + encodeURIComponent(keywords), '_blank');
         setInputText('');
-      } else if (action.type === 'multi') {
-        setProposedAction({ ...action, historyId: tempId });
-        setIsAnalyzing(false);
-
-        // Initialize subTasksState with the subtasks analyzed
-        setSubTasksState(action.subTasks.map((st, idx) => ({
-          id: `st-${idx}-${Date.now()}`,
-          text: st.text,
-          type: st.type,
-          targetCard: st.targetCard,
-          rationale: st.rationale,
-          assignee: st.suggestedAssignee,
-          addToDailyFollowUp: st.suggestedAddToDailyFollowUp,
-          addToCeoReport: st.suggestedAddToCeoReport
-        })));
       } else {
-        // Attach tempId to proposed action to update it later
         setProposedAction({ ...action, historyId: tempId });
         setIsAnalyzing(false);
 
-        // Pre-fill suggested values for single action
-        if (action.suggestedAssignee) {
-          setSelectedAssignee(action.suggestedAssignee);
+        if (action.type === 'multi') {
+          setSubTasksState(action.subTasks.map((st, idx) => ({
+            id: `st-${idx}-${Date.now()}`,
+            text: st.text,
+            type: st.type,
+            targetCard: st.targetCard,
+            rationale: st.rationale,
+            assignee: st.suggestedAssignee,
+            addToDailyFollowUp: st.suggestedAddToDailyFollowUp,
+            addToCeoReport: st.suggestedAddToCeoReport
+          })));
         } else {
-          setSelectedAssignee('Diego Musach (CTO)');
-        }
-        setAddToDailyFollowUp(!!action.suggestedAddToDailyFollowUp);
-        setAddToCeoReport(!!action.suggestedAddToCeoReport);
-
-        if (action.type === 'comment' && action.targetCard) {
-          setCardContextLoading(true);
-          try {
-            const targetId = action.targetCard.notionPageId || action.targetCard.id;
-            const comments = await fetchNotionComments(credentials?.notionToken, targetId);
-            setCardComments(comments || []);
-          } catch(e) {
-            console.error("Error fetching context comments", e);
-          } finally {
-            setCardContextLoading(false);
-          }
+          setSubTasksState([{
+            id: `st-0-${Date.now()}`,
+            text: action.text,
+            type: action.type,
+            targetCard: action.targetCard,
+            rationale: action.rationale,
+            assignee: action.suggestedAssignee,
+            addToDailyFollowUp: action.suggestedAddToDailyFollowUp,
+            addToCeoReport: action.suggestedAddToCeoReport
+          }]);
         }
       }
     }, 600);
   };
 
-  const executeAction = async (actionType) => {
-    if (proposedAction.type === 'multi') {
-      const targetTitles = [];
+  const executeAction = async () => {
+    const targetTitles = [];
 
-      for (const subTask of subTasksState) {
-        const finalAssignee = subTask.addToDailyFollowUp ? subTask.assignee : 'Diego Musach (CTO)';
-        
-        if (subTask.type === 'comment' && subTask.targetCard) {
-          try {
-            await postCommentToNotion(credentials?.notionToken, subTask.targetCard.notionPageId || subTask.targetCard.id, subTask.text);
-            if (onAddCommentAndSync) {
-              onAddCommentAndSync(subTask.targetCard.id, subTask.text, 'Diego Musach (CTO)', {
-                responsable: finalAssignee,
-                assignedTo: finalAssignee,
-                isCEOCard: subTask.addToCeoReport
-              });
-            }
-            targetTitles.push(`Comentó "${subTask.targetCard.title}"`);
-          } catch (e) {
-            console.error("Error saving subtask comment", e);
-          }
-        } else {
-          try {
-            const title = subTask.text.split(' ').slice(0, 6).join(' ') + '...';
-            const newCard = {
-              id: `new-${Date.now()}-${Math.random()}`,
-              notionPageId: `new-${Date.now()}-${Math.random()}`,
-              title: title,
-              summary: subTask.text,
-              status: 'Abierto',
-              priority: 'P2 - ALTA',
+    for (const subTask of subTasksState) {
+      if (subTask.type === 'discard') {
+        targetTitles.push(`Descartó "${subTask.text.substring(0, 15)}..."`);
+        continue;
+      }
+
+      const finalAssignee = subTask.addToDailyFollowUp ? subTask.assignee : 'Diego Musach (CTO)';
+      
+      if (subTask.type === 'comment' && subTask.targetCard) {
+        try {
+          await postCommentToNotion(credentials?.notionToken, subTask.targetCard.notionPageId || subTask.targetCard.id, subTask.text);
+          if (onAddCommentAndSync) {
+            onAddCommentAndSync(subTask.targetCard.id, subTask.text, 'Diego Musach (CTO)', {
               responsable: finalAssignee,
               assignedTo: finalAssignee,
-              isCEOCard: subTask.addToCeoReport,
-              comments: []
-            };
-            await createNotionPage(credentials?.notionToken, newCard);
-            if (onAddNotionCard) {
-              onAddNotionCard(newCard);
-            }
-            targetTitles.push(`Creó "${title}"`);
-          } catch (e) {
-            console.error("Error creating subtask card", e);
+              isCEOCard: subTask.addToCeoReport
+            });
           }
+          targetTitles.push(`Comentó "${subTask.targetCard.title}"`);
+        } catch (e) {
+          console.error("Error saving subtask comment", e);
         }
-      }
-
-      const outcomeTitle = targetTitles.join(', ');
-
-      setHistory(prev => prev.map(item => {
-        if (item.id === proposedAction.historyId) {
-          return {
-            ...item,
-            status: 'success',
-            actionTaken: 'Procesadas Acciones Múltiples',
-            targetTitle: outcomeTitle
-          };
-        }
-        return item;
-      }));
-
-      setProposedAction(null);
-      setInputText('');
-      setSubTasksState([]);
-      return;
-    }
-
-    const updatedOutcome = {
-      status: 'pending',
-      actionTaken: '',
-      targetTitle: ''
-    };
-
-    if (actionType === 'comment') {
-      try {
-        await postCommentToNotion(credentials?.notionToken, proposedAction.targetCard.notionPageId || proposedAction.targetCard.id, proposedAction.text);
-        
-        if (onAddCommentAndSync) {
-          const finalAssignee = addToDailyFollowUp ? selectedAssignee : 'Diego Musach (CTO)';
-          const updates = {
+      } else {
+        try {
+          const title = subTask.text.split(' ').slice(0, 6).join(' ') + '...';
+          const newCard = {
+            id: `new-${Date.now()}-${Math.random()}`,
+            notionPageId: `new-${Date.now()}-${Math.random()}`,
+            title: title,
+            summary: subTask.text,
+            status: 'Abierto',
+            priority: 'P2 - ALTA',
             responsable: finalAssignee,
             assignedTo: finalAssignee,
-            isCEOCard: addToCeoReport
+            isCEOCard: subTask.addToCeoReport,
+            comments: []
           };
-          onAddCommentAndSync(proposedAction.targetCard.id, proposedAction.text, 'Diego Musach (CTO)', updates);
-        }
-
-        updatedOutcome.status = 'success';
-        updatedOutcome.actionTaken = 'Comentario Agregado';
-        updatedOutcome.targetTitle = proposedAction.targetCard.title;
-
-        // EMAIL LOGIC
-        if (sendEmailCopy) {
-          const responsableName = proposedAction.targetCard.responsable || '';
-          let emailToSend = contactsDirectory[responsableName] || newEmailInput;
-          
-          if (!contactsDirectory[responsableName] && newEmailInput) {
-            const updatedDir = { ...contactsDirectory, [responsableName]: newEmailInput };
-            setContactsDirectory(updatedDir);
-            localStorage.setItem('dm_contacts_directory', JSON.stringify(updatedDir));
+          await createNotionPage(credentials?.notionToken, newCard);
+          if (onAddNotionCard) {
+            onAddNotionCard(newCard);
           }
-          
-          if (emailToSend) {
-            const subject = encodeURIComponent(`Seguimiento: ${proposedAction.targetCard.title}`);
-            const body = encodeURIComponent(proposedAction.text);
-            window.open(`mailto:${emailToSend}?subject=${subject}&body=${body}`, '_blank');
-          }
+          targetTitles.push(`Creó "${title}"`);
+        } catch (e) {
+          console.error("Error creating subtask card", e);
         }
-      } catch (err) {
-        updatedOutcome.status = 'error';
-        updatedOutcome.actionTaken = 'Error al comentar';
-        updatedOutcome.targetTitle = proposedAction.targetCard.title;
-      }
-    } else {
-      try {
-        const title = proposedAction.text.split(' ').slice(0, 6).join(' ') + '...';
-        const finalAssignee = addToDailyFollowUp ? selectedAssignee : 'Diego Musach (CTO)';
-        const newCard = {
-          id: `new-${Date.now()}`,
-          notionPageId: `new-${Date.now()}`,
-          title: title,
-          summary: proposedAction.text,
-          status: 'Abierto',
-          priority: 'P2 - ALTA',
-          responsable: finalAssignee,
-          assignedTo: finalAssignee,
-          isCEOCard: addToCeoReport,
-          comments: []
-        };
-        await createNotionPage(credentials?.notionToken, newCard);
-        
-        if (onAddNotionCard) {
-          onAddNotionCard(newCard);
-        }
-
-        updatedOutcome.status = 'success';
-        updatedOutcome.actionTaken = 'Nueva Tarjeta Creada';
-        updatedOutcome.targetTitle = title;
-      } catch(err) {
-        updatedOutcome.status = 'error';
-        updatedOutcome.actionTaken = 'Error al crear';
       }
     }
 
-    // Update existing history item
+    const outcomeTitle = targetTitles.join(', ') || 'Sin acciones ejecutadas';
+
     setHistory(prev => prev.map(item => {
       if (item.id === proposedAction.historyId) {
         return {
           ...item,
-          status: updatedOutcome.status,
-          actionTaken: updatedOutcome.actionTaken,
-          targetTitle: updatedOutcome.targetTitle
+          status: 'success',
+          actionTaken: 'Procesadas Acciones AI',
+          targetTitle: outcomeTitle
         };
       }
       return item;
@@ -494,10 +390,9 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
 
     setProposedAction(null);
     setInputText('');
-    setSendEmailCopy(false);
-    setNewEmailInput('');
-    setAddToCeoReport(false);
-    setAddToDailyFollowUp(false);
+    setSubTasksState([]);
+    setCollapsedComments({});
+    setLoadedComments({});
   };
 
   return (
@@ -667,74 +562,161 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
             </div>
             
             <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.25rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '1.5rem' }}>
-              <div style={{ marginBottom: '1.25rem' }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>📝 Tu Anotación:</span>
-                <div style={{ fontSize: '1rem', color: '#fff', marginTop: '0.35rem', fontStyle: 'italic', background: 'rgba(255,255,255,0.05)', padding: '0.75rem', borderRadius: '6px' }}>"{proposedAction.text}"</div>
-              </div>
-
-              {proposedAction.type === 'multi' ? (
-                <div>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, display: 'block', marginBottom: '0.75rem' }}>
-                    🧩 Se detectaron {subTasksState.length} temas individuales:
-                  </span>
-                  
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '350px', overflowY: 'auto', paddingRight: '0.5rem' }}>
-                    {subTasksState.map((subTask, idx) => (
-                      <div key={subTask.id} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '1rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                          <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.1)', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 600 }}>
-                            Tema #{idx + 1}
-                          </span>
-                          
-                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <span style={{ fontSize: '0.8rem', color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, display: 'block', marginBottom: '0.75rem' }}>
+                🧩 {subTasksState.length > 1 ? `Se detectaron ${subTasksState.length} temas independientes:` : 'Acción Sugerida:'}
+              </span>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '420px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+                {subTasksState.map((subTask, idx) => {
+                  const isDiscarded = subTask.type === 'discard';
+                  return (
+                    <div 
+                      key={subTask.id} 
+                      style={{ 
+                        background: isDiscarded ? 'rgba(255,255,255,0.01)' : 'rgba(255,255,255,0.03)', 
+                        border: isDiscarded ? '1px dashed rgba(255,255,255,0.05)' : '1px solid rgba(255,255,255,0.08)', 
+                        borderRadius: '8px', 
+                        padding: '1rem',
+                        opacity: isDiscarded ? 0.45 : 1,
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.1)', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 600 }}>
+                          {subTasksState.length > 1 ? `Tema #${idx + 1}` : 'Anotación'}
+                        </span>
+                        
+                        <div style={{ width: '280px' }}>
+                          <div style={{ display: 'flex', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', overflow: 'hidden', height: '28px' }}>
+                            <button
+                              disabled={!subTask.targetCard}
+                              onClick={() => {
+                                setSubTasksState(prev => prev.map(st => st.id === subTask.id ? { ...st, type: 'comment' } : st));
+                              }}
+                              style={{
+                                flex: 1,
+                                fontSize: '0.65rem',
+                                border: 'none',
+                                cursor: subTask.targetCard ? 'pointer' : 'not-allowed',
+                                background: subTask.type === 'comment' ? 'rgba(6, 182, 212, 0.25)' : 'transparent',
+                                color: subTask.type === 'comment' ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                                fontWeight: subTask.type === 'comment' ? 700 : 400,
+                                opacity: subTask.targetCard ? 1 : 0.4,
+                                transition: 'all 0.15s ease'
+                              }}
+                              title={subTask.targetCard ? 'Añadir un comentario a la tarjeta encontrada' : 'No se encontró tarjeta para comentar'}
+                            >
+                              💬 COMENTAR
+                            </button>
                             <button
                               onClick={() => {
                                 setSubTasksState(prev => prev.map(st => st.id === subTask.id ? { ...st, type: 'create' } : st));
                               }}
                               style={{
-                                fontSize: '0.75rem',
-                                padding: '0.15rem 0.4rem',
-                                borderRadius: '4px',
-                                border: '1px solid rgba(255,255,255,0.15)',
-                                background: subTask.type === 'create' ? 'var(--accent-emerald)' : 'transparent',
-                                color: subTask.type === 'create' ? '#000' : 'var(--text-muted)',
-                                cursor: 'pointer'
+                                flex: 1,
+                                fontSize: '0.65rem',
+                                border: 'none',
+                                cursor: 'pointer',
+                                background: subTask.type === 'create' ? 'rgba(16, 185, 129, 0.25)' : 'transparent',
+                                color: subTask.type === 'create' ? 'var(--accent-emerald)' : 'var(--text-muted)',
+                                fontWeight: subTask.type === 'create' ? 700 : 400,
+                                borderLeft: '1px solid rgba(255,255,255,0.1)',
+                                borderRight: '1px solid rgba(255,255,255,0.1)',
+                                transition: 'all 0.15s ease'
                               }}
                             >
-                              Crear Nueva
+                              ➕ CREAR
                             </button>
-                            {subTask.targetCard && (
-                              <button
-                                onClick={() => {
-                                  setSubTasksState(prev => prev.map(st => st.id === subTask.id ? { ...st, type: 'comment' } : st));
-                                }}
-                                style={{
-                                  fontSize: '0.75rem',
-                                  padding: '0.15rem 0.4rem',
-                                  borderRadius: '4px',
-                                  border: '1px solid rgba(255,255,255,0.15)',
-                                  background: subTask.type === 'comment' ? 'var(--accent-cyan)' : 'transparent',
-                                  color: subTask.type === 'comment' ? '#000' : 'var(--text-muted)',
-                                  cursor: 'pointer'
-                                }}
-                              >
-                                Comentar
-                              </button>
-                            )}
+                            <button
+                              onClick={() => {
+                                setSubTasksState(prev => prev.map(st => st.id === subTask.id ? { ...st, type: 'discard' } : st));
+                              }}
+                              style={{
+                                flex: 1,
+                                fontSize: '0.65rem',
+                                border: 'none',
+                                cursor: 'pointer',
+                                background: subTask.type === 'discard' ? 'rgba(239, 68, 68, 0.25)' : 'transparent',
+                                color: subTask.type === 'discard' ? 'var(--accent-rose)' : 'var(--text-muted)',
+                                fontWeight: subTask.type === 'discard' ? 700 : 400,
+                                transition: 'all 0.15s ease'
+                              }}
+                            >
+                              🚫 DESCARTAR
+                            </button>
                           </div>
                         </div>
+                      </div>
 
-                        <div style={{ color: '#fff', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.65rem', fontStyle: 'italic' }}>
-                          "{subTask.text}"
-                        </div>
+                      {/* EDITABLE SUBTASK TEXT */}
+                      <input 
+                        type="text"
+                        value={subTask.text}
+                        disabled={isDiscarded}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setSubTasksState(prev => prev.map(st => st.id === subTask.id ? { ...st, text: val } : st));
+                        }}
+                        style={{
+                          width: '100%',
+                          background: 'rgba(0,0,0,0.2)',
+                          border: isDiscarded ? '1px dashed rgba(255,255,255,0.05)' : '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '6px',
+                          padding: '0.5rem',
+                          color: isDiscarded ? 'var(--text-muted)' : '#fff',
+                          fontSize: '0.9rem',
+                          marginBottom: '0.5rem',
+                          textDecoration: isDiscarded ? 'line-through' : 'none',
+                          cursor: isDiscarded ? 'not-allowed' : 'text'
+                        }}
+                      />
 
-                        {subTask.type === 'comment' && subTask.targetCard && (
-                          <div style={{ fontSize: '0.8rem', color: 'var(--accent-cyan)', background: 'rgba(6, 182, 212, 0.1)', padding: '0.5rem', borderRadius: '4px', marginBottom: '0.65rem' }}>
-                            🎯 Coincide con: <strong>{subTask.targetCard.title}</strong>
+                      {subTask.type === 'comment' && subTask.targetCard && (
+                        <div style={{ fontSize: '0.8rem', color: 'var(--accent-cyan)', background: 'rgba(6, 182, 212, 0.08)', padding: '0.5rem 0.75rem', borderRadius: '6px', marginBottom: '0.65rem', border: '1px solid rgba(6, 182, 212, 0.15)' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span>🎯 Coincide con: <strong>{subTask.targetCard.title}</strong></span>
+                            
+                            <button 
+                              onClick={() => handleToggleComments(subTask.targetCard.id, subTask.targetCard.notionPageId)}
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--accent-cyan)',
+                                fontSize: '0.75rem',
+                                cursor: 'pointer',
+                                padding: 0,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.25rem'
+                              }}
+                            >
+                              <History size={12} /> 
+                              {collapsedComments[subTask.targetCard.id] ? 'Ocultar' : 'Ver comentarios'}
+                            </button>
                           </div>
-                        )}
 
-                        {/* ASSIGNEE DROP-DOWN FOR THIS SUBTASK */}
+                          {collapsedComments[subTask.targetCard.id] && (
+                            <div style={{ marginTop: '0.5rem', background: 'rgba(15, 23, 42, 0.8)', padding: '0.5rem', borderRadius: '4px', maxHeight: '120px', overflowY: 'auto', border: '1px solid rgba(255,255,255,0.05)' }}>
+                              {cardContextLoading && !(loadedComments[subTask.targetCard.id]) ? (
+                                <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                  <RefreshCw size={10} className="spin" /> Cargando...
+                                </div>
+                              ) : (loadedComments[subTask.targetCard.id] || []).length === 0 ? (
+                                <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>No hay comentarios anteriores en esta tarjeta.</div>
+                              ) : (
+                                (loadedComments[subTask.targetCard.id] || []).map((c, i) => (
+                                  <div key={i} style={{ fontSize: '0.75rem', marginBottom: '0.25rem', borderBottom: '1px solid rgba(255,255,255,0.02)', paddingBottom: '0.25rem' }}>
+                                    <strong style={{ color: 'var(--accent-cyan)' }}>{c.author}:</strong> <span style={{ color: 'var(--text-body)' }}>{c.text}</span>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* ASSIGNEE DROP-DOWN FOR THIS SUBTASK */}
+                      {!isDiscarded && (
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '0.75rem' }}>
                           <div style={{ flex: 1, minWidth: '180px' }}>
                             <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>👥 Responsable:</label>
@@ -797,190 +779,35 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
                             </label>
                           </div>
                         </div>
-
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  {proposedAction.type === 'comment' ? (
-                    <div>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '1px' }}>🎯 Tarjeta Asociada Encontrada:</span>
-                      <div style={{ fontSize: '1.1rem', color: '#fff', fontWeight: 600, marginTop: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <FileText size={18} /> {proposedAction.targetCard.title}
-                      </div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem', marginBottom: '1rem' }}>💡 {proposedAction.rationale}</div>
-                      
-                      {/* EXISTING CARD CONTEXT */}
-                      <div style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '1rem', marginTop: '1rem' }}>
-                        <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <History size={14} /> Contexto Actual de la Tarjeta
-                        </h4>
-                        {cardContextLoading ? (
-                          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><RefreshCw size={14} className="spin" /> Recuperando historial de comentarios de Notion...</div>
-                        ) : (
-                          <div style={{ maxHeight: '180px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingRight: '0.5rem' }}>
-                            {cardComments.length === 0 ? (
-                              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>La tarjeta aún no tiene comentarios. Tu anotación será la primera.</div>
-                            ) : (
-                              cardComments.map((c, idx) => (
-                                <div key={idx} style={{ background: 'rgba(0,0,0,0.2)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.85rem' }}>
-                                  <span style={{ color: 'var(--accent-cyan)', fontWeight: 600, marginRight: '0.5rem', fontSize: '0.75rem' }}>{c.author}:</span>
-                                  <span style={{ color: 'var(--text-body)' }}>{c.text}</span>
-                                </div>
-                              ))
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* EMAIL SUGGESTION */}
-                      <div style={{ background: 'rgba(147, 51, 234, 0.1)', border: '1px solid var(--accent-purple)', borderRadius: '8px', padding: '1rem', marginTop: '1rem' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: '#fff', fontSize: '0.9rem' }}>
-                          <input 
-                            type="checkbox" 
-                            checked={sendEmailCopy}
-                            onChange={(e) => setSendEmailCopy(e.target.checked)}
-                            style={{ accentColor: 'var(--accent-purple)' }}
-                          />
-                          📬 Enviar también una copia rápida por Email al Responsable
-                        </label>
-                        
-                        {sendEmailCopy && (
-                          <div style={{ marginTop: '0.75rem', paddingLeft: '1.5rem' }}>
-                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                              Responsable: <strong>{proposedAction.targetCard.responsable || 'Sin Asignar'}</strong>
-                            </span>
-                            {contactsDirectory[proposedAction.targetCard.responsable || ''] ? (
-                              <div style={{ fontSize: '0.85rem', color: 'var(--accent-cyan)', marginTop: '0.25rem' }}>
-                                ✓ Email conocido: {contactsDirectory[proposedAction.targetCard.responsable || '']}
-                              </div>
-                            ) : (
-                              <div style={{ marginTop: '0.5rem' }}>
-                                <input 
-                                  type="email" 
-                                  placeholder="Ingresa su email para aprenderlo..."
-                                  value={newEmailInput}
-                                  onChange={(e) => setNewEmailInput(e.target.value)}
-                                  style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: '#fff', fontSize: '0.85rem' }}
-                                />
-                                <div style={{ fontSize: '0.75rem', color: 'var(--accent-amber)', marginTop: '0.25rem' }}>
-                                  Al enviar, el sistema recordará este correo para futuras ocasiones.
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                      )}
                     </div>
-                  ) : (
-                    <div>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--accent-amber)', textTransform: 'uppercase', letterSpacing: '1px' }}>⚠️ Nueva Iniciativa:</span>
-                      <div style={{ fontSize: '0.95rem', color: '#fff', marginTop: '0.35rem' }}>
-                        💡 {proposedAction.rationale}<br/><br/>
-                        Se sugiere crear una <strong>nueva tarjeta</strong> en Notion con esta anotación como objetivo principal.
-                      </div>
-                    </div>
-                  )}
-
-                  {/* SHARED ASSIGNEE SELECTOR */}
-                  <div style={{ marginTop: '1.25rem' }}>
-                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.45rem', fontWeight: 700 }}>👥 Asignar Responsable:</label>
-                    <select
-                      value={selectedAssignee}
-                      onChange={(e) => {
-                        setSelectedAssignee(e.target.value);
-                        if (e.target.value !== 'Diego Musach (CTO)') {
-                          setAddToDailyFollowUp(true);
-                        } else {
-                          setAddToDailyFollowUp(false);
-                        }
-                      }}
-                      style={{
-                        width: '100%',
-                        padding: '0.65rem',
-                        borderRadius: '6px',
-                        border: '1px solid rgba(255,255,255,0.15)',
-                        background: 'rgba(15, 23, 42, 0.95)',
-                        color: '#fff',
-                        fontSize: '0.85rem',
-                        cursor: 'pointer',
-                        boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
-                      }}
-                    >
-                      <option value="Diego Musach (CTO)">Diego Musach (CTO) (Tú)</option>
-                      <option value="Camilo Uribe">Camilo Uribe</option>
-                      <option value="Mario Maqueda">Mario Maqueda</option>
-                      <option value="Leonard Amaya">Leonard Amaya (Leo)</option>
-                      <option value="Joseph Valer">Joseph</option>
-                      <option value="Fabricio Jose Nieva">Fabricio Nieva</option>
-                      <option value="Enrique Bevilacqua">Enrique</option>
-                      <option value="Rodolfo">Rodolfo</option>
-                    </select>
-                  </div>
-
-                  {/* SHARED DESTINATION SELECTION */}
-                  <div style={{ marginTop: '1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '0.85rem' }}>
-                    <span style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.55rem', fontWeight: 600 }}>📬 ¿Dónde crear/actualizar la tarjeta?</span>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: '#fff', fontSize: '0.85rem' }}>
-                        <input
-                          type="checkbox"
-                          checked={addToDailyFollowUp}
-                          onChange={(e) => setAddToDailyFollowUp(e.target.checked)}
-                          style={{ accentColor: 'var(--accent-cyan)' }}
-                        />
-                        📋 Seguimiento Diario (Backlog de Equipo)
-                      </label>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: '#fff', fontSize: '0.85rem' }}>
-                        <input
-                          type="checkbox"
-                          checked={addToCeoReport}
-                          onChange={(e) => setAddToCeoReport(e.target.checked)}
-                          style={{ accentColor: 'var(--accent-rose)' }}
-                        />
-                        🎯 Reporte Semanal CEO (Iniciativa Principal)
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              )}
+                  );
+                })}
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-              {proposedAction.type === 'multi' && (
-                <>
-                  <button className="btn-secondary" onClick={() => setProposedAction(null)}>
-                    Cancelar
-                  </button>
-                  <button className="btn-primary" onClick={() => executeAction('multi')} style={{ background: 'var(--accent-emerald)', color: '#000' }}>
-                    <Zap size={14} /> Confirmar y Procesar {subTasksState.length} Acciones
-                  </button>
-                </>
-              )}
-
-              {proposedAction.type === 'comment' && (
-                <>
-                  <button className="btn-secondary" onClick={() => executeAction('create')} style={{ borderColor: 'var(--accent-purple)', color: 'var(--accent-purple)' }}>
-                    <PlusCircle size={14} /> Forzar Nueva Tarjeta
-                  </button>
-                  <button className="btn-primary" onClick={() => executeAction('comment')} disabled={cardContextLoading}>
-                    <MessageSquare size={14} /> Confirmar Añadir a Tarjeta
-                  </button>
-                </>
-              )}
-              
-              {proposedAction.type === 'create' && (
-                <>
-                  <button className="btn-secondary" onClick={() => setProposedAction(null)}>
-                    Cancelar
-                  </button>
-                  <button className="btn-primary" onClick={() => executeAction('create')} style={{ background: 'var(--accent-emerald)', color: '#000' }}>
-                    <PlusCircle size={14} /> Confirmar Crear Nueva
-                  </button>
-                </>
-              )}
+              <button className="btn-secondary" onClick={() => setProposedAction(null)}>
+                Cancelar
+              </button>
+              <button 
+                className="btn-primary" 
+                onClick={executeAction} 
+                style={{ 
+                  background: 'var(--accent-emerald)', 
+                  color: '#000',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                <Zap size={14} /> 
+                {subTasksState.every(st => st.type === 'discard') 
+                  ? 'Confirmar y Cerrar' 
+                  : `Confirmar y Procesar ${subTasksState.filter(st => st.type !== 'discard').length} Acción(es)`
+                }
+              </button>
             </div>
           </div>
         </div>
