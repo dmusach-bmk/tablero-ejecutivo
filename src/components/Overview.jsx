@@ -13,9 +13,15 @@ export default function Overview({ notionCards, excelData, teamTracking, onNavig
     const keywords = searchQuery.toLowerCase().split(' ').filter(k => k.length > 2);
     
     setFilteredCards(notionCards.filter(c => {
-      const txt = ((c.title || '') + ' ' + (c.summary || '') + ' ' + (c.responsable || '') + ' ' + (c.status || '')).toLowerCase();
-      // Match if at least one meaningful keyword is found in the text
-      return keywords.some(kw => txt.includes(kw));
+      const commentsText = c.comments ? c.comments.map(comm => comm.text || '').join(' ') : '';
+      const txt = ((c.title || '') + ' ' + (c.summary || '') + ' ' + (c.responsable || '') + ' ' + (c.status || '') + ' ' + commentsText).toLowerCase();
+      // Typo tolerance (aficia/afinia)
+      const normTxt = txt.replace(/aficia/g, 'afinia');
+      
+      return keywords.some(kw => {
+        const normKw = kw.replace(/aficia/g, 'afinia');
+        return txt.includes(kw) || normTxt.includes(normKw);
+      });
     }));
   }, [searchQuery, notionCards]);
 

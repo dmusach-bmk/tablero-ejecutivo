@@ -271,7 +271,25 @@ export default function App() {
       return null;
     };
 
-    const targetMember = parseReassignment(commentText);
+    const membersMap = [
+      { key: 'mario', id: 'mem-1', name: 'Mario Maqueda', title: 'Mario Maqueda', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80' },
+      { key: 'camilo', id: 'mem-2', name: 'Camilo Uribe', title: 'Camilo Uribe', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=80&q=80' },
+      { key: 'leo', id: 'mem-3', name: 'Leonard Amaya', title: 'Leo', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80' },
+      { key: 'leonard', id: 'mem-3', name: 'Leonard Amaya', title: 'Leo', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80' },
+      { key: 'joseph', id: 'mem-4', name: 'Joseph Valer', title: 'Joseph', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=80&q=80' },
+      { key: 'fabricio', id: 'mem-5', name: 'Fabricio Jose Nieva', title: 'Fabricio Nieva', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=80&q=80' },
+      { key: 'enrique', id: 'mem-6', name: 'Enrique Bevilacqua', title: 'Enrique', avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=80&q=80' },
+      { key: 'rodolfo', id: 'mem-7', name: 'Rodolfo', title: 'Rodolfo', avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=80&q=80' },
+      { key: 'diego', id: 'mem-8', name: 'Diego Musach (CTO)', title: 'Diego Musach (CTO)', avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=80&q=80' }
+    ];
+
+    const getDropdownMember = () => {
+      if (!extraUpdates.responsable) return null;
+      const respLower = extraUpdates.responsable.toLowerCase();
+      return membersMap.find(m => respLower.includes(m.name.split(' ')[0].toLowerCase()));
+    };
+
+    const targetMember = getDropdownMember() || parseReassignment(commentText);
     const extractedDeadline = extractDateFromText(commentText.trim());
 
     // Update notionCards

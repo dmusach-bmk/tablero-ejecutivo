@@ -278,11 +278,20 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
 
   if (globalSearchQuery.trim()) {
     const q = globalSearchQuery.toLowerCase();
-    memberFilteredCards = allCardsCross.filter(c => 
-      c.title.toLowerCase().includes(q) ||
-      c.memberName.toLowerCase().includes(q) ||
-      (c.log && c.log.toLowerCase().includes(q))
-    );
+    const normQ = q.replace(/aficia/g, 'afinia');
+    
+    memberFilteredCards = allCardsCross.filter(c => {
+      const matchTitle = (c.title || '').toLowerCase().includes(q) || (c.title || '').toLowerCase().includes(normQ);
+      const matchMember = (c.memberName || '').toLowerCase().includes(q);
+      const matchLog = (c.log || '').toLowerCase().includes(q);
+      const matchSummary = (c.summary || '').toLowerCase().includes(q) || (c.summary || '').toLowerCase().includes(normQ);
+      const matchComments = c.comments && c.comments.some(comm => 
+        (comm.text || '').toLowerCase().includes(q) || 
+        (comm.text || '').toLowerCase().includes(normQ)
+      );
+      
+      return matchTitle || matchMember || matchLog || matchSummary || matchComments;
+    });
   }
 
   // Get domain tag helper
@@ -360,12 +369,24 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
   };
 
   // Re-order OPEN cards: Uncommented first, Commented pushed to bottom (most recent to absolute bottom)
+  // New cards without comments are also placed at the end of the open cards list
   const sortedOpenCards = [...openCards].sort((a, b) => {
     const timeA = getLatestCommentTime(a);
     const timeB = getLatestCommentTime(b);
     if (timeA !== timeB) {
       return timeA - timeB;
     }
+    
+    // Sort recently added cards (starts with 'new-') to the bottom of uncommented cards
+    const isNewA = String(a.id).startsWith('new-');
+    const isNewB = String(b.id).startsWith('new-');
+    if (isNewA && !isNewB) return 1;
+    if (!isNewA && isNewB) return -1;
+    if (isNewA && isNewB) {
+      // Sort new cards chronologically by their timestamp in the ID (ascending, newest at absolute bottom)
+      return String(a.id).localeCompare(String(b.id));
+    }
+    
     return 0;
   });
 
