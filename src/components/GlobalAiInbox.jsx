@@ -588,26 +588,26 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
                         
                         <div style={{ width: '280px' }}>
                           <div style={{ display: 'flex', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', overflow: 'hidden', height: '28px' }}>
-                            <button
-                              disabled={!subTask.targetCard}
-                              onClick={() => {
-                                setSubTasksState(prev => prev.map(st => st.id === subTask.id ? { ...st, type: 'comment' } : st));
-                              }}
-                              style={{
-                                flex: 1,
-                                fontSize: '0.65rem',
-                                border: 'none',
-                                cursor: subTask.targetCard ? 'pointer' : 'not-allowed',
-                                background: subTask.type === 'comment' ? 'rgba(6, 182, 212, 0.25)' : 'transparent',
-                                color: subTask.type === 'comment' ? 'var(--accent-cyan)' : 'var(--text-muted)',
-                                fontWeight: subTask.type === 'comment' ? 700 : 400,
-                                opacity: subTask.targetCard ? 1 : 0.4,
-                                transition: 'all 0.15s ease'
-                              }}
-                              title={subTask.targetCard ? 'Añadir un comentario a la tarjeta encontrada' : 'No se encontró tarjeta para comentar'}
-                            >
-                              💬 COMENTAR
-                            </button>
+                            {subTask.targetCard && (
+                              <button
+                                onClick={() => {
+                                  setSubTasksState(prev => prev.map(st => st.id === subTask.id ? { ...st, type: 'comment' } : st));
+                                }}
+                                style={{
+                                  flex: 1,
+                                  fontSize: '0.65rem',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  background: subTask.type === 'comment' ? 'rgba(6, 182, 212, 0.25)' : 'transparent',
+                                  color: subTask.type === 'comment' ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                                  fontWeight: subTask.type === 'comment' ? 700 : 400,
+                                  transition: 'all 0.15s ease'
+                                }}
+                                title="Añadir un comentario a la tarjeta encontrada"
+                              >
+                                💬 COMENTAR
+                              </button>
+                            )}
                             <button
                               onClick={() => {
                                 setSubTasksState(prev => prev.map(st => st.id === subTask.id ? { ...st, type: 'create' } : st));
@@ -620,8 +620,8 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
                                 background: subTask.type === 'create' ? 'rgba(16, 185, 129, 0.25)' : 'transparent',
                                 color: subTask.type === 'create' ? 'var(--accent-emerald)' : 'var(--text-muted)',
                                 fontWeight: subTask.type === 'create' ? 700 : 400,
-                                borderLeft: '1px solid rgba(255,255,255,0.1)',
-                                borderRight: '1px solid rgba(255,255,255,0.1)',
+                                borderLeft: subTask.targetCard ? '1px solid rgba(255,255,255,0.15)' : 'none',
+                                borderRight: '1px solid rgba(255,255,255,0.15)',
                                 transition: 'all 0.15s ease'
                               }}
                             >
