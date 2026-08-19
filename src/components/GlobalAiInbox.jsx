@@ -177,7 +177,7 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
       };
     }
 
-    // Split note into sub-tasks if it contains numbered items (e.g. 1., 2.) or newlines
+    // Split note into sub-tasks if it contains numbered items (e.g. 1., 2.) or bullet points
     const splitNoteIntoTasks = (text) => {
       // Look for numbered patterns like "1. ", "2. ", "1) ", "2) " or lists starting with dash/bullet
       const numberedRegex = /(?:\r?\n|^|\s)(?:\d+[\.\)]|[-*•])\s+/g;
@@ -202,12 +202,6 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
           }
         }
         return tasks;
-      }
-      
-      // Fallback: Split by newlines if there are multiple lines that look like tasks
-      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 5);
-      if (lines.length > 1) {
-        return lines;
       }
       
       return [text.trim()];
