@@ -24,6 +24,7 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
   const [addToCeoReport, setAddToCeoReport] = useState(false);
   const [selectedAssignee, setSelectedAssignee] = useState('Diego Musach (CTO)');
   const [addToDailyFollowUp, setAddToDailyFollowUp] = useState(false);
+  const [subTasksState, setSubTasksState] = useState([]);
 
   // Unified global history across all sections
   const storageKey = 'dm_ai_inbox_history_global';
@@ -119,11 +120,10 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
 
     const isQuestion = note.trim().endsWith('?') || /^(qué|que|quién|quien|cómo|como|cuál|cual|dónde|donde|estado de|tareas de|tiene)\b/i.test(note.trim());
 
-    const stopWords = new Set(['el', 'la', 'los', 'las', 'un', 'una', 'con', 'para', 'por', 'sobre', 'decir', 'hacer']);
-    const tokens = note.toLowerCase().match(/[a-záéíóúñ]{4,}/g) || [];
-    const keywords = tokens.filter(w => !stopWords.has(w));
-
     if (isQuestion) {
+      const stopWords = new Set(['el', 'la', 'los', 'las', 'un', 'una', 'con', 'para', 'por', 'sobre', 'decir', 'hacer']);
+      const tokens = note.toLowerCase().match(/[a-záéíóúñ]{4,}/g) || [];
+      const keywords = tokens.filter(w => !stopWords.has(w));
       const matches = notionCards.filter(card => {
         const targetText = ((card.title || '') + ' ' + (card.summary || '') + ' ' + (card.responsable || '') + ' ' + (card.status || '')).toLowerCase();
         return keywords.some(kw => targetText.includes(kw));
@@ -135,45 +135,106 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
       };
     }
 
-    let bestMatch = null;
-    let maxScore = 0;
-
-    notionCards.forEach(card => {
-      let score = 0;
-      const targetText = ((card.title || '') + ' ' + (card.summary || '') + ' ' + (card.responsable || '')).toLowerCase();
-      keywords.forEach(kw => {
-        if (targetText.includes(kw)) score += 1;
-      });
-      if (score > maxScore) {
-        maxScore = score;
-        bestMatch = card;
+    // Split note into sub-tasks if it contains numbered items (e.g. 1., 2.) or newlines
+    const splitNoteIntoTasks = (text) => {
+      // Look for numbered patterns like "1. ", "2. ", "1) ", "2) " or lists starting with dash/bullet
+      const numberedRegex = /(?:\r?\n|^|\s)(?:\d+[\.\)]|[-*•])\s+/g;
+      if (numberedRegex.test(text)) {
+        const parts = text.split(/(?:\r?\n|^|\s)(?:\d+[\.\)]|[-*•])\s+/);
+        let prefix = '';
+        const tasks = [];
+        
+        // Extract common prefix (like "Joseph" or "Para Camilo")
+        const firstPart = parts[0].trim();
+        if (firstPart.split(/\s+/).length <= 4 && parts.length > 1) {
+          prefix = firstPart;
+        } else if (firstPart) {
+          tasks.push(firstPart);
+        }
+        
+        for (let i = 1; i < parts.length; i++) {
+          const p = parts[i].trim();
+          if (p) {
+            // Keep the prefix context in each task
+            tasks.push(prefix ? `${prefix} ${p}` : p);
+          }
+        }
+        return tasks;
       }
-    });
+      
+      // Fallback: Split by newlines if there are multiple lines that look like tasks
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 5);
+      if (lines.length > 1) {
+        return lines;
+      }
+      
+      return [text.trim()];
+    };
 
-    const suggestedAssignee = parseSuggestedAssignee(note);
-    const suggestedAddToDailyFollowUp = suggestedAssignee !== 'Diego Musach (CTO)';
-    const suggestedAddToCeoReport = /ceo|pillar|roadmap|reunion|reunión|informe|reporte/i.test(note);
+    const rawTasks = splitNoteIntoTasks(note);
 
-    if (bestMatch && maxScore > 0) {
+    const analyzeSubTask = (subTaskText) => {
+      const stopWords = new Set(['el', 'la', 'los', 'las', 'un', 'una', 'con', 'para', 'por', 'sobre', 'decir', 'hacer']);
+      // Normalizing common typos to improve keyword matching accuracy
+      const normalizedText = subTaskText.toLowerCase()
+        .replace(/teelcable/g, 'telecable')
+        .replace(/certicaion/g, 'certificacion');
+      const tokens = normalizedText.match(/[a-záéíóúñ]{4,}/g) || [];
+      const keywords = tokens.filter(w => !stopWords.has(w));
+
+      let bestMatch = null;
+      let maxScore = 0;
+
+      notionCards.forEach(card => {
+        let score = 0;
+        const targetText = ((card.title || '') + ' ' + (card.summary || '') + ' ' + (card.responsable || '')).toLowerCase();
+        keywords.forEach(kw => {
+          if (targetText.includes(kw)) score += 1;
+        });
+        if (score > maxScore) {
+          maxScore = score;
+          bestMatch = card;
+        }
+      });
+
+      const suggestedAssignee = parseSuggestedAssignee(subTaskText);
+      const suggestedAddToDailyFollowUp = suggestedAssignee !== 'Diego Musach (CTO)';
+      const suggestedAddToCeoReport = /ceo|roadmap|pillar|reunion|reunión|informe|reporte/i.test(subTaskText);
+
+      // We require at least 2 keyword matches for a confident card matching
+      const hasConfidentMatch = bestMatch && (maxScore >= 2 || (maxScore === 1 && keywords.some(kw => (bestMatch.title || '').toLowerCase().includes(kw))));
+
+      if (bestMatch && hasConfidentMatch) {
+        return {
+          type: 'comment',
+          text: subTaskText,
+          targetCard: bestMatch,
+          rationale: `Coincide con la tarjeta "${bestMatch.title}".`,
+          suggestedAssignee,
+          suggestedAddToDailyFollowUp,
+          suggestedAddToCeoReport
+        };
+      } else {
+        return {
+          type: 'create',
+          text: subTaskText,
+          targetCard: null,
+          rationale: `No se encontró coincidencia clara en Notion.`,
+          suggestedAssignee,
+          suggestedAddToDailyFollowUp,
+          suggestedAddToCeoReport
+        };
+      }
+    };
+
+    if (rawTasks.length > 1) {
       return {
-        type: 'comment',
+        type: 'multi',
         text: note,
-        targetCard: bestMatch,
-        rationale: `Se encontraron coincidencias clave con la tarjeta "${bestMatch.title}".`,
-        suggestedAssignee,
-        suggestedAddToDailyFollowUp,
-        suggestedAddToCeoReport
+        subTasks: rawTasks.map(t => analyzeSubTask(t))
       };
     } else {
-      return {
-        type: 'create',
-        text: note,
-        targetCard: null,
-        rationale: `No se encontró ninguna tarjeta en Notion que coincida semánticamente con esta anotación.`,
-        suggestedAssignee,
-        suggestedAddToDailyFollowUp,
-        suggestedAddToCeoReport
-      };
+      return analyzeSubTask(note);
     }
   };
 
@@ -228,12 +289,27 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
         // Open new tab with the search query
         window.open(window.location.origin + '/#overview?q=' + encodeURIComponent(keywords), '_blank');
         setInputText('');
+      } else if (action.type === 'multi') {
+        setProposedAction({ ...action, historyId: tempId });
+        setIsAnalyzing(false);
+
+        // Initialize subTasksState with the subtasks analyzed
+        setSubTasksState(action.subTasks.map((st, idx) => ({
+          id: `st-${idx}-${Date.now()}`,
+          text: st.text,
+          type: st.type,
+          targetCard: st.targetCard,
+          rationale: st.rationale,
+          assignee: st.suggestedAssignee,
+          addToDailyFollowUp: st.suggestedAddToDailyFollowUp,
+          addToCeoReport: st.suggestedAddToCeoReport
+        })));
       } else {
         // Attach tempId to proposed action to update it later
         setProposedAction({ ...action, historyId: tempId });
         setIsAnalyzing(false);
 
-        // Pre-fill suggested values
+        // Pre-fill suggested values for single action
         if (action.suggestedAssignee) {
           setSelectedAssignee(action.suggestedAssignee);
         } else {
@@ -259,6 +335,72 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
   };
 
   const executeAction = async (actionType) => {
+    if (proposedAction.type === 'multi') {
+      const targetTitles = [];
+
+      for (const subTask of subTasksState) {
+        const finalAssignee = subTask.addToDailyFollowUp ? subTask.assignee : 'Diego Musach (CTO)';
+        
+        if (subTask.type === 'comment' && subTask.targetCard) {
+          try {
+            await postCommentToNotion(credentials?.notionToken, subTask.targetCard.notionPageId || subTask.targetCard.id, subTask.text);
+            if (onAddCommentAndSync) {
+              onAddCommentAndSync(subTask.targetCard.id, subTask.text, 'Diego Musach (CTO)', {
+                responsable: finalAssignee,
+                assignedTo: finalAssignee,
+                isCEOCard: subTask.addToCeoReport
+              });
+            }
+            targetTitles.push(`Comentó "${subTask.targetCard.title}"`);
+          } catch (e) {
+            console.error("Error saving subtask comment", e);
+          }
+        } else {
+          try {
+            const title = subTask.text.split(' ').slice(0, 6).join(' ') + '...';
+            const newCard = {
+              id: `new-${Date.now()}-${Math.random()}`,
+              notionPageId: `new-${Date.now()}-${Math.random()}`,
+              title: title,
+              summary: subTask.text,
+              status: 'Abierto',
+              priority: 'P2 - ALTA',
+              responsable: finalAssignee,
+              assignedTo: finalAssignee,
+              isCEOCard: subTask.addToCeoReport,
+              comments: []
+            };
+            await createNotionPage(credentials?.notionToken, newCard);
+            if (onAddNotionCard) {
+              onAddNotionCard(newCard);
+            }
+            targetTitles.push(`Creó "${title}"`);
+          } catch (e) {
+            console.error("Error creating subtask card", e);
+          }
+        }
+      }
+
+      const outcomeTitle = targetTitles.join(', ');
+
+      setHistory(prev => prev.map(item => {
+        if (item.id === proposedAction.historyId) {
+          return {
+            ...item,
+            status: 'success',
+            actionTaken: 'Procesadas Acciones Múltiples',
+            targetTitle: outcomeTitle
+          };
+        }
+        return item;
+      }));
+
+      setProposedAction(null);
+      setInputText('');
+      setSubTasksState([]);
+      return;
+    }
+
     const updatedOutcome = {
       status: 'pending',
       actionTaken: '',
@@ -529,149 +671,294 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
                 <div style={{ fontSize: '1rem', color: '#fff', marginTop: '0.35rem', fontStyle: 'italic', background: 'rgba(255,255,255,0.05)', padding: '0.75rem', borderRadius: '6px' }}>"{proposedAction.text}"</div>
               </div>
 
-              {proposedAction.type === 'comment' ? (
+              {proposedAction.type === 'multi' ? (
                 <div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '1px' }}>🎯 Tarjeta Asociada Encontrada:</span>
-                  <div style={{ fontSize: '1.1rem', color: '#fff', fontWeight: 600, marginTop: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <FileText size={18} /> {proposedAction.targetCard.title}
-                  </div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem', marginBottom: '1rem' }}>💡 {proposedAction.rationale}</div>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, display: 'block', marginBottom: '0.75rem' }}>
+                    🧩 Se detectaron {subTasksState.length} temas individuales:
+                  </span>
                   
-                  {/* EXISTING CARD CONTEXT */}
-                  <div style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '1rem', marginTop: '1rem' }}>
-                    <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <History size={14} /> Contexto Actual de la Tarjeta
-                    </h4>
-                    {cardContextLoading ? (
-                      <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><RefreshCw size={14} className="spin" /> Recuperando historial de comentarios de Notion...</div>
-                    ) : (
-                      <div style={{ maxHeight: '180px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingRight: '0.5rem' }}>
-                        {cardComments.length === 0 ? (
-                          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>La tarjeta aún no tiene comentarios. Tu anotación será la primera.</div>
-                        ) : (
-                          cardComments.map((c, idx) => (
-                            <div key={idx} style={{ background: 'rgba(0,0,0,0.2)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.85rem' }}>
-                              <span style={{ color: 'var(--accent-cyan)', fontWeight: 600, marginRight: '0.5rem', fontSize: '0.75rem' }}>{c.author}:</span>
-                              <span style={{ color: 'var(--text-body)' }}>{c.text}</span>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    )}
-                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '350px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+                    {subTasksState.map((subTask, idx) => (
+                      <div key={subTask.id} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '1rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                          <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.1)', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 600 }}>
+                            Tema #{idx + 1}
+                          </span>
+                          
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button
+                              onClick={() => {
+                                setSubTasksState(prev => prev.map(st => st.id === subTask.id ? { ...st, type: 'create' } : st));
+                              }}
+                              style={{
+                                fontSize: '0.75rem',
+                                padding: '0.15rem 0.4rem',
+                                borderRadius: '4px',
+                                border: '1px solid rgba(255,255,255,0.15)',
+                                background: subTask.type === 'create' ? 'var(--accent-emerald)' : 'transparent',
+                                color: subTask.type === 'create' ? '#000' : 'var(--text-muted)',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Crear Nueva
+                            </button>
+                            {subTask.targetCard && (
+                              <button
+                                onClick={() => {
+                                  setSubTasksState(prev => prev.map(st => st.id === subTask.id ? { ...st, type: 'comment' } : st));
+                                }}
+                                style={{
+                                  fontSize: '0.75rem',
+                                  padding: '0.15rem 0.4rem',
+                                  borderRadius: '4px',
+                                  border: '1px solid rgba(255,255,255,0.15)',
+                                  background: subTask.type === 'comment' ? 'var(--accent-cyan)' : 'transparent',
+                                  color: subTask.type === 'comment' ? '#000' : 'var(--text-muted)',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                Comentar
+                              </button>
+                            )}
+                          </div>
+                        </div>
 
-                  {/* EMAIL SUGGESTION */}
-                  <div style={{ background: 'rgba(147, 51, 234, 0.1)', border: '1px solid var(--accent-purple)', borderRadius: '8px', padding: '1rem', marginTop: '1rem' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: '#fff', fontSize: '0.9rem' }}>
-                      <input 
-                        type="checkbox" 
-                        checked={sendEmailCopy}
-                        onChange={(e) => setSendEmailCopy(e.target.checked)}
-                        style={{ accentColor: 'var(--accent-purple)' }}
-                      />
-                      📬 Enviar también una copia rápida por Email al Responsable
-                    </label>
-                    
-                    {sendEmailCopy && (
-                      <div style={{ marginTop: '0.75rem', paddingLeft: '1.5rem' }}>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                          Responsable: <strong>{proposedAction.targetCard.responsable || 'Sin Asignar'}</strong>
-                        </span>
-                        {contactsDirectory[proposedAction.targetCard.responsable || ''] ? (
-                          <div style={{ fontSize: '0.85rem', color: 'var(--accent-cyan)', marginTop: '0.25rem' }}>
-                            ✓ Email conocido: {contactsDirectory[proposedAction.targetCard.responsable || '']}
-                          </div>
-                        ) : (
-                          <div style={{ marginTop: '0.5rem' }}>
-                            <input 
-                              type="email" 
-                              placeholder="Ingresa su email para aprenderlo..."
-                              value={newEmailInput}
-                              onChange={(e) => setNewEmailInput(e.target.value)}
-                              style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: '#fff', fontSize: '0.85rem' }}
-                            />
-                            <div style={{ fontSize: '0.75rem', color: 'var(--accent-amber)', marginTop: '0.25rem' }}>
-                              Al enviar, el sistema recordará este correo para futuras ocasiones.
-                            </div>
+                        <div style={{ color: '#fff', fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.65rem', fontStyle: 'italic' }}>
+                          "{subTask.text}"
+                        </div>
+
+                        {subTask.type === 'comment' && subTask.targetCard && (
+                          <div style={{ fontSize: '0.8rem', color: 'var(--accent-cyan)', background: 'rgba(6, 182, 212, 0.1)', padding: '0.5rem', borderRadius: '4px', marginBottom: '0.65rem' }}>
+                            🎯 Coincide con: <strong>{subTask.targetCard.title}</strong>
                           </div>
                         )}
+
+                        {/* ASSIGNEE DROP-DOWN FOR THIS SUBTASK */}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '0.75rem' }}>
+                          <div style={{ flex: 1, minWidth: '180px' }}>
+                            <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>👥 Responsable:</label>
+                            <select
+                              value={subTask.assignee}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setSubTasksState(prev => prev.map(st => st.id === subTask.id ? { 
+                                  ...st, 
+                                  assignee: val, 
+                                  addToDailyFollowUp: val !== 'Diego Musach (CTO)' 
+                                } : st));
+                              }}
+                              style={{
+                                width: '100%',
+                                padding: '0.4rem',
+                                borderRadius: '4px',
+                                border: '1px solid rgba(255,255,255,0.15)',
+                                background: 'rgba(15, 23, 42, 0.9)',
+                                color: '#fff',
+                                fontSize: '0.8rem',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <option value="Diego Musach (CTO)">Diego Musach (CTO) (Tú)</option>
+                              <option value="Camilo Uribe">Camilo Uribe</option>
+                              <option value="Mario Maqueda">Mario Maqueda</option>
+                              <option value="Leonard Amaya">Leonard Amaya (Leo)</option>
+                              <option value="Joseph Valer">Joseph</option>
+                              <option value="Fabricio Jose Nieva">Fabricio Nieva</option>
+                              <option value="Enrique Bevilacqua">Enrique</option>
+                              <option value="Rodolfo">Rodolfo</option>
+                            </select>
+                          </div>
+
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', justifyContent: 'center' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', color: '#fff', fontSize: '0.8rem' }}>
+                              <input
+                                type="checkbox"
+                                checked={subTask.addToDailyFollowUp}
+                                onChange={(e) => {
+                                  const chk = e.target.checked;
+                                  setSubTasksState(prev => prev.map(st => st.id === subTask.id ? { ...st, addToDailyFollowUp: chk } : st));
+                                }}
+                                style={{ accentColor: 'var(--accent-cyan)' }}
+                              />
+                              📋 Seguimiento Diario
+                            </label>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', color: '#fff', fontSize: '0.8rem' }}>
+                              <input
+                                type="checkbox"
+                                checked={subTask.addToCeoReport}
+                                onChange={(e) => {
+                                  const chk = e.target.checked;
+                                  setSubTasksState(prev => prev.map(st => st.id === subTask.id ? { ...st, addToCeoReport: chk } : st));
+                                }}
+                                style={{ accentColor: 'var(--accent-rose)' }}
+                              />
+                              🎯 Reporte CEO
+                            </label>
+                          </div>
+                        </div>
+
                       </div>
-                    )}
+                    ))}
                   </div>
                 </div>
               ) : (
                 <div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--accent-amber)', textTransform: 'uppercase', letterSpacing: '1px' }}>⚠️ Nueva Iniciativa:</span>
-                  <div style={{ fontSize: '0.95rem', color: '#fff', marginTop: '0.35rem' }}>
-                    💡 {proposedAction.rationale}<br/><br/>
-                    Se sugiere crear una <strong>nueva tarjeta</strong> en Notion con esta anotación como objetivo principal.
+                  {proposedAction.type === 'comment' ? (
+                    <div>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '1px' }}>🎯 Tarjeta Asociada Encontrada:</span>
+                      <div style={{ fontSize: '1.1rem', color: '#fff', fontWeight: 600, marginTop: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <FileText size={18} /> {proposedAction.targetCard.title}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem', marginBottom: '1rem' }}>💡 {proposedAction.rationale}</div>
+                      
+                      {/* EXISTING CARD CONTEXT */}
+                      <div style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '1rem', marginTop: '1rem' }}>
+                        <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <History size={14} /> Contexto Actual de la Tarjeta
+                        </h4>
+                        {cardContextLoading ? (
+                          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><RefreshCw size={14} className="spin" /> Recuperando historial de comentarios de Notion...</div>
+                        ) : (
+                          <div style={{ maxHeight: '180px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingRight: '0.5rem' }}>
+                            {cardComments.length === 0 ? (
+                              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>La tarjeta aún no tiene comentarios. Tu anotación será la primera.</div>
+                            ) : (
+                              cardComments.map((c, idx) => (
+                                <div key={idx} style={{ background: 'rgba(0,0,0,0.2)', padding: '0.65rem', borderRadius: '6px', fontSize: '0.85rem' }}>
+                                  <span style={{ color: 'var(--accent-cyan)', fontWeight: 600, marginRight: '0.5rem', fontSize: '0.75rem' }}>{c.author}:</span>
+                                  <span style={{ color: 'var(--text-body)' }}>{c.text}</span>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* EMAIL SUGGESTION */}
+                      <div style={{ background: 'rgba(147, 51, 234, 0.1)', border: '1px solid var(--accent-purple)', borderRadius: '8px', padding: '1rem', marginTop: '1rem' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: '#fff', fontSize: '0.9rem' }}>
+                          <input 
+                            type="checkbox" 
+                            checked={sendEmailCopy}
+                            onChange={(e) => setSendEmailCopy(e.target.checked)}
+                            style={{ accentColor: 'var(--accent-purple)' }}
+                          />
+                          📬 Enviar también una copia rápida por Email al Responsable
+                        </label>
+                        
+                        {sendEmailCopy && (
+                          <div style={{ marginTop: '0.75rem', paddingLeft: '1.5rem' }}>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                              Responsable: <strong>{proposedAction.targetCard.responsable || 'Sin Asignar'}</strong>
+                            </span>
+                            {contactsDirectory[proposedAction.targetCard.responsable || ''] ? (
+                              <div style={{ fontSize: '0.85rem', color: 'var(--accent-cyan)', marginTop: '0.25rem' }}>
+                                ✓ Email conocido: {contactsDirectory[proposedAction.targetCard.responsable || '']}
+                              </div>
+                            ) : (
+                              <div style={{ marginTop: '0.5rem' }}>
+                                <input 
+                                  type="email" 
+                                  placeholder="Ingresa su email para aprenderlo..."
+                                  value={newEmailInput}
+                                  onChange={(e) => setNewEmailInput(e.target.value)}
+                                  style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: '#fff', fontSize: '0.85rem' }}
+                                />
+                                <div style={{ fontSize: '0.75rem', color: 'var(--accent-amber)', marginTop: '0.25rem' }}>
+                                  Al enviar, el sistema recordará este correo para futuras ocasiones.
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--accent-amber)', textTransform: 'uppercase', letterSpacing: '1px' }}>⚠️ Nueva Iniciativa:</span>
+                      <div style={{ fontSize: '0.95rem', color: '#fff', marginTop: '0.35rem' }}>
+                        💡 {proposedAction.rationale}<br/><br/>
+                        Se sugiere crear una <strong>nueva tarjeta</strong> en Notion con esta anotación como objetivo principal.
+                      </div>
+                    </div>
+                  )}
+
+                  {/* SHARED ASSIGNEE SELECTOR */}
+                  <div style={{ marginTop: '1.25rem' }}>
+                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.45rem', fontWeight: 700 }}>👥 Asignar Responsable:</label>
+                    <select
+                      value={selectedAssignee}
+                      onChange={(e) => {
+                        setSelectedAssignee(e.target.value);
+                        if (e.target.value !== 'Diego Musach (CTO)') {
+                          setAddToDailyFollowUp(true);
+                        } else {
+                          setAddToDailyFollowUp(false);
+                        }
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '0.65rem',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(255,255,255,0.15)',
+                        background: 'rgba(15, 23, 42, 0.95)',
+                        color: '#fff',
+                        fontSize: '0.85rem',
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
+                      }}
+                    >
+                      <option value="Diego Musach (CTO)">Diego Musach (CTO) (Tú)</option>
+                      <option value="Camilo Uribe">Camilo Uribe</option>
+                      <option value="Mario Maqueda">Mario Maqueda</option>
+                      <option value="Leonard Amaya">Leonard Amaya (Leo)</option>
+                      <option value="Joseph Valer">Joseph</option>
+                      <option value="Fabricio Jose Nieva">Fabricio Nieva</option>
+                      <option value="Enrique Bevilacqua">Enrique</option>
+                      <option value="Rodolfo">Rodolfo</option>
+                    </select>
+                  </div>
+
+                  {/* SHARED DESTINATION SELECTION */}
+                  <div style={{ marginTop: '1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '0.85rem' }}>
+                    <span style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.55rem', fontWeight: 600 }}>📬 ¿Dónde crear/actualizar la tarjeta?</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: '#fff', fontSize: '0.85rem' }}>
+                        <input
+                          type="checkbox"
+                          checked={addToDailyFollowUp}
+                          onChange={(e) => setAddToDailyFollowUp(e.target.checked)}
+                          style={{ accentColor: 'var(--accent-cyan)' }}
+                        />
+                        📋 Seguimiento Diario (Backlog de Equipo)
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: '#fff', fontSize: '0.85rem' }}>
+                        <input
+                          type="checkbox"
+                          checked={addToCeoReport}
+                          onChange={(e) => setAddToCeoReport(e.target.checked)}
+                          style={{ accentColor: 'var(--accent-rose)' }}
+                        />
+                        🎯 Reporte Semanal CEO (Iniciativa Principal)
+                      </label>
+                    </div>
                   </div>
                 </div>
               )}
-
-              {/* SHARED ASSIGNEE SELECTOR */}
-              <div style={{ marginTop: '1.25rem' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.45rem', fontWeight: 700 }}>👥 Asignar Responsable:</label>
-                <select
-                  value={selectedAssignee}
-                  onChange={(e) => {
-                    setSelectedAssignee(e.target.value);
-                    if (e.target.value !== 'Diego Musach (CTO)') {
-                      setAddToDailyFollowUp(true);
-                    } else {
-                      setAddToDailyFollowUp(false);
-                    }
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '0.65rem',
-                    borderRadius: '6px',
-                    border: '1px solid rgba(255,255,255,0.15)',
-                    background: 'rgba(15, 23, 42, 0.95)',
-                    color: '#fff',
-                    fontSize: '0.85rem',
-                    cursor: 'pointer',
-                    boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
-                  }}
-                >
-                  <option value="Diego Musach (CTO)">Diego Musach (CTO) (Tú)</option>
-                  <option value="Camilo Uribe">Camilo Uribe</option>
-                  <option value="Mario Maqueda">Mario Maqueda</option>
-                  <option value="Leonard Amaya">Leonard Amaya (Leo)</option>
-                  <option value="Joseph Valer">Joseph</option>
-                  <option value="Fabricio Jose Nieva">Fabricio Nieva</option>
-                  <option value="Enrique Bevilacqua">Enrique</option>
-                  <option value="Rodolfo">Rodolfo</option>
-                </select>
-              </div>
-
-              {/* SHARED DESTINATION SELECTION */}
-              <div style={{ marginTop: '1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '0.85rem' }}>
-                <span style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.55rem', fontWeight: 600 }}>📬 ¿Dónde crear/actualizar la tarjeta?</span>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: '#fff', fontSize: '0.85rem' }}>
-                    <input
-                      type="checkbox"
-                      checked={addToDailyFollowUp}
-                      onChange={(e) => setAddToDailyFollowUp(e.target.checked)}
-                      style={{ accentColor: 'var(--accent-cyan)' }}
-                    />
-                    📋 Seguimiento Diario (Backlog de Equipo)
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: '#fff', fontSize: '0.85rem' }}>
-                    <input
-                      type="checkbox"
-                      checked={addToCeoReport}
-                      onChange={(e) => setAddToCeoReport(e.target.checked)}
-                      style={{ accentColor: 'var(--accent-rose)' }}
-                    />
-                    🎯 Reporte Semanal CEO (Iniciativa Principal)
-                  </label>
-                </div>
-              </div>
             </div>
 
             <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+              {proposedAction.type === 'multi' && (
+                <>
+                  <button className="btn-secondary" onClick={() => setProposedAction(null)}>
+                    Cancelar
+                  </button>
+                  <button className="btn-primary" onClick={() => executeAction('multi')} style={{ background: 'var(--accent-emerald)', color: '#000' }}>
+                    <Zap size={14} /> Confirmar y Procesar {subTasksState.length} Acciones
+                  </button>
+                </>
+              )}
+
               {proposedAction.type === 'comment' && (
                 <>
                   <button className="btn-secondary" onClick={() => executeAction('create')} style={{ borderColor: 'var(--accent-purple)', color: 'var(--accent-purple)' }}>
