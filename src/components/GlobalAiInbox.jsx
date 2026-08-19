@@ -242,6 +242,7 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
     if (!inputText.trim()) return;
     setIsAnalyzing(true);
     const noteText = inputText.trim();
+    setInputText(''); // Clear input text immediately
 
     // Add note to history immediately so it is recorded even if modal is cancelled
     const tempId = Date.now().toString();
