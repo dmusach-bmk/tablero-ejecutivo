@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Bot, Mic, Send, MessageSquare, PlusCircle, Check, X, History, FileText, Zap, ChevronRight, ChevronLeft, RefreshCw } from 'lucide-react';
 import { postCommentToNotion, createNotionPage, fetchNotionComments } from '../services/notionService';
 
@@ -26,6 +26,17 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
   const [isListening, setIsListening] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  
+  const textareaRef = useRef(null);
+
+  useEffect(() => {
+    if (isOpen && textareaRef.current) {
+      const timer = setTimeout(() => {
+        textareaRef.current.focus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
   
   // Modal State
   const [proposedAction, setProposedAction] = useState(null);
@@ -513,6 +524,7 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
           
           <div style={{ position: 'relative', marginBottom: '1rem' }}>
             <textarea 
+              ref={textareaRef}
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               placeholder="Escribe o dicta tu anotación..."
@@ -562,6 +574,9 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
                   key={record.id} 
                   onClick={() => {
                     setInputText(record.text);
+                    if (textareaRef.current) {
+                      textareaRef.current.focus();
+                    }
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(30, 41, 59, 0.8)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(30, 41, 59, 0.4)'}
