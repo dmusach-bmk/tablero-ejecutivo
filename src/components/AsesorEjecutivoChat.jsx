@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Sparkles, Shield, Cpu, ExternalLink, Mic } from 'lucide-react';
+import { createNotionPage } from '../services/notionService';
 
-export default function AsesorEjecutivoChat({ credentials, teamTracking = [] }) {
+export default function AsesorEjecutivoChat({ credentials, teamTracking = [], onAddNotionCard, onAddCommentAndSync }) {
   const [messages, setMessages] = useState([
     {
       sender: 'advisor',
@@ -86,10 +87,76 @@ export default function AsesorEjecutivoChat({ credentials, teamTracking = [] }) 
     };
 
     setMessages(prev => [...prev, userMsg]);
-    const currentQuery = input;
+    const currentQuery = input.trim();
     setInput('');
 
-    setTimeout(() => {
+    setTimeout(async () => {
+      const q = currentQuery.toLowerCase();
+      
+      // Detect if user wants to create/add a card
+      const isCreateRequest = /crear|agregar|abrir|cree|agrege|targeja|tarjeta/i.test(q);
+      
+      if (isCreateRequest) {
+        // Detect assignee
+        const members = [
+          { name: 'Mario Maqueda', key: 'mario' },
+          { name: 'Camilo Uribe', key: 'camilo' },
+          { name: 'Leonard Amaya', key: 'leo' },
+          { name: 'Leonard Amaya', key: 'leonard' },
+          { name: 'Joseph Valer', key: 'joseph' },
+          { name: 'Fabricio Jose Nieva', key: 'fabricio' },
+          { name: 'Enrique Bevilacqua', key: 'enrique' },
+          { name: 'Rodolfo', key: 'rodolfo' },
+          { name: 'Diego Musach (CTO)', key: 'diego' }
+        ];
+        
+        const foundMember = members.find(m => q.includes(m.key));
+        const assigneeName = foundMember ? foundMember.name : 'Diego Musach (CTO)';
+        
+        // Clean title: remove terms like "agregar tarjeta", "crear tarjeta", "joseph:", etc.
+        let title = currentQuery
+          .replace(/joseph|mario|camilo|leonard|leo|fabricio|enrique|rodolfo/i, '')
+          .replace(/crear|agregar|abrir|tarjeta|targeja/ig, '')
+          .replace(/[:.,]/g, '')
+          .trim();
+          
+        if (title.length < 3) {
+          title = "Nueva tarea creada desde Chat";
+        }
+        
+        try {
+          const newCard = {
+            id: `new-${Date.now()}-${Math.random()}`,
+            notionPageId: `new-${Date.now()}-${Math.random()}`,
+            title: title,
+            summary: title,
+            status: 'Abierto',
+            priority: 'P2 - ALTA',
+            responsable: assigneeName,
+            assignedTo: assigneeName,
+            comments: []
+          };
+          
+          await createNotionPage(credentials?.notionToken, newCard);
+          
+          if (onAddNotionCard) {
+            onAddNotionCard(newCard);
+          }
+          
+          setMessages(prev => [
+            ...prev,
+            {
+              sender: 'advisor',
+              text: `🤖 ¡Entendido, Diego! Acabo de crear la tarjeta **"${title}"** y asignársela a **${assigneeName}**. Ya está visible en su lista de temas de Follow Up y sincronizada.`,
+              time: new Date().toLocaleTimeString().slice(0, 5)
+            }
+          ]);
+          return;
+        } catch (e) {
+          console.error("Error creating card from chat:", e);
+        }
+      }
+
       const responseText = generateExecutiveAdvice(currentQuery);
       setMessages(prev => [
         ...prev,

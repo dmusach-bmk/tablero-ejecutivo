@@ -596,6 +596,9 @@ export default function App() {
             notionCards={notionCards}
             excelData={excelData}
             teamTracking={teamTracking}
+            credentials={credentials}
+            onAddNotionCard={handleAddNotionCard}
+            onAddCommentAndSync={handleAddCommentAndSync}
           />
         )}
       </main>

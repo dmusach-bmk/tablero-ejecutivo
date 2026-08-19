@@ -156,6 +156,15 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
     setStatusUpdatingId(topicId);
     setCardStatusMap(prev => ({ ...prev, [topicId]: newStatus }));
 
+    if (onUpdateTeamTracking) {
+      onUpdateTeamTracking(prevTeam => prevTeam.map(mem => ({
+        ...mem,
+        topics: (mem.topics || []).map(top => 
+          (top.id === topicId || top.notionPageId === topicId) ? { ...top, status: newStatus } : top
+        )
+      })));
+    }
+
     // Sync live to Notion API
     await updateNotionPageStatus(credentials?.notionToken, notionPageId, newStatus);
     setStatusUpdatingId(null);
@@ -166,14 +175,40 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
     const freshComments = await fetchNotionComments(credentials?.notionToken, notionPageId);
     if (freshComments && freshComments.length > 0) {
       freshComments.sort((a, b) => a.date.localeCompare(b.date));
-      setLocalCommentsMap(prev => ({
-        ...prev,
-        [topicId]: freshComments
-      }));
+      
+      setLocalCommentsMap(prev => {
+        const existingCard = allCardsCross.find(c => c.id === topicId);
+        const current = prev[topicId] || existingCard?.comments || [];
+        const combined = [...current];
+        freshComments.forEach(f => {
+          if (!combined.some(c => c.text.trim() === f.text.trim())) {
+            combined.push(f);
+          }
+        });
+        combined.sort((a, b) => a.date.localeCompare(b.date));
+        return {
+          ...prev,
+          [topicId]: combined
+        };
+      });
+
       if (onUpdateTeamTracking) {
         onUpdateTeamTracking(prevTeam => prevTeam.map(mem => ({
           ...mem,
-          topics: (mem.topics || []).map(top => top.id === topicId ? { ...top, comments: freshComments } : top)
+          topics: (mem.topics || []).map(top => {
+            if (top.id === topicId) {
+              const current = top.comments || [];
+              const combined = [...current];
+              freshComments.forEach(f => {
+                if (!combined.some(c => c.text.trim() === f.text.trim())) {
+                  combined.push(f);
+                }
+              });
+              combined.sort((a, b) => a.date.localeCompare(b.date));
+              return { ...top, comments: combined };
+            }
+            return top;
+          })
         })));
       }
     }
@@ -409,10 +444,20 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
           const fresh = await fetchNotionComments(credentials?.notionToken, card.notionPageId);
           if (fresh && fresh.length > 0 && isMounted) {
             fresh.sort((a, b) => a.date.localeCompare(b.date));
-            setLocalCommentsMap(prev => ({
-              ...prev,
-              [card.id]: fresh
-            }));
+            setLocalCommentsMap(prev => {
+              const current = prev[card.id] || card.comments || [];
+              const combined = [...current];
+              fresh.forEach(f => {
+                if (!combined.some(c => c.text.trim() === f.text.trim())) {
+                  combined.push(f);
+                }
+              });
+              combined.sort((a, b) => a.date.localeCompare(b.date));
+              return {
+                ...prev,
+                [card.id]: combined
+              };
+            });
           }
         }
       }
