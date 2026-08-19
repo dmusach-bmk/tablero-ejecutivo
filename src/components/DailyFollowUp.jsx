@@ -5,7 +5,7 @@ import { postCommentToNotion, updateNotionPageStatus, fetchNotionComments } from
 import { extractDateFromText } from '../utils/dateParser';
 import GlobalAiInbox from './GlobalAiInbox';
 
-export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamTracking, onOpenEmailWithAgenda, onNavigate }) {
+export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamTracking, onOpenEmailWithAgenda, onNavigate, onAddCommentAndSync, onAddNotionCard }) {
   const [activeMemberId, setActiveMemberId] = useState('all');
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
   const [commentInputs, setCommentInputs] = useState({});
@@ -18,6 +18,7 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
   const [localDeadlineMap, setLocalDeadlineMap] = useState({});
   const [isFetchingNotionComments, setIsFetchingNotionComments] = useState(false);
   const [listeningTargetId, setListeningTargetId] = useState(null);
+  const [domainFilter, setDomainFilter] = useState('all');
 
   const currentDate = new Date().toLocaleDateString('es-ES', {
     weekday: 'long',
@@ -222,8 +223,10 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
       [topicId]: updatedComments
     }));
 
-    // 2. Persist to parent teamTracking state (and localStorage so F5 retains it!)
-    if (onUpdateTeamTracking) {
+    // 2. Persist to parent states (both teamTracking and notionCards) and execute reassignments
+    if (onAddCommentAndSync) {
+      onAddCommentAndSync(topicId, text.trim(), 'Diego Musach (CTO)');
+    } else if (onUpdateTeamTracking) {
       onUpdateTeamTracking(prevTeam => {
         return prevTeam.map(mem => ({
           ...mem,
@@ -282,19 +285,64 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
     );
   }
 
+  // Get domain tag helper
+  const getCardDomainTag = (card) => {
+    const title = (card.title || '').toLowerCase();
+    const log = (card.log || '').toLowerCase();
+    const text = `${title} ${log}`;
+    
+    const videoKeywords = ['roku', 'ios', 'claro', 'wynn', 'betty', 'transcoder', 'catelsa', 'splash', 'video', 'multicable', 'streaming', 'tv', 'apple', 'wind', 'joseph', 'erik'];
+    const energiaKeywords = ['enee', 'edemsa', 'tecsys', 'habitat', 'ts109', 'ts700', 'ts600', 'netmore', 'koala', 'gateway', 'lora', 'ute', 'aes', 'energia', 'operaciones', 'camilo', 'rodolfo', 'fabricio'];
+    
+    if (videoKeywords.some(kw => text.includes(kw))) {
+      return { label: '📺 Operaciones Video', color: 'var(--accent-cyan)', bg: 'rgba(6, 182, 212, 0.15)' };
+    }
+    if (energiaKeywords.some(kw => text.includes(kw))) {
+      return { label: '⚡ Operaciones Energía', color: 'var(--accent-emerald)', bg: 'rgba(52, 211, 153, 0.15)' };
+    }
+    return null;
+  };
+
   // Split into OPEN vs CLOSED cards
-  const openCards = memberFilteredCards.filter(c => 
+  const allOpenCardsPre = memberFilteredCards.filter(c => 
     !['cerrado', 'completado', 'finalizado', 'closed'].includes((c.status || '').toLowerCase())
   );
 
-  const closedCards = memberFilteredCards.filter(c => 
+  const allClosedCardsPre = memberFilteredCards.filter(c => 
     ['cerrado', 'completado', 'finalizado', 'closed'].includes((c.status || '').toLowerCase())
   );
 
+  // Filter by domain
+  const openCards = allOpenCardsPre.filter(c => {
+    const tag = getCardDomainTag(c);
+    if (domainFilter === 'video') return tag && tag.label.includes('Video');
+    if (domainFilter === 'energy') return tag && tag.label.includes('Energía');
+    if (domainFilter === 'other') return !tag;
+    return true;
+  });
+
+  const closedCards = allClosedCardsPre.filter(c => {
+    const tag = getCardDomainTag(c);
+    if (domainFilter === 'video') return tag && tag.label.includes('Video');
+    if (domainFilter === 'energy') return tag && tag.label.includes('Energía');
+    if (domainFilter === 'other') return !tag;
+    return true;
+  });
+
+  const isCardCommentedToday = (card) => {
+    if (!card.comments || card.comments.length === 0) return false;
+    const todayShort = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit' }).split('/').reverse().join('-');
+    const todayAlt = new Date().toISOString().split('T')[0];
+    return card.comments.some(c => {
+      const cDate = (c.date || '').split(' ')[0];
+      return cDate === todayShort || cDate === todayAlt || cDate.includes('2026-08-18');
+    });
+  };
+
   // Re-order OPEN cards: Uncommented first, Commented pushed to bottom
   const sortedOpenCards = [...openCards].sort((a, b) => {
-    const aCommented = commentedTopicIds.includes(a.id);
-    const bCommented = commentedTopicIds.includes(b.id);
+    const aCommented = commentedTopicIds.includes(a.id) || isCardCommentedToday(a);
+    const bCommented = commentedTopicIds.includes(b.id) || isCardCommentedToday(b);
     if (aCommented && !bCommented) return 1;
     if (!aCommented && bCommented) return -1;
     return 0;
@@ -332,6 +380,8 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
         sectionName="Follow Up Diario" 
         notionCards={teamTracking} 
         credentials={credentials} 
+        onAddCommentAndSync={onAddCommentAndSync}
+        onAddNotionCard={onAddNotionCard}
       />
 
       {/* Compact Header Banner */}
@@ -389,7 +439,17 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
 
         {teamTracking.map((mem) => {
           const isActive = mem.id === activeMemberId && !globalSearchQuery;
-          const openMemCards = (mem.topics || []).filter(t => !['cerrado', 'completado', 'finalizado', 'closed'].includes(((cardStatusMap[t.id] || t.status) || '').toLowerCase()));
+          const openMemCards = (mem.topics || []).filter(t => {
+            const currentStatus = cardStatusMap[t.id] || t.status || 'Abierto';
+            const isOpen = !['cerrado', 'completado', 'finalizado', 'closed'].includes(currentStatus.toLowerCase());
+            if (!isOpen) return false;
+
+            const tag = getCardDomainTag(t);
+            if (domainFilter === 'video') return tag && tag.label.includes('Video');
+            if (domainFilter === 'energy') return tag && tag.label.includes('Energía');
+            if (domainFilter === 'other') return !tag;
+            return true;
+          });
           
           let shortName = mem.name.split(' ')[0];
           if (mem.name.includes('Musach')) shortName = 'Diego (CTO)';
@@ -425,6 +485,39 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
             </button>
           );
         })}
+      </div>
+
+      {/* FILTROS POR ÁREA OPERATIVA EN FOLLOW UP */}
+      <div style={{ display: 'flex', gap: '0.35rem', marginBottom: '0.85rem', flexWrap: 'wrap', alignItems: 'center' }}>
+        <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 700, marginRight: '0.25rem' }}>Filtrar por Área:</span>
+        <button 
+          onClick={() => setDomainFilter('all')} 
+          className={`nav-tab-btn ${domainFilter === 'all' ? 'active' : ''}`}
+          style={{ fontSize: '0.72rem', padding: '0.25rem 0.65rem', borderRadius: '4px', height: '28px' }}
+        >
+          📁 Todos ({allOpenCardsPre.length})
+        </button>
+        <button 
+          onClick={() => setDomainFilter('video')} 
+          className={`nav-tab-btn ${domainFilter === 'video' ? 'active' : ''}`}
+          style={{ fontSize: '0.72rem', padding: '0.25rem 0.65rem', borderRadius: '4px', border: '1px solid var(--accent-cyan)', height: '28px', color: domainFilter === 'video' ? '#fff' : 'var(--accent-cyan)' }}
+        >
+          📺 Video ({allOpenCardsPre.filter(c => getCardDomainTag(c)?.label.includes('Video')).length})
+        </button>
+        <button 
+          onClick={() => setDomainFilter('energy')} 
+          className={`nav-tab-btn ${domainFilter === 'energy' ? 'active' : ''}`}
+          style={{ fontSize: '0.72rem', padding: '0.25rem 0.65rem', borderRadius: '4px', border: '1px solid var(--accent-emerald)', height: '28px', color: domainFilter === 'energy' ? '#fff' : 'var(--accent-emerald)' }}
+        >
+          ⚡ Energía ({allOpenCardsPre.filter(c => getCardDomainTag(c)?.label.includes('Energía')).length})
+        </button>
+        <button 
+          onClick={() => setDomainFilter('other')} 
+          className={`nav-tab-btn ${domainFilter === 'other' ? 'active' : ''}`}
+          style={{ fontSize: '0.72rem', padding: '0.25rem 0.65rem', borderRadius: '4px', height: '28px' }}
+        >
+          📂 Otros ({allOpenCardsPre.filter(c => !getCardDomainTag(c)).length})
+        </button>
       </div>
 
       {/* CROSS-TEAM GLOBAL SEARCH BAR WITH VOICE DICTATION */}
@@ -489,7 +582,7 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
             const topicInfo = generateExecutiveSpeech(topic.title, topic.memberName, topic.log);
             const inputVal = commentInputs[topic.id] || '';
             const status = syncStatus[topic.id];
-            const isCommented = commentedTopicIds.includes(topic.id);
+            const isCommented = commentedTopicIds.includes(topic.id) || isCardCommentedToday(topic);
             const notionUrl = getNotionUrl(topic.notionPageId);
             
             // STRICT CHRONOLOGICAL SORTING (NEWEST LAST)
@@ -524,6 +617,24 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
                       <span className={`tag ${topic.priority?.includes('P1') ? 'critical' : 'high'}`} style={{ fontSize: '0.62rem', padding: '0.1rem 0.35rem' }}>
                         {topic.priority}
                       </span>
+                      {(() => {
+                        const tag = getCardDomainTag(topic);
+                        if (!tag) return null;
+                        return (
+                          <span style={{ 
+                            fontSize: '0.62rem', 
+                            padding: '0.1rem 0.35rem', 
+                            borderRadius: '10px', 
+                            fontWeight: 700, 
+                            color: tag.color, 
+                            background: tag.bg, 
+                            border: `1px solid ${tag.color}`,
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {tag.label}
+                          </span>
+                        );
+                      })()}
 
                       {/* INLINE EDITABLE DEADLINE CONTROL */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.68rem', color: 'var(--text-muted)', background: 'rgba(0,0,0,0.4)', padding: '0.1rem 0.45rem', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.08)' }}>

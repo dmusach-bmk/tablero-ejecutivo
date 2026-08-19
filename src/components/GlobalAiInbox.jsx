@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Bot, Mic, Send, MessageSquare, PlusCircle, Check, X, History, FileText, Zap, ChevronRight, ChevronLeft } from 'lucide-react';
 import { postCommentToNotion, createNotionPage, fetchNotionComments } from '../services/notionService';
 
-export default function GlobalAiInbox({ sectionName, notionCards = [], credentials }) {
+export default function GlobalAiInbox({ sectionName, notionCards = [], credentials, onAddCommentAndSync, onAddNotionCard }) {
   const [isOpen, setIsOpen] = useState(false);
   const [inputText, setInputText] = useState('');
   const [isListening, setIsListening] = useState(false);
@@ -159,6 +159,11 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
     if (actionType === 'comment') {
       try {
         await postCommentToNotion(credentials?.notionToken, proposedAction.targetCard.notionPageId || proposedAction.targetCard.id, proposedAction.text);
+        
+        if (onAddCommentAndSync) {
+          onAddCommentAndSync(proposedAction.targetCard.id, proposedAction.text, 'Diego Musach (CTO)');
+        }
+
         newRecord.status = 'success';
         newRecord.actionTaken = 'Comentario Agregado';
         newRecord.targetTitle = proposedAction.targetCard.title;
@@ -188,7 +193,23 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
     } else {
       try {
         const title = proposedAction.text.split(' ').slice(0, 6).join(' ') + '...';
-        await createNotionPage(credentials?.notionToken, { title, summary: proposedAction.text, status: 'Abierto' });
+        const newCard = {
+          id: `new-${Date.now()}`,
+          notionPageId: `new-${Date.now()}`,
+          title: title,
+          summary: proposedAction.text,
+          status: 'Abierto',
+          priority: 'P2 - ALTA',
+          responsable: 'Diego Musach (CTO)',
+          assignedTo: 'Diego Musach (CTO)',
+          comments: []
+        };
+        await createNotionPage(credentials?.notionToken, newCard);
+        
+        if (onAddNotionCard) {
+          onAddNotionCard(newCard);
+        }
+
         newRecord.status = 'success';
         newRecord.actionTaken = 'Nueva Tarjeta Creada';
         newRecord.targetTitle = title;

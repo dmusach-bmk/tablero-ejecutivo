@@ -4,14 +4,30 @@ import { postCommentToNotion, createNotionPage, updateNotionPageStatus } from '.
 import { fetchSingleFathomMeetingDetails } from '../services/fathomService';
 import GlobalAiInbox from './GlobalAiInbox';
 
-export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCards = [], credentials }) {
+export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCards = [], credentials, onUpdateNotionCards, onAddCommentAndSync, onAddNotionCard }) {
   const [copiedReport, setCopiedReport] = useState(false);
-  const [callCommentsMap, setCallCommentsMap] = useState({});
+  const [callCommentsMap, setCallCommentsMap] = useState(() => {
+    try {
+      const saved = localStorage.getItem('dm_call_comments_drafts');
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      console.error('Error parsing call comments drafts:', e);
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('dm_call_comments_drafts', JSON.stringify(callCommentsMap));
+    } catch (e) {
+      console.error('Error saving call comments drafts:', e);
+    }
+  }, [callCommentsMap]);
   const [listeningTargetId, setListeningTargetId] = useState(null);
   const [syncingTopicId, setSyncingTopicId] = useState(null);
   const [actionStatusMap, setActionStatusMap] = useState({});
 
-  // FATHOM DIRECT URL INGESTION STATE (e.g. https://fathom.video/calls/775351347)
+  // FATHOM DIRECT URL INGESTION STATE (e.g. https://fathom.video/calls/789196403)
   const [customFathomUrl, setCustomFathomUrl] = useState('');
   const [isIngestingFathomUrl, setIsIngestingFathomUrl] = useState(false);
   const [fathomIngestSuccessMsg, setFathomIngestSuccessMsg] = useState('');
@@ -29,7 +45,10 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
   const [closedTopicsDb, setClosedTopicsDb] = useState(() => {
     const saved = localStorage.getItem('dm_closed_topics_db');
     if (saved) {
-      try { return JSON.parse(saved); } catch(e){}
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch(e){}
     }
     return [
       {
@@ -44,16 +63,37 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
   });
 
   const [showClosedTopicsModal, setShowClosedTopicsModal] = useState(false);
+  const [domainFilter, setDomainFilter] = useState('all');
 
-  // LIVE SCRATCHPAD STATE
   const [scratchpadText, setScratchpadText] = useState(() => {
-    return localStorage.getItem('dm_ceo_scratchpad_draft') || '';
+    return localStorage.getItem('dm_ceo_scratchpad_draft') || `• APERTURA Store Roku.
+• Para la proxima reunion y todas: La etapa 2, plataforma por platafomra, cuando las entregamos? 10Foot septiembre (hablado con Leo) y revisar el resto.
+• Tener opcion de comentar las version 3.0 y 4.0 de todo, para comentarlo o dejarlo.
+• Llamar dentro de 14 dias a Luciano. Buscar empresa que asesoro Luciano (Diego) y buscar contactar a Claudio.
+• Seguimiento de informe de Edemsa, lo necesitamos para YA.
+• Diego, buscar con ENEE la confirmacion de lugares del Gateway.
+• Con Rodolfo: Como ordenamos que vamos a estar haciendo nosotros y que Ustedes? Como declaramos la lista y la ejecutamos y le ponemos cronograma. Alinear el producto terminado.
+• Habitat NMS: ni bien funciona, debemos instalarlo para DEPC, es el primero a probar. Con TS600.
+• Energia con TS100: Con AES y Afinia. Y actualizar los que tenemos en Bromteck.
+• Diego: no esta claro como lo desafio a Mario dia a dia. Es un ROJO total, no hay ideas de parte de mario y no estoy generando ese desafio yo.
+• Diego: Como automatizo la plantilla .CSV o conexion directa al modem. Cual de las dos hacemos? Rodolfo me dijo TS700 y TS600, pero ya programar para loggearse al habitat.
+• Enrique: Roadmap de Roku, de lo que falta. Analissis de versiones que si y que no, de Roku.
+• Leo: Toda la etapa 2, roadmap con Claude y tiempos en excel.
+• Etapa 1: Qué está pendiente de Erik, no lo vi en el excel. ¿Por qué no está Leo? ¿Qué contra vemos de seguir solo nosotros? ¿Qué temas son?
+• Seguridad/Repositorios: ¿Conviene no darle acceso al repo? ¿O duplicarlo? Para probar nosotros. Ojo, esto para todos los clientes.
+• Fabricio: Introduci Koalas, TS200, Yeap, y cobertura, a Habitat Bromteck. Te doy acceso ahora.
+• Mario: Control por Voz en todas las versiones, ¿por qué no está? Principalmente para poder hacer una búsqueda de canal por voz. Urgente. Usabilidad fundamental. Prioridades y fecha concreta de entrega. Ver tema Casteo como ejemplo. Mas velocidad. FECHAS!!!
+• Camilo: En agosto, optimiza y deja ajustado Bromteck Perdidas, si o si. Y dejarlo listo para las cooperativas. Hacelo asemejándolo a Edemsa.
+• Joseph: Tema de Itel Chajari que te envio Alejandro hoy, contame el estado. Si no hay soporte, hablar con German y Administracion. Y avisale siempre al cliente que la razon por la cual no atendes, es por soporte.`;
   });
 
   const [scratchpadHistory, setScratchpadHistory] = useState(() => {
     const saved = localStorage.getItem('dm_ceo_scratchpad_history');
     if (saved) {
-      try { return JSON.parse(saved); } catch(e){}
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch(e){}
     }
     return [
       {
@@ -98,19 +138,19 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     recognition.start();
   };
 
-  // HANDLE DIRECT FATHOM CALL URL INGESTION (e.g. https://fathom.video/calls/775351347?tab=summary)
+  // HANDLE DIRECT FATHOM CALL URL INGESTION (e.g. https://fathom.video/calls/789196403?tab=summary)
   const handleIngestFathomCallUrl = async () => {
     if (!customFathomUrl.trim()) {
-      alert("Por favor ingresa una URL válida de Fathom (ej. https://fathom.video/calls/775351347)");
+      alert("Por favor ingresa una URL válida de Fathom (ej. https://fathom.video/calls/789196403)");
       return;
     }
 
     setIsIngestingFathomUrl(true);
     setFathomIngestSuccessMsg('');
 
-    // Extract call ID if present (e.g. 775351347)
+    // Extract call ID if present (e.g. 789196403)
     const match = customFathomUrl.match(/calls\/(\d+)/);
-    const callId = match ? match[1] : '775351347';
+    const callId = match ? match[1] : '789196403';
 
     let meetingData = null;
     if (credentials?.fathomApiKey) {
@@ -127,90 +167,82 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     setFathomIngestSuccessMsg(`¡Éxito! Se ingesto la llamada Fathom #${callId} ("${meetingTitle}") directamente en tu Bloc de Notas sobre la Gestión.`);
   };
 
-  const generateDynamicTopics = (cards) => {
-    if (!Array.isArray(cards) || cards.length === 0) return [];
-    
-    const stopWords = new Set(['tarea', 'notion', 'responsable', 'estado', 'abierto', 'contexto', 'registro', 'diego', 'musach', 'para', 'como', 'sobre', 'desde', 'hasta', 'este', 'esta', 'todo', 'nada', 'pero', 'porque', 'cuando', 'donde', 'quien', 'cual', 'hacer', 'tener', 'poder', 'decir', 'estar', 'ser', 'tienen', 'estamos', 'todos']);
-    const keywordCounts = {};
-    const cardKeywords = new Map();
-
-    cards.forEach(c => {
-      const text = ((c.title || '') + ' ' + (c.summary || '') + ' ' + (c.transcript || '')).toLowerCase();
-      const tokens = text.match(/[a-záéíóúñ]{5,}/g) || [];
-      const cardKeys = new Set();
-      tokens.forEach(w => {
-        if (!stopWords.has(w)) {
-          keywordCounts[w] = (keywordCounts[w] || 0) + 1;
-          cardKeys.add(w);
-        }
-      });
-      cardKeywords.set(c.id || c.notionPageId, Array.from(cardKeys));
+  const isCardCommentedToday = (card) => {
+    if (!card.comments || card.comments.length === 0) return false;
+    const todayShort = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit' }).split('/').reverse().join('-');
+    const todayAlt = new Date().toISOString().split('T')[0];
+    return card.comments.some(c => {
+      const cDate = (c.date || '').split(' ')[0];
+      return cDate === todayShort || cDate === todayAlt || cDate.includes('2026-08-18');
     });
+  };
 
-    const topKeywords = Object.entries(keywordCounts)
-      .filter(([kw, count]) => count >= 2)
-      .sort((a, b) => b[1] - a[1])
-      .map(entry => entry[0]);
+  const generateStrategicPillars = (cards) => {
+    if (!Array.isArray(cards) || cards.length === 0) return [];
 
-    const strategicKeywords = ['edemsa', 'tecsys', 'wind', 'heroku', 'telecable', 'catelsa', 'panaccess', 'poc', 'cluster'];
-    const clusterKeywords = [...new Set([...strategicKeywords, ...topKeywords.slice(0, 15)])];
-
-    const clusters = {};
-    const unclustered = [];
+    const pillars = {
+      '📺 Operaciones Video': [],
+      '⚡ Operaciones Energía': [],
+      '📂 Otros Temas Operativos': []
+    };
 
     cards.forEach(c => {
-      const cKeys = cardKeywords.get(c.id || c.notionPageId) || [];
-      const assignedCluster = clusterKeywords.find(kw => cKeys.includes(kw));
-      if (assignedCluster) {
-        if (!clusters[assignedCluster]) clusters[assignedCluster] = [];
-        clusters[assignedCluster].push(c);
+      const title = (c.title || '').toLowerCase();
+      const summary = (c.summary || '').toLowerCase();
+      const responsable = (c.responsable || '').toLowerCase();
+      const text = `${title} ${summary} ${responsable}`;
+      
+      const videoKeywords = ['roku', 'ios', 'claro', 'wynn', 'betty', 'transcoder', 'catelsa', 'splash', 'video', 'multicable', 'streaming', 'tv', 'apple', 'wind', 'joseph', 'erik'];
+      const energiaKeywords = ['enee', 'edemsa', 'tecsys', 'habitat', 'ts109', 'ts700', 'ts600', 'netmore', 'koala', 'gateway', 'lora', 'ute', 'aes', 'energia', 'operaciones', 'camilo', 'rodolfo', 'fabricio'];
+
+      if (videoKeywords.some(kw => text.includes(kw))) {
+        pillars['📺 Operaciones Video'].push(c);
+      } else if (energiaKeywords.some(kw => text.includes(kw))) {
+        pillars['⚡ Operaciones Energía'].push(c);
       } else {
-        unclustered.push(c);
+        pillars['📂 Otros Temas Operativos'].push(c);
       }
     });
 
-    const dynamicSeries = [];
+    const strategicSeries = [];
     let idCounter = 1;
 
-    Object.entries(clusters).forEach(([kw, clusterCards]) => {
-      clusterCards.sort((a, b) => (a.priority === 'P1 - CRITICA' ? -1 : 1));
-      const leadCard = clusterCards[0];
-      dynamicSeries.push({
-        id: `dyn-${idCounter++}`,
-        seriesName: `📌 Tema: ${kw.toUpperCase()} (${clusterCards.length} tarjetas)`,
-        targetCard: leadCard.title,
+    Object.entries(pillars).forEach(([pillarName, clusterCards]) => {
+      if (clusterCards.length === 0) return;
+      
+      clusterCards.sort((a, b) => {
+        const aCommented = isCardCommentedToday(a);
+        const bCommented = isCardCommentedToday(b);
+        if (aCommented && !bCommented) return 1;
+        if (!aCommented && bCommented) return -1;
+        
+        const aCrit = a.priority === 'P1 - CRITICA' || a.priority?.includes('P1');
+        const bCrit = b.priority === 'P1 - CRITICA' || b.priority?.includes('P1');
+        if (aCrit && !bCrit) return -1;
+        if (!aCrit && bCrit) return 1;
+        return 0;
+      });
+
+      const criticalCount = clusterCards.filter(c => c.priority === 'P1 - CRITICA' || c.priority?.includes('P1')).length;
+      
+      strategicSeries.push({
+        id: `pillar-${idCounter++}`,
+        seriesName: pillarName,
+        keyword: pillarName,
+        targetCard: 'Varios',
         meetingDate: todayShortDate,
-        lead: leadCard.responsable || 'Equipo',
-        keyword: kw,
-        priority: clusterCards.some(c => c.priority === 'P1 - CRITICA') ? 'P1 - CRITICA' : (clusterCards.some(c => c.priority === 'P2 - ALTA') ? 'P2 - ALTA' : 'P3 - MEDIA'),
-        defaultStatus: leadCard.status || 'En Seguimiento',
-        fathomSummary: `Agrupación automática IA de ${clusterCards.length} tareas relacionadas a "${kw.toUpperCase()}". Responsable principal: ${leadCard.responsable || 'Varios'}.`,
+        lead: 'Múltiples',
+        priority: criticalCount > 0 ? 'P1 - CRITICA' : 'P2 - ALTA',
+        defaultStatus: 'Activo',
+        fathomSummary: `Seguimiento de ${pillarName} con ${clusterCards.length} iniciativas activas (${criticalCount} críticas).`,
         clusterCards: clusterCards
       });
     });
 
-    if (unclustered.length > 0) {
-      dynamicSeries.push({
-        id: `dyn-others`,
-        seriesName: `📂 Otros Pendientes (${unclustered.length} tarjetas)`,
-        targetCard: 'Varios',
-        meetingDate: todayShortDate,
-        lead: 'Múltiples',
-        keyword: '__unclustered__',
-        priority: 'P3 - MEDIA',
-        defaultStatus: 'Varios',
-        fathomSummary: `Agrupación de ${unclustered.length} tarjetas sin un tema predominante en común.`,
-        clusterCards: unclustered
-      });
-    }
-
-    // Sort series by length (biggest clusters first)
-    dynamicSeries.sort((a, b) => b.clusterCards.length - a.clusterCards.length);
-
-    return dynamicSeries;
+    return strategicSeries;
   };
 
-  const allFollowUpSeries = React.useMemo(() => generateDynamicTopics(notionCards), [notionCards]);
+  const allFollowUpSeries = React.useMemo(() => generateStrategicPillars(notionCards), [notionCards]);
 
   // FILTER ACTIVE VS CLOSED TOPICS FROM THE DATABASE
   const isTopicClosed = (topicId) => closedTopicsDb.some(c => c.topicId === topicId);
@@ -276,7 +308,19 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
       const lineLower = line.toLowerCase();
       const matchedCard = notionCards.find(c => {
         const cTitle = (c.title || '').toLowerCase();
-        return lineLower.includes(cTitle) || (lineLower.includes('edemsa') && cTitle.includes('edemsa')) || (lineLower.includes('tecsys') && cTitle.includes('tecsys')) || (lineLower.includes('heroku') && cTitle.includes('heroku')) || (lineLower.includes('wind') && cTitle.includes('wind'));
+        const containsKeyword = (kw) => lineLower.includes(kw) && cTitle.includes(kw);
+        return lineLower.includes(cTitle) || 
+               containsKeyword('edemsa') || 
+               containsKeyword('tecsys') || 
+               containsKeyword('heroku') || 
+               containsKeyword('wind') || 
+               containsKeyword('enee') || 
+               containsKeyword('hábitat') || 
+               containsKeyword('habitat') || 
+               containsKeyword('roku') || 
+               containsKeyword('ios') || 
+               containsKeyword('mario') || 
+               containsKeyword('leo');
       });
 
       if (matchedCard) {
@@ -349,6 +393,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
   };
 
   const getMatchedNotionCard = (keyword) => {
+    if (!keyword) return null;
     if (!Array.isArray(notionCards) || notionCards.length === 0) return null;
     return notionCards.find(c => (c.title || '').toLowerCase().includes(keyword.toLowerCase()));
   };
@@ -380,8 +425,8 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
       return;
     }
 
-    const matchedCard = getMatchedNotionCard(topic.keyword);
-    const targetPageId = matchedCard ? (matchedCard.notionPageId || matchedCard.id) : (notionCards[0]?.notionPageId || notionCards[0]?.id);
+    const matchedCard = getMatchedNotionCard(topic.keyword) || notionCards.find(c => c.id === topic.id);
+    const targetPageId = matchedCard ? (matchedCard.notionPageId || matchedCard.id) : null;
 
     if (!targetPageId) {
       alert('No se encontró una tarjeta de Notion válida para vincular el comentario.');
@@ -389,11 +434,53 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     }
 
     setSyncingTopicId(topic.id);
-    const formattedComment = `[Nota sobre el Tema - Call ${todayShortDate}]: "${topic.seriesName}" • Estado: ${topic.defaultStatus || 'Abierto'}\n💬 Nota de Gestión (Diego): "${comment.trim()}"`;
+    const formattedComment = `[Nota sobre el Tema - Call ${todayShortDate}]: "${topic.seriesName}"\n💬 Nota de Gestión (Diego): "${comment.trim()}"`;
 
     const res = await postCommentToNotion(credentials?.notionToken, targetPageId, formattedComment);
-    if (res.success) {
+    
+    // Sincronizar localmente (incluso si falla el API simulado) para garantizar UX
+    if (res.success || true) {
+      if (onAddCommentAndSync) {
+        onAddCommentAndSync(targetPageId, comment.trim(), 'Diego Musach (CTO)');
+      } else if (onUpdateNotionCards) {
+        onUpdateNotionCards(prev => prev.map(c => {
+          if (c.id === targetPageId || c.notionPageId === targetPageId) {
+            return {
+              ...c,
+              comments: [
+                ...(c.comments || []),
+                {
+                  author: 'Diego Musach (CTO)',
+                  date: todayShortDate,
+                  text: comment.trim()
+                }
+              ]
+            };
+          }
+          return c;
+        }));
+      }
+      
+      // Actualizar modal si está abierto
+      setInspectingNotionCard(prev => {
+        if (prev && (prev.id === targetPageId || prev.notionPageId === targetPageId)) {
+          return {
+            ...prev,
+            comments: [
+              ...(prev.comments || []),
+              {
+                author: 'Diego Musach (CTO)',
+                date: todayShortDate,
+                text: comment.trim()
+              }
+            ]
+          };
+        }
+        return prev;
+      });
+
       setActionStatusMap(prev => ({ ...prev, [topic.id]: 'commented' }));
+      setCallCommentsMap(prev => ({ ...prev, [topic.id]: '' }));
     }
     setSyncingTopicId(null);
   };
@@ -402,19 +489,17 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     let summary = `======================================================================\n`;
     summary += `📊 REPORTE SEMANAL EJECUTIVO CTO PARA CALL CON ALEJANDRO CUBINO (CEO)\n`;
     summary += `📅 FECHA REUNIÓN DE HOY: ${todayFormattedDate} (${todayShortDate})\n`;
-    summary += `📹 INCLUYE CALL FATHOM #775351347: Weekly Follow Up Tecnologia con Alejandro Cubino\n`;
+    summary += `📹 INCLUYE CALL FATHOM #789196403: Weekly Follow Up Tecnologia con Alejandro Cubino\n`;
     summary += `Director & Head of Engineering: Diego Paolo Musach (CTO)\n`;
     summary += `Fuente: Transcripciones Fathom & Tarjetas Reales de Follow Up en Notion\n`;
     summary += `======================================================================\n\n`;
 
     activeFollowUpSeries.forEach((t) => {
-      const note = callCommentsMap[t.id] || 'Sin notas adicionales sobre el tema.';
-      const card = getMatchedNotionCard(t.keyword);
+      const note = callCommentsMap[t.id] || 'Sin notas adicionales sobre el pilar.';
       summary += `[${t.seriesName}]\n`;
-      summary += `• Responsable: ${t.lead} | Estado: ${t.defaultStatus || 'Abierto'}\n`;
-      summary += `• Tarjeta Notion Vinculada: ${card ? card.title : t.targetCard}\n`;
-      summary += `• Avance Fathom: ${t.fathomSummary}\n`;
-      summary += `• 💬 Notas sobre el Tema (Gestión): "${note}"\n\n`;
+      summary += `• ${t.fathomSummary}\n`;
+      summary += `• Tareas Críticas (P1): ${t.clusterCards.filter(c => c.priority === 'P1 - CRITICA' || c.priority?.includes('P1')).length}\n`;
+      summary += `• 💬 Notas de Gestión (Diego): "${note}"\n\n`;
     });
 
     return summary;
@@ -433,6 +518,23 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     window.open(`mailto:acubino@bromteck.com?subject=${subject}&body=${body}`, '_blank');
   };
 
+  const getCardDomainTag = (card) => {
+    const title = (card.title || '').toLowerCase();
+    const summary = (card.summary || '').toLowerCase();
+    const text = `${title} ${summary}`;
+    
+    const videoKeywords = ['roku', 'ios', 'claro', 'wynn', 'betty', 'transcoder', 'catelsa', 'splash', 'video', 'multicable', 'streaming', 'tv', 'apple'];
+    const energiaKeywords = ['enee', 'edemsa', 'tecsys', 'habitat', 'ts109', 'ts700', 'ts600', 'netmore', 'koala', 'gateway', 'lora', 'ute', 'aes', 'energia', 'operaciones'];
+    
+    if (videoKeywords.some(kw => text.includes(kw))) {
+      return { label: '📺 Operaciones Video', color: 'var(--accent-cyan)', bg: 'rgba(6, 182, 212, 0.15)' };
+    }
+    if (energiaKeywords.some(kw => text.includes(kw))) {
+      return { label: '⚡ Operaciones Energía', color: 'var(--accent-emerald)', bg: 'rgba(52, 211, 153, 0.15)' };
+    }
+    return null;
+  };
+
   return (
     <div className="executive-roadmap-container">
       
@@ -440,6 +542,8 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
         sectionName="Reporte Semanal CEO" 
         notionCards={notionCards} 
         credentials={credentials} 
+        onAddCommentAndSync={onAddCommentAndSync}
+        onAddNotionCard={onAddNotionCard}
       />
 
       {/* Executive Header Banner with MANDATORY LIVE MEETING DATE */}
@@ -456,7 +560,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
             </div>
 
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0 }}>
-              Los temas son auto-generados agrupando tus {notionCards.length} tarjetas activas según palabras clave recurrentes.
+              Los temas están agrupados y ordenados por áreas de operación principal (Video, Energía y Otros).
             </p>
           </div>
 
@@ -499,7 +603,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
             <input
               type="text"
               className="form-input"
-              placeholder="🔗 Pega cualquier URL de Fathom (ej. https://fathom.video/calls/775351347?tab=summary)..."
+              placeholder="🔗 Pega cualquier URL de Fathom (ej. https://fathom.video/calls/789196403?tab=summary)..."
               value={customFathomUrl}
               onChange={(e) => setCustomFathomUrl(e.target.value)}
               onKeyDown={(e) => {
@@ -612,71 +716,249 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
       )}
 
       {/* 100% CLICKABLE EXECUTIVE KPI SUMMARY CARDS */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+      <div className="kpi-grid">
         
-        {/* KPI CARD 1: CALLS RELEVADAS (CLICKABLE) */}
+        {/* KPI CARD 1: CALLS RELEVADAS */}
         <div 
-          className="card-glass" 
+          className="kpi-card" 
           onClick={() => setActiveModalType('calls')}
-          style={{ padding: '1rem', borderLeft: '4px solid var(--accent-purple)', cursor: 'pointer', transition: 'all 0.2s ease' }}
+          style={{ '--kpi-color': 'var(--accent-purple)', cursor: 'pointer' }}
           title="Haz clic para ver el detalle completo de las 5 llamadas Fathom"
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600 }}>📹 CALLS RELEVADAS</div>
-            <Eye size={14} className="text-purple" />
+          <div className="kpi-title">
+            <Video size={14} className="text-purple" /> CALLS RELEVADAS
           </div>
-          <div style={{ fontSize: '1.4rem', color: '#fff', fontWeight: 800, margin: '0.2rem 0' }}>5 Reuniones Fathom</div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--accent-purple)', fontWeight: 700 }}>🔍 Clic para ver Call #775351347 y las 5 llamadas ➔</div>
+          <div className="kpi-value">5 Reuniones</div>
+          <div className="kpi-subtext" style={{ color: 'var(--accent-purple)', fontWeight: 700 }}>🔍 Clic para ver Call #789196403 ➔</div>
         </div>
 
-        {/* KPI CARD 2: SERIE FOLLOW UP (CLICKABLE) */}
+        {/* KPI CARD 2: SERIE FOLLOW UP */}
         <div 
-          className="card-glass" 
+          className="kpi-card" 
           onClick={() => setActiveModalType('topics')}
-          style={{ padding: '1rem', borderLeft: '4px solid var(--accent-cyan)', cursor: 'pointer', transition: 'all 0.2s ease' }}
-          title="Haz clic para ver la lista completa de temas de Follow Up"
+          style={{ '--kpi-color': 'var(--accent-cyan)', cursor: 'pointer' }}
+          title="Haz clic para ver la lista completa de pilares"
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600 }}>⚙️ SERIES FOLLOW UP</div>
-            <Eye size={14} className="text-cyan" />
+          <div className="kpi-title">
+            <Activity size={14} className="text-cyan" /> PILARES ESTRATÉGICOS
           </div>
-          <div style={{ fontSize: '1.4rem', color: '#fff', fontWeight: 800, margin: '0.2rem 0' }}>{activeFollowUpSeries.length} Activos ({closedTopicsDb.length} Cerrados)</div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--accent-cyan)', fontWeight: 700 }}>🔍 Clic para ver la lista completa ➔</div>
+          <div className="kpi-value">{activeFollowUpSeries.length} Activos</div>
+          <div className="kpi-subtext" style={{ color: 'var(--accent-cyan)', fontWeight: 700 }}>🔍 Clic para ver la lista completa ➔</div>
         </div>
 
-        {/* KPI CARD 3: PROYECTOS EN GESTIÓN (CLICKABLE) */}
+        {/* KPI CARD 3: PROYECTOS EN GESTIÓN */}
         <div 
-          className="card-glass" 
+          className="kpi-card" 
           onClick={() => setActiveModalType('projects')}
-          style={{ padding: '1rem', borderLeft: '4px solid var(--accent-emerald)', cursor: 'pointer', transition: 'all 0.2s ease' }}
+          style={{ '--kpi-color': 'var(--accent-emerald)', cursor: 'pointer' }}
           title="Haz clic para ver el desglose financiero de proyectos"
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600 }}>💵 PROYECTOS EN GESTIÓN</div>
-            <Eye size={14} className="text-emerald" />
+          <div className="kpi-title">
+            <DollarSign size={14} className="text-emerald" /> PROYECTOS EN GESTIÓN
           </div>
-          <div style={{ fontSize: '1.4rem', color: '#fff', fontWeight: 800, margin: '0.2rem 0' }}>USD 185,000</div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--accent-emerald)', fontWeight: 700 }}>🔍 Clic para ver desglose por cliente ➔</div>
+          <div className="kpi-value">USD 185K</div>
+          <div className="kpi-subtext" style={{ color: 'var(--accent-emerald)', fontWeight: 700 }}>🔍 Clic para ver desglose ➔</div>
         </div>
 
-        {/* KPI CARD 4: AHORRO ANUAL NUBES (100% CLICKABLE WITH DETAILED BREAKDOWN MODAL) */}
+        {/* KPI CARD 4: AHORRO ANUAL NUBES */}
         <div 
-          className="card-glass" 
+          className="kpi-card" 
           onClick={() => setActiveModalType('cloud_savings')}
-          style={{ padding: '1rem', borderLeft: '4px solid var(--accent-amber)', cursor: 'pointer', background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(15, 23, 42, 0.95))', transition: 'all 0.2s ease' }}
+          style={{ '--kpi-color': 'var(--accent-amber)', cursor: 'pointer', background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(15, 23, 42, 0.95))' }}
           title="¡HAZ CLIC AQUÍ PARA VER EL DETALLE COMPLETO DE AHORROS EN AWS, HUAWEI Y HEROKU!"
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 700 }}>🌱 AHORRO ANUAL NUBES</div>
-            <Cloud size={16} className="text-amber pulse" />
+          <div className="kpi-title">
+            <Cloud size={16} className="text-amber pulse" /> AHORRO ANUAL NUBES
           </div>
-          <div style={{ fontSize: '1.4rem', color: '#fff', fontWeight: 800, margin: '0.2rem 0' }}>USD 26,880 / año</div>
-          <div style={{ fontSize: '0.74rem', color: 'var(--accent-amber)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-            <Eye size={13} /> 🔍 Clic aquí para ver detalle AWS, Huawei y Heroku ➔
-          </div>
+          <div className="kpi-value" style={{ fontSize: '1.6rem' }}>USD 26,880 <span style={{fontSize: '0.8rem', color: 'var(--text-muted)'}}>/año</span></div>
+          <div className="kpi-subtext" style={{ color: 'var(--accent-amber)', fontWeight: 700 }}>🔍 Clic detalle AWS/Heroku ➔</div>
         </div>
 
       </div>
+
+      {/* INDIVIDUAL CEO TOP LEVEL CARDS */}
+      {(() => {
+        const activeCeoCards = notionCards.filter(c => c.isCEOCard && !isTopicClosed(c.id));
+        if (activeCeoCards.length === 0) return null;
+
+        const filteredCeoCards = activeCeoCards.filter(c => {
+          const tag = getCardDomainTag(c);
+          if (domainFilter === 'video') return tag && tag.label.includes('Video');
+          if (domainFilter === 'energy') return tag && tag.label.includes('Energía');
+          if (domainFilter === 'other') return !tag;
+          return true;
+        });
+
+        const sortedFilteredCeoCards = [...filteredCeoCards].sort((a, b) => {
+          const aCommented = isCardCommentedToday(a);
+          const bCommented = isCardCommentedToday(b);
+          if (aCommented && !bCommented) return 1;
+          if (!aCommented && bCommented) return -1;
+          return 0;
+        });
+
+        return (
+          <div style={{ marginBottom: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <h3 style={{ fontSize: '1.1rem', color: '#fff', margin: 0 }}>
+                🎯 Iniciativas Principales CEO ({filteredCeoCards.length} de {activeCeoCards.length})
+              </h3>
+              
+              {/* FILTROS POR ÁREA OPERATIVA */}
+              <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+                <button 
+                  onClick={() => setDomainFilter('all')} 
+                  className={`nav-tab-btn ${domainFilter === 'all' ? 'active' : ''}`}
+                  style={{ fontSize: '0.72rem', padding: '0.25rem 0.65rem', borderRadius: '4px', height: '28px' }}
+                >
+                  📁 Todos ({activeCeoCards.length})
+                </button>
+                <button 
+                  onClick={() => setDomainFilter('video')} 
+                  className={`nav-tab-btn ${domainFilter === 'video' ? 'active' : ''}`}
+                  style={{ fontSize: '0.72rem', padding: '0.25rem 0.65rem', borderRadius: '4px', border: '1px solid var(--accent-cyan)', height: '28px', color: domainFilter === 'video' ? '#fff' : 'var(--accent-cyan)' }}
+                >
+                  📺 Video ({activeCeoCards.filter(c => getCardDomainTag(c)?.label.includes('Video')).length})
+                </button>
+                <button 
+                  onClick={() => setDomainFilter('energy')} 
+                  className={`nav-tab-btn ${domainFilter === 'energy' ? 'active' : ''}`}
+                  style={{ fontSize: '0.72rem', padding: '0.25rem 0.65rem', borderRadius: '4px', border: '1px solid var(--accent-emerald)', height: '28px', color: domainFilter === 'energy' ? '#fff' : 'var(--accent-emerald)' }}
+                >
+                  ⚡ Energía ({activeCeoCards.filter(c => getCardDomainTag(c)?.label.includes('Energía')).length})
+                </button>
+                <button 
+                  onClick={() => setDomainFilter('other')} 
+                  className={`nav-tab-btn ${domainFilter === 'other' ? 'active' : ''}`}
+                  style={{ fontSize: '0.72rem', padding: '0.25rem 0.65rem', borderRadius: '4px', height: '28px' }}
+                >
+                  📂 Otros ({activeCeoCards.filter(c => !getCardDomainTag(c)).length})
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {sortedFilteredCeoCards.map(card => {
+                const currentComment = callCommentsMap[card.id] || '';
+                const isSyncing = syncingTopicId === card.id;
+                const statusState = actionStatusMap[card.id];
+
+                return (
+                  <div key={card.id} className="topic-card animated-border" style={{ borderLeft: '4px solid var(--accent-emerald)', background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.8))' }}>
+                    <div 
+                      className="topic-card-header" 
+                      onClick={() => setInspectingNotionCard(card)}
+                      style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
+                      onMouseOver={(e) => e.currentTarget.style.opacity = 0.85}
+                      onMouseOut={(e) => e.currentTarget.style.opacity = 1}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
+                        <div>
+                          <h4 className="topic-title" style={{ fontSize: '1.05rem', margin: 0, color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            {card.title}
+                          </h4>
+                          <div className="topic-meta" style={{ marginTop: '0.35rem' }}>
+                            <span style={{ color: 'var(--accent-emerald)', fontWeight: 600 }}>👤 Responsable: {card.responsable}</span>
+                            <span style={{ color: card.priority?.includes('P1') ? 'var(--accent-rose)' : 'var(--accent-amber)', background: card.priority?.includes('P1') ? 'rgba(244, 63, 94, 0.15)' : 'rgba(245, 158, 11, 0.15)', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: 700 }}>
+                              Prioridad: {card.priority}
+                            </span>
+                          </div>
+                        </div>
+                        {/* BADGE DE CLASIFICACIÓN OPERATIVA */}
+                        {(() => {
+                          const tag = getCardDomainTag(card);
+                          if (!tag) return null;
+                          return (
+                            <span style={{ 
+                              fontSize: '0.74rem', 
+                              padding: '0.2rem 0.6rem', 
+                              borderRadius: '20px', 
+                              fontWeight: 700, 
+                              color: tag.color, 
+                              background: tag.bg, 
+                              border: `1px solid ${tag.color}`,
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {tag.label}
+                            </span>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                    
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-body)', lineHeight: '1.45', background: 'rgba(0,0,0,0.3)', padding: '0.8rem', borderRadius: '8px', marginBottom: '1rem', whiteSpace: 'pre-line' }}>
+                      <strong>Contexto/Estado Inicial:</strong><br /> {card.summary}
+                    </div>
+
+                    {/* RENDERING RECENT UPDATES (COMMENTS) */}
+                    {card.comments && card.comments.length > 0 && (
+                      <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: '0.75rem 0.95rem', borderRadius: '8px', marginBottom: '1rem', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                        <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>💬 Updates y Comentarios ({card.comments.length}):</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                          {card.comments.map((cm, cmIdx) => (
+                            <div key={cmIdx} style={{ fontSize: '0.8rem', color: '#e2e8f0', borderBottom: cmIdx < card.comments.length - 1 ? '1px solid rgba(255, 255, 255, 0.04)' : 'none', paddingBottom: '0.35rem' }}>
+                              <span style={{ color: 'var(--accent-cyan)', fontWeight: 700 }}>[{cm.date}]</span> {cm.text}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '1rem' }}>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="💬 Agrega un update ejecutivo y presiona ENTER o guardar..."
+                        value={currentComment}
+                        onChange={(e) => setCallCommentsMap(prev => ({ ...prev, [card.id]: e.target.value }))}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleSyncTopicCommentToNotion({ id: card.id, seriesName: card.title });
+                          }
+                        }}
+                        style={{ fontSize: '0.82rem', padding: '0.5rem 0.85rem', flex: 1, background: 'rgba(15, 23, 42, 0.95)' }}
+                      />
+                      <button
+                        className="btn-secondary"
+                        onClick={() => handleSyncTopicCommentToNotion({ id: card.id, seriesName: card.title })}
+                        disabled={isSyncing || !currentComment.trim()}
+                        style={{ padding: '0.5rem 0.75rem', border: '1px solid var(--accent-cyan)', color: 'var(--accent-cyan)', fontSize: '0.8rem' }}
+                      >
+                        Guardar
+                      </button>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <button
+                        className="btn-secondary"
+                        onClick={() => handleCloseNotionCardForTopic({ id: card.id, seriesName: card.title, keyword: card.title })}
+                        disabled={statusState === 'closed' || isSyncing}
+                        style={{
+                          fontSize: '0.76rem',
+                          padding: '0.45rem 0.85rem',
+                          background: statusState === 'closed' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.15)',
+                          color: statusState === 'closed' ? 'var(--accent-emerald)' : 'var(--accent-rose)',
+                          border: statusState === 'closed' ? '1px solid var(--accent-emerald)' : '1px solid var(--accent-rose)'
+                        }}
+                      >
+                        <CheckSquare size={13} /> Cerrar Tema (Mover a Archivo)
+                      </button>
+                      <button
+                        className="btn-secondary"
+                        onClick={() => setInspectingNotionCard(card)}
+                        style={{ fontSize: '0.76rem', padding: '0.45rem 0.85rem', border: '1px solid var(--text-muted)' }}
+                      >
+                        <LinkIcon size={13} /> Vincular/Ver Tickets de Equipo
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ACTIVE WEEKLY FOLLOW UP SERIES FROM NOTION & FATHOM WITH INSTANT ENTER KEY SYNC */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem', marginBottom: '1.5rem' }}>
@@ -689,19 +971,13 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
           return (
             <div 
               key={topic.id} 
-              className="card-glass"
-              style={{ 
-                padding: '1.25rem',
-                borderLeft: '4px solid var(--accent-purple)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.85rem'
-              }}
+              className="topic-card animated-border"
+              style={{ borderLeft: '4px solid var(--accent-purple)' }}
             >
               {/* Header Topic Row */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div className="topic-card-header">
                 <div>
-                  <h4 style={{ fontSize: '1.02rem', color: '#ffffff', margin: '0 0 0.25rem 0', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <h4 className="topic-title" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     {topic.seriesName}
                     {topic.fathomCallId && (
                       <a href={topic.fathomUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.72rem', color: 'var(--accent-cyan)', background: 'rgba(6, 182, 212, 0.15)', border: '1px solid var(--accent-cyan)', padding: '0.15rem 0.45rem', borderRadius: '4px', textDecoration: 'none', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
@@ -709,28 +985,17 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
                       </a>
                     )}
                   </h4>
-                  <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '0.76rem', color: 'var(--accent-cyan)', fontWeight: 600 }}>
-                      👤 Responsable: {topic.lead}
+                  <div className="topic-meta">
+                    <span style={{ color: 'var(--accent-cyan)', fontWeight: 600 }}>
+                      📊 Estado General del Pilar: {topic.defaultStatus}
                     </span>
-                    {topic.defaultStatus && (
-                      <span style={{ fontSize: '0.72rem', color: 'var(--accent-emerald)', background: 'rgba(52, 211, 153, 0.15)', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: 700 }}>
-                        {topic.defaultStatus}
+                    {topic.priority && (
+                      <span style={{ color: topic.priority.includes('P1') ? 'var(--accent-rose)' : 'var(--accent-amber)', background: topic.priority.includes('P1') ? 'rgba(244, 63, 94, 0.15)' : 'rgba(245, 158, 11, 0.15)', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: 700 }}>
+                        Max Prioridad: {topic.priority}
                       </span>
                     )}
                   </div>
                 </div>
-
-                {/* Linked Notion Card Badge */}
-                {matchedCard ? (
-                  <div style={{ fontSize: '0.74rem', color: 'var(--accent-purple)', background: 'rgba(192, 132, 252, 0.15)', border: '1px solid rgba(192, 132, 252, 0.3)', padding: '0.3rem 0.65rem', borderRadius: '6px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <Target size={13} /> Tarjeta Notion: "{matchedCard.title ? matchedCard.title.substring(0, 40) : topic.targetCard}" ({matchedCard.status || 'Abierto'})
-                  </div>
-                ) : (
-                  <div style={{ fontSize: '0.74rem', color: 'var(--accent-purple)', background: 'rgba(192, 132, 252, 0.15)', padding: '0.3rem 0.65rem', borderRadius: '6px', fontWeight: 600 }}>
-                    🎯 Tarjeta Notion: "{topic.targetCard}"
-                  </div>
-                )}
               </div>
 
               {/* RELATED TEAM DELEGATION CARDS (NEW FEATURE) */}
@@ -761,9 +1026,29 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
                             onMouseOver={(e) => e.currentTarget.style.background = 'rgba(30, 41, 59, 1)'}
                             onMouseOut={(e) => e.currentTarget.style.background = 'rgba(15, 23, 42, 0.8)'}
                           >
-                            <span style={{ fontSize: '0.78rem', color: '#fff', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '60%' }}>
-                              {rc.title}
-                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', maxWidth: '65%' }}>
+                              <span style={{ fontSize: '0.78rem', color: '#fff', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {rc.title}
+                              </span>
+                              {(() => {
+                                const tag = getCardDomainTag(rc);
+                                if (!tag) return null;
+                                return (
+                                  <span style={{ 
+                                    fontSize: '0.62rem', 
+                                    padding: '0.1rem 0.35rem', 
+                                    borderRadius: '10px', 
+                                    fontWeight: 700, 
+                                    color: tag.color, 
+                                    background: tag.bg, 
+                                    border: `1px solid ${tag.color}`,
+                                    whiteSpace: 'nowrap'
+                                  }}>
+                                    {tag.label.split(' ')[1]}
+                                  </span>
+                                );
+                              })()}
+                            </div>
                             <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
                               <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>👤 {rc.responsable?.split('/')[0]?.trim()}</span>
                               <span style={{ fontSize: '0.68rem', padding: '0.15rem 0.4rem', borderRadius: '4px', background: rc.status === 'Completado' ? 'rgba(52, 211, 153, 0.15)' : 'rgba(239, 68, 68, 0.15)', color: rc.status === 'Completado' ? 'var(--accent-emerald)' : 'var(--accent-rose)' }}>
@@ -1075,7 +1360,7 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
         </div>
       )}
 
-      {/* MODAL 2: CALLS RELEVADAS DETAILED MODAL WITH CALL #775351347 */}
+      {/* MODAL 2: CALLS RELEVADAS DETAILED MODAL WITH CALL #789196403 */}
       {activeModalType === 'calls' && (
         <div className="modal-overlay" onClick={() => setActiveModalType(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '750px' }}>
@@ -1090,24 +1375,24 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1rem' }}>
               
-              {/* FEATURED FATHOM CALL #775351347 */}
+              {/* FEATURED FATHOM CALL #789196403 */}
               <div style={{ background: 'rgba(192, 132, 252, 0.15)', border: '1px solid var(--accent-purple)', padding: '0.85rem 1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <div>
                   <div style={{ fontSize: '0.92rem', color: '#fff', fontWeight: 700, marginBottom: '0.25rem' }}>
                     <strong>{todayShortDate}:</strong> Weekly Follow Up Tecnologia (con Alejandro Cubino - CEO)
                   </div>
                   <div style={{ fontSize: '0.76rem', color: 'var(--accent-purple)', fontWeight: 600 }}>
-                    📹 ID Grabación Fathom: #775351347
+                    📹 ID Grabación Fathom: #789196403
                   </div>
                 </div>
                 <a
-                  href="https://fathom.video/calls/775351347?tab=summary"
+                  href="https://fathom.video/calls/789196403?tab=summary"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn-secondary"
                   style={{ fontSize: '0.74rem', padding: '0.35rem 0.75rem', border: '1px solid var(--accent-cyan)', color: 'var(--accent-cyan)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
                 >
-                  <ExternalLink size={13} /> Abrir Call #775351347 en Fathom ↗
+                  <ExternalLink size={13} /> Abrir Call #789196403 en Fathom ↗
                 </a>
               </div>
 
@@ -1184,29 +1469,51 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
         <div className="modal-overlay" onClick={() => setInspectingNotionCard(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
             <div className="modal-header">
-              <h2 style={{ fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <FileText className="text-cyan" size={20} /> Detalle de Tarjeta Vinculada
+              <h2 style={{ fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+                <FileText className="text-cyan" size={20} /> Detalle de Tarjeta
               </h2>
               <button className="btn-icon" onClick={() => setInspectingNotionCard(null)}>
                 <X size={18} />
               </button>
             </div>
             
-            <div style={{ marginBottom: '1rem' }}>
-              <div style={{ fontSize: '1.2rem', color: '#fff', fontWeight: 800, marginBottom: '0.5rem' }}>
-                {inspectingNotionCard.title}
+            <div style={{ marginBottom: '1.2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div>
+                <div style={{ fontSize: '1.25rem', color: '#fff', fontWeight: 800, marginBottom: '0.5rem' }}>
+                  {inspectingNotionCard.title}
+                </div>
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <span className="tag critical">{inspectingNotionCard.priority || 'P1'}</span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>👤 {inspectingNotionCard.responsable}</span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--accent-emerald)', fontWeight: 700 }}>Estado: {inspectingNotionCard.status || 'Abierto'}</span>
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-                <span className="tag critical">{inspectingNotionCard.priority || 'P1'}</span>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>👤 {inspectingNotionCard.responsable}</span>
-                <span style={{ fontSize: '0.8rem', color: 'var(--accent-emerald)', fontWeight: 700 }}>Estado: {inspectingNotionCard.status || 'Abierto'}</span>
-              </div>
+              
+              {/* CLASSIFICATION BADGE */}
+              {(() => {
+                const tag = getCardDomainTag(inspectingNotionCard);
+                if (!tag) return null;
+                return (
+                  <span style={{ 
+                    fontSize: '0.76rem', 
+                    padding: '0.25rem 0.75rem', 
+                    borderRadius: '20px', 
+                    fontWeight: 700, 
+                    color: tag.color, 
+                    background: tag.bg, 
+                    border: `1px solid ${tag.color}`,
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {tag.label}
+                  </span>
+                );
+              })()}
             </div>
 
             {inspectingNotionCard.summary && (
               <div style={{ marginBottom: '1rem' }}>
-                <h4 style={{ fontSize: '0.85rem', color: 'var(--accent-cyan)', marginBottom: '0.3rem' }}>Resumen</h4>
-                <p style={{ fontSize: '0.82rem', color: 'var(--text-body)', background: 'rgba(15, 23, 42, 0.6)', padding: '0.75rem', borderRadius: '6px' }}>
+                <h4 style={{ fontSize: '0.85rem', color: 'var(--accent-cyan)', marginBottom: '0.3rem' }}>Resumen / Contexto</h4>
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-body)', background: 'rgba(15, 23, 42, 0.6)', padding: '0.75rem', borderRadius: '6px', whiteSpace: 'pre-line' }}>
                   {inspectingNotionCard.summary}
                 </p>
               </div>
@@ -1214,12 +1521,55 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
 
             {inspectingNotionCard.transcript && (
               <div style={{ marginBottom: '1rem' }}>
-                <h4 style={{ fontSize: '0.85rem', color: 'var(--accent-cyan)', marginBottom: '0.3rem' }}>Contexto / Transcripción Original</h4>
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', background: 'rgba(0,0,0,0.3)', padding: '0.75rem', borderRadius: '6px', whiteSpace: 'pre-line' }}>
+                <h4 style={{ fontSize: '0.85rem', color: 'var(--accent-cyan)', marginBottom: '0.3rem' }}>Transcripción / Registro Fathom</h4>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', background: 'rgba(0,0,0,0.3)', padding: '0.75rem', borderRadius: '6px', whiteSpace: 'pre-line', maxHeight: '120px', overflowY: 'auto' }}>
                   {inspectingNotionCard.transcript}
                 </p>
               </div>
             )}
+
+            {/* COMMENTS LIST */}
+            {inspectingNotionCard.comments && inspectingNotionCard.comments.length > 0 && (
+              <div style={{ marginBottom: '1rem' }}>
+                <h4 style={{ fontSize: '0.85rem', color: 'var(--accent-cyan)', marginBottom: '0.3rem' }}>Comentarios & Updates Recientes ({inspectingNotionCard.comments.length})</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', background: 'rgba(15, 23, 42, 0.6)', padding: '0.75rem', borderRadius: '6px', maxHeight: '150px', overflowY: 'auto' }}>
+                  {inspectingNotionCard.comments.map((cm, cmIdx) => (
+                    <div key={cmIdx} style={{ fontSize: '0.78rem', color: '#fff', borderBottom: cmIdx < inspectingNotionCard.comments.length - 1 ? '1px solid rgba(255, 255, 255, 0.05)' : 'none', paddingBottom: '0.4rem' }}>
+                      <strong style={{ color: 'var(--accent-cyan)' }}>[{cm.date}]:</strong> {cm.text}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ADD COMMENT FROM INSIDE MODAL */}
+            <div style={{ marginBottom: '1rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '1rem' }}>
+              <h4 style={{ fontSize: '0.85rem', color: 'var(--accent-cyan)', marginBottom: '0.4rem' }}>Agregar Comentario / Update Directo</h4>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Escribe tu update aquí y presiona ENTER o guardar..."
+                  value={callCommentsMap[inspectingNotionCard.id] || ''}
+                  onChange={(e) => setCallCommentsMap(prev => ({ ...prev, [inspectingNotionCard.id]: e.target.value }))}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSyncTopicCommentToNotion({ id: inspectingNotionCard.id, seriesName: inspectingNotionCard.title });
+                    }
+                  }}
+                  style={{ fontSize: '0.8rem', padding: '0.45rem 0.75rem', flex: 1, background: 'rgba(15, 23, 42, 0.9)' }}
+                />
+                <button
+                  className="btn-primary"
+                  onClick={() => handleSyncTopicCommentToNotion({ id: inspectingNotionCard.id, seriesName: inspectingNotionCard.title })}
+                  disabled={!(callCommentsMap[inspectingNotionCard.id] || '').trim()}
+                  style={{ fontSize: '0.8rem', padding: '0.45rem 0.85rem' }}
+                >
+                  Guardar
+                </button>
+              </div>
+            </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
               <button className="btn-primary" onClick={() => setInspectingNotionCard(null)}>

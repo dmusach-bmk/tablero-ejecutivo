@@ -1,8 +1,8 @@
 import React from 'react';
-import { AlertCircle, ArrowUpRight, CheckCircle2, Clock, ShieldAlert, Zap, TrendingUp, Users, Cpu, FileSpreadsheet, Crown, Bot, Award, Calendar } from 'lucide-react';
+import { AlertCircle, ArrowUpRight, CheckCircle2, Clock, ShieldAlert, Zap, TrendingUp, Users, Cpu, FileSpreadsheet, Crown, Bot, Award, Calendar, FileText } from 'lucide-react';
 import GlobalAiInbox from './GlobalAiInbox';
 
-export default function Overview({ notionCards, excelData, teamTracking, onNavigate, onOpenDeadlineModal, credentials, searchQuery }) {
+export default function Overview({ notionCards, excelData, teamTracking, onNavigate, onOpenDeadlineModal, credentials, searchQuery, onAddCommentAndSync, onAddNotionCard }) {
   const [filteredCards, setFilteredCards] = React.useState(notionCards);
 
   React.useEffect(() => {
@@ -35,6 +35,8 @@ export default function Overview({ notionCards, excelData, teamTracking, onNavig
         sectionName="Vista General (Overview)" 
         notionCards={notionCards} 
         credentials={credentials} 
+        onAddCommentAndSync={onAddCommentAndSync}
+        onAddNotionCard={onAddNotionCard}
       />
 
       {/* Executive Quick Access Hub Banners */}
@@ -57,8 +59,11 @@ export default function Overview({ notionCards, excelData, teamTracking, onNavig
             <button className="btn-primary" onClick={() => onNavigate('followup')} style={{ background: 'linear-gradient(135deg, var(--accent-rose), var(--accent-amber))', padding: '0.55rem 1rem', fontSize: '0.82rem' }}>
               <AlertCircle size={15} /> 🚨 Follow Up Hoy
             </button>
+            <button className="btn-primary" onClick={() => onNavigate('roadmap_report')} style={{ background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan))', padding: '0.55rem 1rem', fontSize: '0.82rem' }}>
+              <FileText size={15} /> 📊 Reporte CEO
+            </button>
             <button className="btn-primary" onClick={() => onNavigate('asesor')} style={{ background: 'linear-gradient(135deg, var(--accent-cyan), var(--accent-blue))', padding: '0.55rem 1rem', fontSize: '0.82rem' }}>
-              <Bot size={15} /> 🧠 ASESOR EJECUTIVO
+              <Bot size={15} /> 🧠 ASESOR
             </button>
             <button className="btn-secondary" onClick={() => onNavigate('scorecards')} style={{ padding: '0.55rem 1rem', fontSize: '0.82rem' }}>
               <Award size={15} /> 📊 Scorecards

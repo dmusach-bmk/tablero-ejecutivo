@@ -26,6 +26,7 @@ import LlamadosEjecutivos from './components/LlamadosEjecutivos';
 
 import { REAL_NOTION_CARDS, REAL_TEAM_TRACKING } from './realNotionData';
 import { INITIAL_EXCEL_DATA } from './mockData';
+import { extractDateFromText } from './utils/dateParser';
 
 export default function App() {
   const getTabFromHash = () => {
@@ -41,32 +42,50 @@ export default function App() {
   
   // Use REAL_NOTION_CARDS from Notion API
   const [notionCards, setNotionCards] = useState(() => {
-    const saved = localStorage.getItem('dm_notion_cards_v5');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (parsed.length >= 160 && parsed[0].notionPageId) return parsed;
+    try {
+      const saved = localStorage.getItem('dm_notion_cards_v10');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.length >= 160 && parsed[0].notionPageId) return parsed;
+      }
+    } catch (e) {
+      console.error('Error loading notion cards:', e);
     }
     return REAL_NOTION_CARDS;
   });
 
   const [excelData, setExcelData] = useState(() => {
-    const saved = localStorage.getItem('dm_excel_data');
-    return saved ? JSON.parse(saved) : INITIAL_EXCEL_DATA;
+    try {
+      const saved = localStorage.getItem('dm_excel_data');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error('Error parsing excelData:', e);
+    }
+    return INITIAL_EXCEL_DATA;
   });
 
   // Use REAL_TEAM_TRACKING with 375 real Notion comments + valid notionPageId bound
   const [teamTracking, setTeamTracking] = useState(() => {
-    const saved = localStorage.getItem('dm_team_tracking_v5');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (parsed.length >= 10 && parsed[0].topics[0]?.notionPageId) return parsed;
+    try {
+      const saved = localStorage.getItem('dm_team_tracking_v6');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.length >= 10 && parsed[0].topics && parsed[0].topics[0]?.notionPageId) return parsed;
+      }
+    } catch (e) {
+      console.error('Error parsing teamTracking:', e);
     }
     return REAL_TEAM_TRACKING;
   });
 
   const [credentials, setCredentials] = useState(() => {
-    const saved = localStorage.getItem('dm_credentials');
-    return saved ? JSON.parse(saved) : {};
+    try {
+      const saved = localStorage.getItem('dm_credentials');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error('Error parsing credentials:', e);
+    }
+    return {};
   });
 
   const [isDeadlineModalOpen, setIsDeadlineModalOpen] = useState(false);
@@ -95,7 +114,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('dm_notion_cards_v5', JSON.stringify(notionCards));
+    localStorage.setItem('dm_notion_cards_v10', JSON.stringify(notionCards));
   }, [notionCards]);
 
   useEffect(() => {
@@ -103,7 +122,7 @@ export default function App() {
   }, [excelData]);
 
   useEffect(() => {
-    localStorage.setItem('dm_team_tracking_v5', JSON.stringify(teamTracking));
+    localStorage.setItem('dm_team_tracking_v6', JSON.stringify(teamTracking));
   }, [teamTracking]);
 
   useEffect(() => {
@@ -146,6 +165,189 @@ export default function App() {
     setIsDeadlineModalOpen(true);
   };
 
+  const handleAddCommentAndSync = (cardId, commentText, author = 'Diego Musach (CTO)') => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    
+    // Parse reassignment from comment
+    const parseReassignment = (text) => {
+      const t = text.toLowerCase();
+      const membersMap = [
+        { key: 'mario', id: 'mem-1', name: 'Mario Maqueda', title: 'Mario Maqueda', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80' },
+        { key: 'camilo', id: 'mem-2', name: 'Camilo Uribe', title: 'Camilo Uribe', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=80&q=80' },
+        { key: 'leo', id: 'mem-3', name: 'Leonard Amaya', title: 'Leo', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80' },
+        { key: 'leonard', id: 'mem-3', name: 'Leonard Amaya', title: 'Leo', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80' },
+        { key: 'joseph', id: 'mem-4', name: 'Joseph Valer', title: 'Joseph', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=80&q=80' },
+        { key: 'fabricio', id: 'mem-5', name: 'Fabricio Jose Nieva', title: 'Fabricio Nieva', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=80&q=80' },
+        { key: 'enrique', id: 'mem-6', name: 'Enrique Bevilacqua', title: 'Enrique', avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=80&q=80' },
+        { key: 'rodolfo', id: 'mem-7', name: 'Rodolfo', title: 'Rodolfo', avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=80&q=80' },
+        { key: 'diego', id: 'mem-8', name: 'Diego Musach (CTO)', title: 'Diego Musach (CTO)', avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=80&q=80' }
+      ];
+
+      for (const mem of membersMap) {
+        const patterns = [
+          new RegExp(`pasar(?:la)?\\s+a\\s+${mem.key}`),
+          new RegExp(`pas(?:a|ala)?\\s+a\\s+${mem.key}`),
+          new RegExp(`asignar(?:la)?\\s+a\\s+${mem.key}`),
+          new RegExp(`se\\s+la\\s+paso\\s+a\\s+${mem.key}`),
+          new RegExp(`que\\s+(?:la|lo)\\s+haga\\s+${mem.key}`),
+          new RegExp(`responsable\\s+${mem.key}`)
+        ];
+
+        if (patterns.some(regex => regex.test(t))) {
+          return mem;
+        }
+      }
+      return null;
+    };
+
+    const targetMember = parseReassignment(commentText);
+    const extractedDeadline = extractDateFromText(commentText.trim());
+
+    // Update notionCards
+    setNotionCards(prev => prev.map(c => {
+      if (c.id === cardId || c.notionPageId === cardId || c.notionId === cardId) {
+        const updatedComments = [
+          ...(c.comments || []),
+          { author, date: todayStr, text: commentText.trim() }
+        ];
+        
+        const updatedObj = {
+          ...c,
+          comments: updatedComments
+        };
+
+        if (targetMember) {
+          updatedObj.responsable = targetMember.name;
+          updatedObj.assignedTo = targetMember.name;
+        }
+        if (extractedDeadline) {
+          updatedObj.deadline = extractedDeadline;
+        }
+
+        return updatedObj;
+      }
+      return c;
+    }));
+
+    // Update teamTracking
+    setTeamTracking(prev => {
+      let targetCardData = null;
+      let oldMemberId = null;
+
+      for (const mem of prev) {
+        const found = (mem.topics || []).find(t => t.id === cardId || t.notionPageId === cardId || t.notionId === cardId);
+        if (found) {
+          targetCardData = { ...found };
+          oldMemberId = mem.id;
+          break;
+        }
+      }
+
+      if (!targetCardData) {
+        // If not found in teamTracking, it could be a newly created card or a CEO card not yet in team list.
+        // We find it in notionCards
+        const notionCard = notionCards.find(c => c.id === cardId || c.notionPageId === cardId || c.notionId === cardId);
+        if (notionCard) {
+          targetCardData = {
+            id: notionCard.id,
+            notionPageId: notionCard.notionPageId || notionCard.id,
+            title: notionCard.title,
+            priority: notionCard.priority || 'P2 - ALTA',
+            status: notionCard.status || 'Abierto',
+            responsable: notionCard.responsable,
+            assignedTo: notionCard.assignedTo,
+            comments: [],
+            log: notionCard.summary || ''
+          };
+          // Try to assign it to whoever is responsible
+          const respName = notionCard.responsable.toLowerCase();
+          const foundMem = prev.find(m => respName.includes(m.name.split(' ')[0].toLowerCase()));
+          oldMemberId = foundMem ? foundMem.id : 'mem-8'; // Diego as default
+        } else {
+          return prev;
+        }
+      }
+
+      const updatedComments = [
+        ...(targetCardData.comments || []),
+        { author, date: todayStr, text: commentText.trim() }
+      ];
+
+      // If reassignment is requested and it's to a different member
+      if (targetMember && oldMemberId !== targetMember.id) {
+        return prev.map(mem => {
+          // Remove from old member
+          if (mem.id === oldMemberId) {
+            return {
+              ...mem,
+              topics: (mem.topics || []).filter(t => t.id !== cardId && t.notionPageId !== cardId && t.notionId !== cardId)
+            };
+          }
+          // Add to new member
+          if (mem.id === targetMember.id) {
+            const newTopic = {
+              ...targetCardData,
+              comments: updatedComments,
+              memberName: targetMember.name,
+              memberId: targetMember.id,
+              memberAvatar: targetMember.avatar,
+              responsable: targetMember.name,
+              assignedTo: targetMember.name
+            };
+            if (extractedDeadline) {
+              newTopic.deadline = extractedDeadline;
+            }
+            return {
+              ...mem,
+              topics: [...(mem.topics || []).filter(t => t.id !== cardId), newTopic]
+            };
+          }
+          return mem;
+        });
+      }
+
+      // Standard comment update (no reassignment)
+      return prev.map(mem => {
+        if (mem.id === oldMemberId) {
+          // Check if card is already in this member's list
+          const hasCard = (mem.topics || []).some(t => t.id === cardId || t.notionPageId === cardId || t.notionId === cardId);
+          if (hasCard) {
+            return {
+              ...mem,
+              topics: (mem.topics || []).map(t => {
+                if (t.id === cardId || t.notionPageId === cardId || t.notionId === cardId) {
+                  const updatedT = { ...t, comments: updatedComments };
+                  if (extractedDeadline) {
+                    updatedT.deadline = extractedDeadline;
+                  }
+                  return updatedT;
+                }
+                return t;
+              })
+            };
+          } else {
+            // Append if not there
+            const newTopic = {
+              ...targetCardData,
+              comments: updatedComments,
+              memberName: mem.name,
+              memberId: mem.id,
+              memberAvatar: mem.avatar
+            };
+            if (extractedDeadline) {
+              newTopic.deadline = extractedDeadline;
+            }
+            return {
+              ...mem,
+              topics: [...(mem.topics || []), newTopic]
+            };
+          }
+        }
+        return mem;
+      });
+    });
+  };
+
   return (
     <div className="app-container">
       <Navbar
@@ -165,6 +367,7 @@ export default function App() {
             onOpenDeadlineModal={() => setIsDeadlineModalOpen(true)}
             credentials={credentials}
             searchQuery={searchQuery}
+            onAddCommentAndSync={handleAddCommentAndSync}
           />
         )}
 
@@ -195,6 +398,8 @@ export default function App() {
             onUpdateTeamTracking={setTeamTracking}
             onOpenEmailWithAgenda={handleOpenEmailWithAgenda}
             onNavigate={handleTabChange}
+            onAddCommentAndSync={handleAddCommentAndSync}
+            onAddNotionCard={(newCard) => setNotionCards(prev => [newCard, ...prev])}
           />
         )}
 
@@ -243,6 +448,9 @@ export default function App() {
           <ExecutiveRoadmapAndReport
             teamTracking={teamTracking}
             notionCards={notionCards}
+            onUpdateNotionCards={setNotionCards}
+            onAddCommentAndSync={handleAddCommentAndSync}
+            onAddNotionCard={(newCard) => setNotionCards(prev => [newCard, ...prev])}
           />
         )}
 

@@ -151,6 +151,14 @@ export async function fetchFathomMeetings(apiKey) {
   // Sample data fallback for historical Follow Up Tecnologia meetings from Enero 2026 to present
   const sampleFollowUps = [
     {
+      id: '789196403',
+      title: 'Weekly Follow Up Tecnologia - Grabación de Hoy (789196403)',
+      date: '2026-08-18',
+      createdAtISO: '2026-08-18T10:30:00Z',
+      text: `=== RESUMEN FATHOM: "Weekly Follow Up Tecnologia - Grabación de Hoy (789196403)" ===\n📅 Fecha: 2026-08-18 (Seguimiento de Tecnología y Energía)\n\nResumen Directivo de la Sesión:\n• Apertura Store Roku: Diego Musach dará seguimiento a la Etapa 2 (10Foot) en septiembre (Leo) y la apertura de la tienda.\n• Versiones 3.0/4.0: Diego habilitará la opción para comentar/guardar drafts de notas y comentarios.\n• ENEE Gateways: Confirmación física de las ubicaciones de Gateways pendientes con el cliente de Honduras.\n• Edemsa Mendoza: Seguimiento técnico urgente del informe solicitado de pérdidas (YA).\n• Hábitat NMS: Instalar para DEPC en cuanto esté operativo usando el hardware TS600.\n• TS100 Energía: Integración con AES y Afinia, más actualizaciones en Bromteck.\n• Desafío Mario Maqueda: Diego Musach define plan diario de seguimiento ante la falta de ideas del backend.\n• WIND TV Fase 1: Asignado a Joseph para configurar la grilla definitiva de forma URGENTE.`,
+      categoryTag: '💻 Follow Up Tecnología'
+    },
+    {
       id: '781102602',
       title: 'Technology Follow Up - Catelsa & Recursos Video (781102602)',
       date: '2026-08-12',
