@@ -359,9 +359,21 @@ export default function App() {
     const targetMember = getDropdownMember() || parseReassignment(commentText);
     const extractedDeadline = extractDateFromText(commentText.trim());
 
+    // Resolve the real notionPageId from teamTracking to match dynamically against notionCards
+    let resolvedNotionPageId = null;
+    for (const mem of teamTracking) {
+      const found = (mem.topics || []).find(t => t.id === cardId || t.notionPageId === cardId || t.notionId === cardId);
+      if (found) {
+        resolvedNotionPageId = found.notionPageId || found.notionId;
+        break;
+      }
+    }
+
     // Update notionCards
     setNotionCards(prev => prev.map(c => {
-      if (c.id === cardId || c.notionPageId === cardId || c.notionId === cardId) {
+      const isMatch = c.id === cardId || c.notionPageId === cardId || c.notionId === cardId ||
+                      (resolvedNotionPageId && (c.id === resolvedNotionPageId || c.notionPageId === resolvedNotionPageId || c.notionId === resolvedNotionPageId));
+      if (isMatch) {
         const updatedComments = [
           ...(c.comments || []),
           { author, date: todayStr, text: commentText.trim() }

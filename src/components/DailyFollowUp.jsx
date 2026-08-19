@@ -142,16 +142,29 @@ export default function DailyFollowUp({ teamTracking, notionCards = [], credenti
       
       const currentStatus = cardStatusMap[t.id] || matchingNotion?.status || t.status || 'Abierto';
       
-      // Merge comments from local storage, memory map and notionCards list
-      const baseComments = matchingNotion?.comments || t.comments || [];
-      const localComments = localCommentsMap[t.id] || [];
-      const combinedComments = [...baseComments];
-      localComments.forEach(lc => {
+      // Merge comments from:
+      // 1. Notion cards (matchingNotion?.comments)
+      // 2. Local storage topics (t.comments)
+      // 3. Current session memory map (localCommentsMap[t.id])
+      const notionC = matchingNotion?.comments || [];
+      const localT = t.comments || [];
+      const sessionC = localCommentsMap[t.id] || [];
+      
+      const combinedComments = [...notionC];
+      
+      localT.forEach(lc => {
         if (!combinedComments.some(bc => bc.text.trim() === lc.text.trim())) {
           combinedComments.push(lc);
         }
       });
-      combinedComments.sort((a, b) => a.date.localeCompare(b.date));
+      
+      sessionC.forEach(sc => {
+        if (!combinedComments.some(bc => bc.text.trim() === sc.text.trim())) {
+          combinedComments.push(sc);
+        }
+      });
+      
+      combinedComments.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 
       allCardsCross.push({
         ...t,
