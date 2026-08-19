@@ -176,12 +176,16 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
     const rawTasks = splitNoteIntoTasks(note);
 
     const analyzeSubTask = (subTaskText) => {
-      const stopWords = new Set(['el', 'la', 'los', 'las', 'un', 'una', 'con', 'para', 'por', 'sobre', 'decir', 'hacer']);
+      const stopWords = new Set([
+        'el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas', 
+        'con', 'para', 'por', 'sobre', 'decir', 'hacer',
+        'de', 'en', 'y', 'o', 'a', 'al', 'del', 'se', 'es', 'su', 'sus'
+      ]);
       // Normalizing common typos to improve keyword matching accuracy
       const normalizedText = subTaskText.toLowerCase()
         .replace(/teelcable/g, 'telecable')
         .replace(/certicaion/g, 'certificacion');
-      const tokens = normalizedText.match(/[a-záéíóúñ]{4,}/g) || [];
+      const tokens = normalizedText.match(/[a-z0-9áéíóúñ]{2,}/g) || [];
       const keywords = tokens.filter(w => !stopWords.has(w));
 
       let bestMatch = null;
@@ -189,7 +193,9 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
 
       notionCards.forEach(card => {
         let score = 0;
-        const targetText = ((card.title || '') + ' ' + (card.summary || '') + ' ' + (card.responsable || '')).toLowerCase();
+        const targetText = ((card.title || '') + ' ' + (card.summary || '') + ' ' + (card.responsable || '')).toLowerCase()
+          .replace(/teelcable/g, 'telecable')
+          .replace(/certicaion/g, 'certificacion');
         keywords.forEach(kw => {
           if (targetText.includes(kw)) score += 1;
         });
@@ -203,7 +209,7 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
       const suggestedAddToDailyFollowUp = suggestedAssignee !== 'Diego Musach (CTO)';
       const suggestedAddToCeoReport = /ceo|roadmap|pillar|reunion|reunión|informe|reporte/i.test(subTaskText);
 
-      // We require at least 2 keyword matches for a confident card matching
+      // We require at least 2 keyword matches for a confident card matching OR 1 match if it is highly specific like 'telecable' in card title
       const hasConfidentMatch = bestMatch && (maxScore >= 2 || (maxScore === 1 && keywords.some(kw => (bestMatch.title || '').toLowerCase().includes(kw))));
 
       if (bestMatch && hasConfidentMatch) {
