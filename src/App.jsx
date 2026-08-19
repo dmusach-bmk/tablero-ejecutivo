@@ -196,7 +196,7 @@ export default function App() {
     setIsDeadlineModalOpen(true);
   };
 
-  const handleAddCommentAndSync = (cardId, commentText, author = 'Diego Musach (CTO)') => {
+  const handleAddCommentAndSync = (cardId, commentText, author = 'Diego Musach (CTO)', extraUpdates = {}) => {
     const todayStr = new Date().toISOString().split('T')[0];
     
     // Parse reassignment from comment
@@ -244,6 +244,7 @@ export default function App() {
         
         const updatedObj = {
           ...c,
+          ...extraUpdates,
           comments: updatedComments
         };
 

@@ -21,6 +21,7 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
   });
   const [sendEmailCopy, setSendEmailCopy] = useState(false);
   const [newEmailInput, setNewEmailInput] = useState('');
+  const [addToCeoReport, setAddToCeoReport] = useState(false);
 
   // History state per section
   const storageKey = `dm_ai_inbox_history_${sectionName.replace(/\s+/g, '_')}`;
@@ -161,7 +162,7 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
         await postCommentToNotion(credentials?.notionToken, proposedAction.targetCard.notionPageId || proposedAction.targetCard.id, proposedAction.text);
         
         if (onAddCommentAndSync) {
-          onAddCommentAndSync(proposedAction.targetCard.id, proposedAction.text, 'Diego Musach (CTO)');
+          onAddCommentAndSync(proposedAction.targetCard.id, proposedAction.text, 'Diego Musach (CTO)', addToCeoReport ? { isCEOCard: true } : {});
         }
 
         newRecord.status = 'success';
@@ -202,6 +203,7 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
           priority: 'P2 - ALTA',
           responsable: 'Diego Musach (CTO)',
           assignedTo: 'Diego Musach (CTO)',
+          isCEOCard: addToCeoReport,
           comments: []
         };
         await createNotionPage(credentials?.notionToken, newCard);
@@ -224,6 +226,7 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
     setInputText('');
     setSendEmailCopy(false);
     setNewEmailInput('');
+    setAddToCeoReport(false);
   };
 
   return (
@@ -451,6 +454,19 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
                       </div>
                     )}
                   </div>
+
+                  {/* ELEVATE TO CEO INITIATIVE */}
+                  <div style={{ background: 'rgba(219, 39, 119, 0.1)', border: '1px solid var(--accent-rose)', borderRadius: '8px', padding: '1rem', marginTop: '1rem' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: '#fff', fontSize: '0.9rem' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={addToCeoReport}
+                        onChange={(e) => setAddToCeoReport(e.target.checked)}
+                        style={{ accentColor: 'var(--accent-rose)' }}
+                      />
+                      🎯 Elevar esta tarjeta a Iniciativa Principal del CEO
+                    </label>
+                  </div>
                 </div>
               ) : (
                 <div>
@@ -458,6 +474,19 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
                   <div style={{ fontSize: '0.95rem', color: '#fff', marginTop: '0.35rem' }}>
                     💡 {proposedAction.rationale}<br/><br/>
                     Se sugiere crear una <strong>nueva tarjeta</strong> en Notion con esta anotación como objetivo principal.
+                  </div>
+
+                  {/* CREATE AS CEO INITIATIVE */}
+                  <div style={{ background: 'rgba(219, 39, 119, 0.1)', border: '1px solid var(--accent-rose)', borderRadius: '8px', padding: '1rem', marginTop: '1rem' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: '#fff', fontSize: '0.9rem' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={addToCeoReport}
+                        onChange={(e) => setAddToCeoReport(e.target.checked)}
+                        style={{ accentColor: 'var(--accent-rose)' }}
+                      />
+                      🎯 Crear directamente como Iniciativa Principal del CEO
+                    </label>
                   </div>
                 </div>
               )}
