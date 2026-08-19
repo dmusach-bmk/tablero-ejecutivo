@@ -80,38 +80,65 @@ export default function App() {
         try { parsedV6 = JSON.parse(savedV6); } catch (e) {}
       }
 
-      // Función auxiliar para contar tarjetas cerradas
-      const countClosed = (list) => {
-        if (!list || !Array.isArray(list)) return 0;
-        let count = 0;
-        list.forEach(mem => {
-          if (mem.topics) {
-            mem.topics.forEach(t => {
-              if (t.status === 'Cerrado' || t.status === 'Cerrada') {
-                count++;
-              }
-            });
-          }
-        });
-        return count;
-      };
-
       const hasValidStructure = (list) => {
         return list && Array.isArray(list) && list.length >= 8 && list[0].topics;
       };
 
-      let sourceList = null;
-      if (hasValidStructure(parsedV6) && countClosed(parsedV6) > countClosed(parsedV7)) {
-        // V6 tiene más historial de tarjetas cerradas que la versión actual V7 corrupta, priorizamos V6
-        sourceList = parsedV6;
+      // Fusión (merge) de V6 y V7 para preservar tanto el historial de ayer como los nuevos comentarios de hoy
+      const mergeTeamTracking = (listA, listB) => {
+        if (!hasValidStructure(listA)) return listB;
+        if (!hasValidStructure(listB)) return listA;
+        
+        return listA.map(memA => {
+          const memB = listB.find(m => m.id === memA.id || m.name === memA.name);
+          if (!memB) return memA;
+          
+          const mergedTopics = (memA.topics || []).map(topA => {
+            const topB = (memB.topics || []).find(t => t.id === topA.id || t.notionPageId === topA.notionPageId);
+            if (!topB) return topA;
+            
+            // Si está cerrado en cualquiera de las dos versiones, se marca como Cerrado
+            const isClosed = topA.status === 'Cerrado' || topA.status === 'Cerrada' || 
+                             topB.status === 'Cerrado' || topB.status === 'Cerrada';
+            const status = isClosed ? 'Cerrado' : (topA.status || topB.status || 'Abierto');
+            
+            // Fusión de comentarios
+            const commentsA = topA.comments || [];
+            const commentsB = topB.comments || [];
+            const combined = [...commentsA];
+            commentsB.forEach(cb => {
+              if (!combined.some(ca => ca.text.trim() === cb.text.trim())) {
+                combined.push(cb);
+              }
+            });
+            combined.sort((x, y) => (x.date || '').localeCompare(y.date || ''));
+            
+            return {
+              ...topA,
+              status,
+              comments: combined,
+              deadline: topA.deadline || topB.deadline
+            };
+          });
+          
+          return {
+            ...memA,
+            topics: mergedTopics
+          };
+        });
+      };
+
+      let mergedList = REAL_TEAM_TRACKING;
+      if (hasValidStructure(parsedV7) && hasValidStructure(parsedV6)) {
+        mergedList = mergeTeamTracking(parsedV7, parsedV6);
       } else if (hasValidStructure(parsedV7)) {
-        sourceList = parsedV7;
+        mergedList = parsedV7;
       } else if (hasValidStructure(parsedV6)) {
-        sourceList = parsedV6;
+        mergedList = parsedV6;
       }
 
-      if (sourceList) {
-        let migrated = sourceList.map(mem => {
+      if (mergedList) {
+        let migrated = mergedList.map(mem => {
           if (mem.id === 'mem-1') mem.id = 'dev-mario';
           if (mem.id === 'mem-2') mem.id = 'dev-camilo';
           if (mem.id === 'mem-3') mem.id = 'dev-leonard';

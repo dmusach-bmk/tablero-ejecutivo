@@ -969,25 +969,49 @@ export default function DailyFollowUp({ teamTracking, notionCards = [], credenti
             {closedCards.length === 0 ? (
               <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>No hay tarjetas cerradas en esta vista.</p>
             ) : (
-              closedCards.map((c, idx) => (
-                <div key={c.id || idx} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-subtle)', padding: '0.65rem 0.85rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-                      <span className="tag low" style={{ fontSize: '0.62rem' }}>Cerrado</span>
-                      <span style={{ fontSize: '0.76rem', color: 'var(--accent-cyan)', fontWeight: 700 }}>{c.memberName}</span>
+              closedCards.map((c, idx) => {
+                const sortedC = [...(c.comments || [])].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+                return (
+                  <div key={c.id || idx} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-subtle)', padding: '0.65rem 0.85rem', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', marginBottom: '0.15rem' }}>
+                          <span className="tag low" style={{ fontSize: '0.62rem', background: 'rgba(16, 185, 129, 0.2)', color: 'var(--accent-emerald)', border: '1px solid rgba(16, 185, 129, 0.4)' }}>Cerrado</span>
+                          <span style={{ fontSize: '0.76rem', color: 'var(--accent-cyan)', fontWeight: 700 }}>{c.memberName}</span>
+                        </div>
+                        <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', textDecoration: 'line-through', fontWeight: 500 }}>{c.title}</div>
+                      </div>
+                      
+                      <button 
+                        className="btn-secondary" 
+                        onClick={() => handleStatusChange(c.id, c.notionPageId, 'Abierto')}
+                        style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem' }}
+                      >
+                        Reabrir
+                      </button>
                     </div>
-                    <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', textDecoration: 'line-through' }}>{c.title}</div>
+
+                    {sortedC.length > 0 && (
+                      <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.45rem 0.65rem', borderRadius: '4px', fontSize: '0.72rem', borderLeft: '2px solid var(--accent-emerald)' }}>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '0.25rem' }}>
+                          💬 Notas de cierre y comentarios ({sortedC.length}):
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                          {sortedC.map((cmt, cIdx) => (
+                            <div key={cIdx}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#58a6ff', fontWeight: 600, fontSize: '0.68rem' }}>
+                                <span>👤 {cmt.author}</span>
+                                <span style={{ color: 'var(--text-muted)', fontWeight: 'normal', fontSize: '0.64rem' }}>{cmt.date}</span>
+                              </div>
+                              <div style={{ color: 'var(--text-body)', fontSize: '0.74rem', lineHeight: '1.3' }}>{cmt.text}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  
-                  <button 
-                    className="btn-secondary" 
-                    onClick={() => handleStatusChange(c.id, c.notionPageId, 'Abierto')}
-                    style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem' }}
-                  >
-                    Reabrir
-                  </button>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
