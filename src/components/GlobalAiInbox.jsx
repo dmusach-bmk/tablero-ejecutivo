@@ -25,8 +25,8 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
   const [selectedAssignee, setSelectedAssignee] = useState('Diego Musach (CTO)');
   const [addToDailyFollowUp, setAddToDailyFollowUp] = useState(false);
 
-  // History state per section
-  const storageKey = `dm_ai_inbox_history_${sectionName.replace(/\s+/g, '_')}`;
+  // Unified global history across all sections
+  const storageKey = 'dm_ai_inbox_history_global';
   const [history, setHistory] = useState(() => {
     const saved = localStorage.getItem(storageKey);
     return saved ? JSON.parse(saved) : [];
@@ -35,6 +35,36 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
   useEffect(() => {
     localStorage.setItem(storageKey, JSON.stringify(history));
   }, [history, storageKey]);
+
+  useEffect(() => {
+    // Migrate old section-specific histories to global history
+    const oldKeys = [
+      'dm_ai_inbox_history_Vista_General_(Overview)',
+      'dm_ai_inbox_history_Reporte_Semanal_CEO',
+      'dm_ai_inbox_history_Follow_Up_Diario'
+    ];
+    let migratedItems = [];
+    oldKeys.forEach(key => {
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            migratedItems = [...migratedItems, ...parsed];
+          }
+        } catch(e) {}
+        localStorage.removeItem(key);
+      }
+    });
+    if (migratedItems.length > 0) {
+      setHistory(prev => {
+        const merged = [...prev, ...migratedItems];
+        const unique = Array.from(new Map(merged.map(item => [item.id, item])).values());
+        unique.sort((a, b) => b.id.localeCompare(a.id));
+        return unique;
+      });
+    }
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
