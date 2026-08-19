@@ -5,7 +5,7 @@ import { postCommentToNotion, updateNotionPageStatus, fetchNotionComments } from
 import { extractDateFromText } from '../utils/dateParser';
 import GlobalAiInbox from './GlobalAiInbox';
 
-export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamTracking, onOpenEmailWithAgenda, onNavigate, onAddCommentAndSync, onAddNotionCard }) {
+export default function DailyFollowUp({ teamTracking, notionCards = [], credentials, onUpdateTeamTracking, onOpenEmailWithAgenda, onNavigate, onAddCommentAndSync, onAddNotionCard }) {
   const [activeMemberId, setActiveMemberId] = useState('all');
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
   const [commentInputs, setCommentInputs] = useState({});
@@ -137,12 +137,26 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
   const allCardsCross = [];
   teamTracking.forEach(mem => {
     (mem.topics || []).forEach(t => {
-      const currentStatus = cardStatusMap[t.id] || t.status || 'Abierto';
-      const comments = localCommentsMap[t.id] || t.comments || [];
+      // Find corresponding card in notionCards to pull the latest status and comments
+      const matchingNotion = notionCards && notionCards.find(nc => nc.id === t.id || nc.notionPageId === t.id || nc.notionPageId === t.notionPageId);
+      
+      const currentStatus = cardStatusMap[t.id] || matchingNotion?.status || t.status || 'Abierto';
+      
+      // Merge comments from local storage, memory map and notionCards list
+      const baseComments = matchingNotion?.comments || t.comments || [];
+      const localComments = localCommentsMap[t.id] || [];
+      const combinedComments = [...baseComments];
+      localComments.forEach(lc => {
+        if (!combinedComments.some(bc => bc.text.trim() === lc.text.trim())) {
+          combinedComments.push(lc);
+        }
+      });
+      combinedComments.sort((a, b) => a.date.localeCompare(b.date));
+
       allCardsCross.push({
         ...t,
         status: currentStatus,
-        comments: comments,
+        comments: combinedComments,
         memberName: mem.name,
         memberRole: mem.role,
         memberAvatar: mem.avatar,

@@ -67,9 +67,29 @@ export default function App() {
   // Use REAL_TEAM_TRACKING with 375 real Notion comments + valid notionPageId bound
   const [teamTracking, setTeamTracking] = useState(() => {
     try {
-      const saved = localStorage.getItem('dm_team_tracking_v7');
-      if (saved) {
-        let parsed = JSON.parse(saved);
+      const savedV7 = localStorage.getItem('dm_team_tracking_v7');
+      if (savedV7) {
+        let parsed = JSON.parse(savedV7);
+        if (parsed && parsed.length >= 10 && parsed[0].topics && parsed[0].topics[0]?.notionPageId) {
+          // Migración dinámica de IDs viejos
+          parsed = parsed.map(mem => {
+            if (mem.id === 'mem-1') mem.id = 'dev-mario';
+            if (mem.id === 'mem-2') mem.id = 'dev-camilo';
+            if (mem.id === 'mem-3') mem.id = 'dev-leonard';
+            if (mem.id === 'mem-4') mem.id = 'dev-joseph';
+            if (mem.id === 'mem-5') mem.id = 'dev-fabricio';
+            if (mem.id === 'mem-6') mem.id = 'dev-enrique';
+            if (mem.id === 'mem-7') mem.id = 'dev-rodolfo';
+            if (mem.id === 'mem-8') mem.id = 'dev-diego';
+            return mem;
+          });
+          return parsed;
+        }
+      }
+      
+      const savedV6 = localStorage.getItem('dm_team_tracking_v6');
+      if (savedV6) {
+        let parsed = JSON.parse(savedV6);
         if (parsed && parsed.length >= 10 && parsed[0].topics && parsed[0].topics[0]?.notionPageId) {
           // Migración dinámica de IDs viejos
           parsed = parsed.map(mem => {
@@ -486,6 +506,7 @@ export default function App() {
         {activeTab === 'followup' && (
           <DailyFollowUp
             teamTracking={teamTracking}
+            notionCards={notionCards}
             credentials={credentials}
             onUpdateTeamTracking={setTeamTracking}
             onOpenEmailWithAgenda={handleOpenEmailWithAgenda}
