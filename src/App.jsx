@@ -67,10 +67,24 @@ export default function App() {
   // Use REAL_TEAM_TRACKING with 375 real Notion comments + valid notionPageId bound
   const [teamTracking, setTeamTracking] = useState(() => {
     try {
-      const saved = localStorage.getItem('dm_team_tracking_v6');
+      const saved = localStorage.getItem('dm_team_tracking_v7');
       if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && parsed.length >= 10 && parsed[0].topics && parsed[0].topics[0]?.notionPageId) return parsed;
+        let parsed = JSON.parse(saved);
+        if (parsed && parsed.length >= 10 && parsed[0].topics && parsed[0].topics[0]?.notionPageId) {
+          // Migración dinámica de IDs viejos
+          parsed = parsed.map(mem => {
+            if (mem.id === 'mem-1') mem.id = 'dev-mario';
+            if (mem.id === 'mem-2') mem.id = 'dev-camilo';
+            if (mem.id === 'mem-3') mem.id = 'dev-leonard';
+            if (mem.id === 'mem-4') mem.id = 'dev-joseph';
+            if (mem.id === 'mem-5') mem.id = 'dev-fabricio';
+            if (mem.id === 'mem-6') mem.id = 'dev-enrique';
+            if (mem.id === 'mem-7') mem.id = 'dev-rodolfo';
+            if (mem.id === 'mem-8') mem.id = 'dev-diego';
+            return mem;
+          });
+          return parsed;
+        }
       }
     } catch (e) {
       console.error('Error parsing teamTracking:', e);
@@ -113,7 +127,7 @@ export default function App() {
     
     // Clean up obsolete localStorage keys to free up quota
     try {
-      const currentKeys = ['dm_notion_cards_v11', 'dm_team_tracking_v6', 'dm_excel_data', 'dm_credentials', 'dm_call_comments_drafts', 'dm_closed_topics_db', 'dm_contacts_directory'];
+      const currentKeys = ['dm_notion_cards_v11', 'dm_team_tracking_v7', 'dm_excel_data', 'dm_credentials', 'dm_call_comments_drafts', 'dm_closed_topics_db', 'dm_contacts_directory'];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && key.startsWith('dm_') && !currentKeys.includes(key)) {
@@ -146,7 +160,7 @@ export default function App() {
 
   useEffect(() => {
     try {
-      localStorage.setItem('dm_team_tracking_v6', JSON.stringify(teamTracking));
+      localStorage.setItem('dm_team_tracking_v7', JSON.stringify(teamTracking));
     } catch (e) {
       console.warn('LocalStorage quota exceeded for team tracking:', e);
     }
@@ -240,20 +254,20 @@ export default function App() {
     const todayStr = new Date().toISOString().split('T')[0];
     
     // Parse reassignment from comment
+    const membersMap = [
+      { key: 'mario', id: 'dev-mario', name: 'Mario Maqueda', title: 'Mario Maqueda', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80' },
+      { key: 'camilo', id: 'dev-camilo', name: 'Camilo Uribe', title: 'Camilo Uribe', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=80&q=80' },
+      { key: 'leo', id: 'dev-leonard', name: 'Leonard Amaya', title: 'Leo', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80' },
+      { key: 'leonard', id: 'dev-leonard', name: 'Leonard Amaya', title: 'Leo', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80' },
+      { key: 'joseph', id: 'dev-joseph', name: 'Joseph Valer', title: 'Joseph', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=80&q=80' },
+      { key: 'fabricio', id: 'dev-fabricio', name: 'Fabricio Jose Nieva', title: 'Fabricio Nieva', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=80&q=80' },
+      { key: 'enrique', id: 'dev-enrique', name: 'Enrique Bevilacqua', title: 'Enrique', avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=80&q=80' },
+      { key: 'rodolfo', id: 'dev-rodolfo', name: 'Rodolfo', title: 'Rodolfo', avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=80&q=80' },
+      { key: 'diego', id: 'dev-diego', name: 'Diego Musach (CTO)', title: 'Diego Musach (CTO)', avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=80&q=80' }
+    ];
+
     const parseReassignment = (text) => {
       const t = text.toLowerCase();
-      const membersMap = [
-        { key: 'mario', id: 'mem-1', name: 'Mario Maqueda', title: 'Mario Maqueda', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80' },
-        { key: 'camilo', id: 'mem-2', name: 'Camilo Uribe', title: 'Camilo Uribe', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=80&q=80' },
-        { key: 'leo', id: 'mem-3', name: 'Leonard Amaya', title: 'Leo', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80' },
-        { key: 'leonard', id: 'mem-3', name: 'Leonard Amaya', title: 'Leo', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80' },
-        { key: 'joseph', id: 'mem-4', name: 'Joseph Valer', title: 'Joseph', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=80&q=80' },
-        { key: 'fabricio', id: 'mem-5', name: 'Fabricio Jose Nieva', title: 'Fabricio Nieva', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=80&q=80' },
-        { key: 'enrique', id: 'mem-6', name: 'Enrique Bevilacqua', title: 'Enrique', avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=80&q=80' },
-        { key: 'rodolfo', id: 'mem-7', name: 'Rodolfo', title: 'Rodolfo', avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=80&q=80' },
-        { key: 'diego', id: 'mem-8', name: 'Diego Musach (CTO)', title: 'Diego Musach (CTO)', avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=80&q=80' }
-      ];
-
       for (const mem of membersMap) {
         const patterns = [
           new RegExp(`pasar(?:la)?\\s+a\\s+${mem.key}`),
@@ -270,18 +284,6 @@ export default function App() {
       }
       return null;
     };
-
-    const membersMap = [
-      { key: 'mario', id: 'mem-1', name: 'Mario Maqueda', title: 'Mario Maqueda', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80' },
-      { key: 'camilo', id: 'mem-2', name: 'Camilo Uribe', title: 'Camilo Uribe', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=80&q=80' },
-      { key: 'leo', id: 'mem-3', name: 'Leonard Amaya', title: 'Leo', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80' },
-      { key: 'leonard', id: 'mem-3', name: 'Leonard Amaya', title: 'Leo', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80' },
-      { key: 'joseph', id: 'mem-4', name: 'Joseph Valer', title: 'Joseph', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=80&q=80' },
-      { key: 'fabricio', id: 'mem-5', name: 'Fabricio Jose Nieva', title: 'Fabricio Nieva', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=80&q=80' },
-      { key: 'enrique', id: 'mem-6', name: 'Enrique Bevilacqua', title: 'Enrique', avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=80&q=80' },
-      { key: 'rodolfo', id: 'mem-7', name: 'Rodolfo', title: 'Rodolfo', avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=80&q=80' },
-      { key: 'diego', id: 'mem-8', name: 'Diego Musach (CTO)', title: 'Diego Musach (CTO)', avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=80&q=80' }
-    ];
 
     const getDropdownMember = () => {
       if (!extraUpdates.responsable) return null;
@@ -352,7 +354,7 @@ export default function App() {
           // Try to assign it to whoever is responsible
           const respName = notionCard.responsable.toLowerCase();
           const foundMem = prev.find(m => respName.includes(m.name.split(' ')[0].toLowerCase()));
-          oldMemberId = foundMem ? foundMem.id : 'mem-8'; // Diego as default
+          oldMemberId = foundMem ? foundMem.id : 'dev-diego'; // Diego as default
         } else {
           return prev;
         }
