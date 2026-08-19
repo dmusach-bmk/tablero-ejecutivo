@@ -68,43 +68,61 @@ export default function App() {
   const [teamTracking, setTeamTracking] = useState(() => {
     try {
       const savedV7 = localStorage.getItem('dm_team_tracking_v7');
-      if (savedV7) {
-        let parsed = JSON.parse(savedV7);
-        if (parsed && parsed.length >= 10 && parsed[0].topics && parsed[0].topics[0]?.notionPageId) {
-          // Migración dinámica de IDs viejos
-          parsed = parsed.map(mem => {
-            if (mem.id === 'mem-1') mem.id = 'dev-mario';
-            if (mem.id === 'mem-2') mem.id = 'dev-camilo';
-            if (mem.id === 'mem-3') mem.id = 'dev-leonard';
-            if (mem.id === 'mem-4') mem.id = 'dev-joseph';
-            if (mem.id === 'mem-5') mem.id = 'dev-fabricio';
-            if (mem.id === 'mem-6') mem.id = 'dev-enrique';
-            if (mem.id === 'mem-7') mem.id = 'dev-rodolfo';
-            if (mem.id === 'mem-8') mem.id = 'dev-diego';
-            return mem;
-          });
-          return parsed;
-        }
-      }
-      
       const savedV6 = localStorage.getItem('dm_team_tracking_v6');
+      
+      let parsedV7 = null;
+      let parsedV6 = null;
+      
+      if (savedV7) {
+        try { parsedV7 = JSON.parse(savedV7); } catch (e) {}
+      }
       if (savedV6) {
-        let parsed = JSON.parse(savedV6);
-        if (parsed && parsed.length >= 10 && parsed[0].topics && parsed[0].topics[0]?.notionPageId) {
-          // Migración dinámica de IDs viejos
-          parsed = parsed.map(mem => {
-            if (mem.id === 'mem-1') mem.id = 'dev-mario';
-            if (mem.id === 'mem-2') mem.id = 'dev-camilo';
-            if (mem.id === 'mem-3') mem.id = 'dev-leonard';
-            if (mem.id === 'mem-4') mem.id = 'dev-joseph';
-            if (mem.id === 'mem-5') mem.id = 'dev-fabricio';
-            if (mem.id === 'mem-6') mem.id = 'dev-enrique';
-            if (mem.id === 'mem-7') mem.id = 'dev-rodolfo';
-            if (mem.id === 'mem-8') mem.id = 'dev-diego';
-            return mem;
-          });
-          return parsed;
-        }
+        try { parsedV6 = JSON.parse(savedV6); } catch (e) {}
+      }
+
+      // Función auxiliar para contar tarjetas cerradas
+      const countClosed = (list) => {
+        if (!list || !Array.isArray(list)) return 0;
+        let count = 0;
+        list.forEach(mem => {
+          if (mem.topics) {
+            mem.topics.forEach(t => {
+              if (t.status === 'Cerrado' || t.status === 'Cerrada') {
+                count++;
+              }
+            });
+          }
+        });
+        return count;
+      };
+
+      const hasValidStructure = (list) => {
+        return list && Array.isArray(list) && list.length >= 8 && list[0].topics;
+      };
+
+      let sourceList = null;
+      if (hasValidStructure(parsedV6) && countClosed(parsedV6) > countClosed(parsedV7)) {
+        // V6 tiene más historial de tarjetas cerradas que la versión actual V7 corrupta, priorizamos V6
+        sourceList = parsedV6;
+      } else if (hasValidStructure(parsedV7)) {
+        sourceList = parsedV7;
+      } else if (hasValidStructure(parsedV6)) {
+        sourceList = parsedV6;
+      }
+
+      if (sourceList) {
+        let migrated = sourceList.map(mem => {
+          if (mem.id === 'mem-1') mem.id = 'dev-mario';
+          if (mem.id === 'mem-2') mem.id = 'dev-camilo';
+          if (mem.id === 'mem-3') mem.id = 'dev-leonard';
+          if (mem.id === 'mem-4') mem.id = 'dev-joseph';
+          if (mem.id === 'mem-5') mem.id = 'dev-fabricio';
+          if (mem.id === 'mem-6') mem.id = 'dev-enrique';
+          if (mem.id === 'mem-7') mem.id = 'dev-rodolfo';
+          if (mem.id === 'mem-8') mem.id = 'dev-diego';
+          return mem;
+        });
+        return migrated;
       }
     } catch (e) {
       console.error('Error parsing teamTracking:', e);
