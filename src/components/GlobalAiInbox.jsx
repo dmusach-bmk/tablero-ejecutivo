@@ -36,6 +36,16 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
     localStorage.setItem(storageKey, JSON.stringify(history));
   }, [history, storageKey]);
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setProposedAction(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const handleStartVoiceDictation = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -398,7 +408,23 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 {history.map(record => (
-                  <div key={record.id} style={{ background: 'rgba(30, 41, 59, 0.4)', padding: '0.85rem', borderRadius: '8px', borderLeft: record.status === 'success' ? '3px solid var(--accent-emerald)' : '3px solid var(--accent-rose)' }}>
+                  <div 
+                    key={record.id} 
+                    onClick={() => {
+                      setInputText(record.text);
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(30, 41, 59, 0.8)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(30, 41, 59, 0.4)'}
+                    style={{ 
+                      background: 'rgba(30, 41, 59, 0.4)', 
+                      padding: '0.85rem', 
+                      borderRadius: '8px', 
+                      borderLeft: record.status === 'success' ? '3px solid var(--accent-emerald)' : '3px solid var(--accent-rose)',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                    }}
+                    title="Haz clic para volver a cargar esta nota en la caja de entrada"
+                  >
                     <div style={{ fontSize: '0.85rem', color: '#fff', marginBottom: '0.5rem', fontStyle: 'italic' }}>"{record.text}"</div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>📅 {record.date}</div>
                     <div style={{ fontSize: '0.8rem', color: record.status === 'success' ? 'var(--accent-emerald)' : 'var(--accent-rose)', fontWeight: 600 }}>
