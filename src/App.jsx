@@ -183,6 +183,46 @@ export default function App() {
     }));
   };
 
+  const handleAddNotionCard = (newCard) => {
+    // 1. Update notionCards
+    setNotionCards(prev => [newCard, ...prev]);
+
+    // 2. If it is assigned to a team member, append to their topics in teamTracking!
+    const respName = (newCard.responsable || '').toLowerCase();
+    
+    setTeamTracking(prev => {
+      // Find if the assignee matches any member's first name
+      const matchedMember = prev.find(m => respName.includes(m.name.split(' ')[0].toLowerCase()));
+      if (matchedMember) {
+        return prev.map(m => {
+          if (m.id === matchedMember.id) {
+            const newTopic = {
+              id: newCard.id,
+              notionPageId: newCard.notionPageId || newCard.id,
+              notionId: newCard.notionId || newCard.id,
+              title: newCard.title,
+              priority: newCard.priority || 'P2 - ALTA',
+              status: newCard.status || 'Abierto',
+              memberName: matchedMember.name,
+              memberId: matchedMember.id,
+              memberAvatar: matchedMember.avatar,
+              responsable: matchedMember.name,
+              assignedTo: matchedMember.name,
+              comments: [],
+              log: newCard.summary || ''
+            };
+            return {
+              ...m,
+              topics: [newTopic, ...(m.topics || [])]
+            };
+          }
+          return m;
+        });
+      }
+      return prev;
+    });
+  };
+
   const handleOpenEmailWithAgenda = (memberName, topics) => {
     const topicText = (topics || [])
       .map((t, idx) => `${idx + 1}. [${t.priority || 'P2'}] ${t.title}`)
@@ -431,7 +471,7 @@ export default function App() {
             onOpenEmailWithAgenda={handleOpenEmailWithAgenda}
             onNavigate={handleTabChange}
             onAddCommentAndSync={handleAddCommentAndSync}
-            onAddNotionCard={(newCard) => setNotionCards(prev => [newCard, ...prev])}
+            onAddNotionCard={handleAddNotionCard}
           />
         )}
 
@@ -452,7 +492,7 @@ export default function App() {
           <DelegacionHub
             notionCards={notionCards}
             setNotionCards={setNotionCards}
-            onAddNotionCard={(newCard) => setNotionCards(prev => [newCard, ...prev])}
+            onAddNotionCard={handleAddNotionCard}
             teamTracking={teamTracking}
             setTeamTracking={setTeamTracking}
           />
@@ -482,7 +522,7 @@ export default function App() {
             notionCards={notionCards}
             onUpdateNotionCards={setNotionCards}
             onAddCommentAndSync={handleAddCommentAndSync}
-            onAddNotionCard={(newCard) => setNotionCards(prev => [newCard, ...prev])}
+            onAddNotionCard={handleAddNotionCard}
           />
         )}
 

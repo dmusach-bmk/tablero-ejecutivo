@@ -22,6 +22,8 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
   const [sendEmailCopy, setSendEmailCopy] = useState(false);
   const [newEmailInput, setNewEmailInput] = useState('');
   const [addToCeoReport, setAddToCeoReport] = useState(false);
+  const [selectedAssignee, setSelectedAssignee] = useState('Diego Musach (CTO)');
+  const [addToDailyFollowUp, setAddToDailyFollowUp] = useState(false);
 
   // History state per section
   const storageKey = `dm_ai_inbox_history_${sectionName.replace(/\s+/g, '_')}`;
@@ -59,6 +61,22 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
   };
 
   const analyzeNoteWithAI = (note) => {
+    const parseSuggestedAssignee = (text) => {
+      const t = text.toLowerCase();
+      const members = [
+        { name: 'Mario Maqueda', key: 'mario' },
+        { name: 'Camilo Uribe', key: 'camilo' },
+        { name: 'Leonard Amaya', key: 'leo' },
+        { name: 'Leonard Amaya', key: 'leonard' },
+        { name: 'Joseph Valer', key: 'joseph' },
+        { name: 'Fabricio Jose Nieva', key: 'fabricio' },
+        { name: 'Enrique Bevilacqua', key: 'enrique' },
+        { name: 'Rodolfo', key: 'rodolfo' }
+      ];
+      const found = members.find(m => t.includes(m.key));
+      return found ? found.name : 'Diego Musach (CTO)';
+    };
+
     const isQuestion = note.trim().endsWith('?') || /^(qué|que|quién|quien|cómo|como|cuál|cual|dónde|donde|estado de|tareas de|tiene)\b/i.test(note.trim());
 
     const stopWords = new Set(['el', 'la', 'los', 'las', 'un', 'una', 'con', 'para', 'por', 'sobre', 'decir', 'hacer']);
@@ -92,19 +110,29 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
       }
     });
 
+    const suggestedAssignee = parseSuggestedAssignee(note);
+    const suggestedAddToDailyFollowUp = suggestedAssignee !== 'Diego Musach (CTO)';
+    const suggestedAddToCeoReport = /ceo|pillar|roadmap|reunion|reunión|informe|reporte/i.test(note);
+
     if (bestMatch && maxScore > 0) {
       return {
         type: 'comment',
         text: note,
         targetCard: bestMatch,
-        rationale: `Se encontraron coincidencias clave con la tarjeta "${bestMatch.title}".`
+        rationale: `Se encontraron coincidencias clave con la tarjeta "${bestMatch.title}".`,
+        suggestedAssignee,
+        suggestedAddToDailyFollowUp,
+        suggestedAddToCeoReport
       };
     } else {
       return {
         type: 'create',
         text: note,
         targetCard: null,
-        rationale: `No se encontró ninguna tarjeta en Notion que coincida semánticamente con esta anotación.`
+        rationale: `No se encontró ninguna tarjeta en Notion que coincida semánticamente con esta anotación.`,
+        suggestedAssignee,
+        suggestedAddToDailyFollowUp,
+        suggestedAddToCeoReport
       };
     }
   };
@@ -130,6 +158,15 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
       } else {
         setProposedAction(action);
         setIsAnalyzing(false);
+
+        // Pre-fill suggested values
+        if (action.suggestedAssignee) {
+          setSelectedAssignee(action.suggestedAssignee);
+        } else {
+          setSelectedAssignee('Diego Musach (CTO)');
+        }
+        setAddToDailyFollowUp(!!action.suggestedAddToDailyFollowUp);
+        setAddToCeoReport(!!action.suggestedAddToCeoReport);
 
         if (action.type === 'comment' && action.targetCard) {
           setCardContextLoading(true);
@@ -162,7 +199,13 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
         await postCommentToNotion(credentials?.notionToken, proposedAction.targetCard.notionPageId || proposedAction.targetCard.id, proposedAction.text);
         
         if (onAddCommentAndSync) {
-          onAddCommentAndSync(proposedAction.targetCard.id, proposedAction.text, 'Diego Musach (CTO)', addToCeoReport ? { isCEOCard: true } : {});
+          const finalAssignee = addToDailyFollowUp ? selectedAssignee : 'Diego Musach (CTO)';
+          const updates = {
+            responsable: finalAssignee,
+            assignedTo: finalAssignee,
+            isCEOCard: addToCeoReport
+          };
+          onAddCommentAndSync(proposedAction.targetCard.id, proposedAction.text, 'Diego Musach (CTO)', updates);
         }
 
         newRecord.status = 'success';
@@ -194,6 +237,7 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
     } else {
       try {
         const title = proposedAction.text.split(' ').slice(0, 6).join(' ') + '...';
+        const finalAssignee = addToDailyFollowUp ? selectedAssignee : 'Diego Musach (CTO)';
         const newCard = {
           id: `new-${Date.now()}`,
           notionPageId: `new-${Date.now()}`,
@@ -201,8 +245,8 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
           summary: proposedAction.text,
           status: 'Abierto',
           priority: 'P2 - ALTA',
-          responsable: 'Diego Musach (CTO)',
-          assignedTo: 'Diego Musach (CTO)',
+          responsable: finalAssignee,
+          assignedTo: finalAssignee,
           isCEOCard: addToCeoReport,
           comments: []
         };
@@ -227,6 +271,7 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
     setSendEmailCopy(false);
     setNewEmailInput('');
     setAddToCeoReport(false);
+    setAddToDailyFollowUp(false);
   };
 
   return (
@@ -454,19 +499,6 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
                       </div>
                     )}
                   </div>
-
-                  {/* ELEVATE TO CEO INITIATIVE */}
-                  <div style={{ background: 'rgba(219, 39, 119, 0.1)', border: '1px solid var(--accent-rose)', borderRadius: '8px', padding: '1rem', marginTop: '1rem' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: '#fff', fontSize: '0.9rem' }}>
-                      <input 
-                        type="checkbox" 
-                        checked={addToCeoReport}
-                        onChange={(e) => setAddToCeoReport(e.target.checked)}
-                        style={{ accentColor: 'var(--accent-rose)' }}
-                      />
-                      🎯 Elevar esta tarjeta a Iniciativa Principal del CEO
-                    </label>
-                  </div>
                 </div>
               ) : (
                 <div>
@@ -475,21 +507,69 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
                     💡 {proposedAction.rationale}<br/><br/>
                     Se sugiere crear una <strong>nueva tarjeta</strong> en Notion con esta anotación como objetivo principal.
                   </div>
-
-                  {/* CREATE AS CEO INITIATIVE */}
-                  <div style={{ background: 'rgba(219, 39, 119, 0.1)', border: '1px solid var(--accent-rose)', borderRadius: '8px', padding: '1rem', marginTop: '1rem' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: '#fff', fontSize: '0.9rem' }}>
-                      <input 
-                        type="checkbox" 
-                        checked={addToCeoReport}
-                        onChange={(e) => setAddToCeoReport(e.target.checked)}
-                        style={{ accentColor: 'var(--accent-rose)' }}
-                      />
-                      🎯 Crear directamente como Iniciativa Principal del CEO
-                    </label>
-                  </div>
                 </div>
               )}
+
+              {/* SHARED ASSIGNEE SELECTOR */}
+              <div style={{ marginTop: '1.25rem' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.45rem', fontWeight: 700 }}>👥 Asignar Responsable:</label>
+                <select
+                  value={selectedAssignee}
+                  onChange={(e) => {
+                    setSelectedAssignee(e.target.value);
+                    if (e.target.value !== 'Diego Musach (CTO)') {
+                      setAddToDailyFollowUp(true);
+                    } else {
+                      setAddToDailyFollowUp(false);
+                    }
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem',
+                    borderRadius: '6px',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    background: 'rgba(15, 23, 42, 0.95)',
+                    color: '#fff',
+                    fontSize: '0.85rem',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
+                  }}
+                >
+                  <option value="Diego Musach (CTO)">Diego Musach (CTO) (Tú)</option>
+                  <option value="Camilo Uribe">Camilo Uribe</option>
+                  <option value="Mario Maqueda">Mario Maqueda</option>
+                  <option value="Leonard Amaya">Leonard Amaya (Leo)</option>
+                  <option value="Joseph Valer">Joseph</option>
+                  <option value="Fabricio Jose Nieva">Fabricio Nieva</option>
+                  <option value="Enrique Bevilacqua">Enrique</option>
+                  <option value="Rodolfo">Rodolfo</option>
+                </select>
+              </div>
+
+              {/* SHARED DESTINATION SELECTION */}
+              <div style={{ marginTop: '1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '0.85rem' }}>
+                <span style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.55rem', fontWeight: 600 }}>📬 ¿Dónde crear/actualizar la tarjeta?</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: '#fff', fontSize: '0.85rem' }}>
+                    <input
+                      type="checkbox"
+                      checked={addToDailyFollowUp}
+                      onChange={(e) => setAddToDailyFollowUp(e.target.checked)}
+                      style={{ accentColor: 'var(--accent-cyan)' }}
+                    />
+                    📋 Seguimiento Diario (Backlog de Equipo)
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: '#fff', fontSize: '0.85rem' }}>
+                    <input
+                      type="checkbox"
+                      checked={addToCeoReport}
+                      onChange={(e) => setAddToCeoReport(e.target.checked)}
+                      style={{ accentColor: 'var(--accent-rose)' }}
+                    />
+                    🎯 Reporte Semanal CEO (Iniciativa Principal)
+                  </label>
+                </div>
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
