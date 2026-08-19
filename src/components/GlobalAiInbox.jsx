@@ -61,12 +61,54 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
   const storageKey = 'dm_ai_inbox_history_global';
   const [history, setHistory] = useState(() => {
     const saved = localStorage.getItem(storageKey);
-    return saved ? JSON.parse(saved) : [];
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.sort((a, b) => b.id.localeCompare(a.id));
+        }
+      } catch (e) {}
+    }
+    return [];
   });
 
+  // Save history and notify other instances
   useEffect(() => {
     localStorage.setItem(storageKey, JSON.stringify(history));
+    window.dispatchEvent(new CustomEvent('dm-history-updated', { detail: history }));
   }, [history, storageKey]);
+
+  // Synchronize history across different mounted instances in the same tab
+  useEffect(() => {
+    const handleHistoryUpdated = (e) => {
+      if (Array.isArray(e.detail)) {
+        // Only set state if it's different to prevent infinite loops
+        const currentJson = JSON.stringify(history);
+        const newJson = JSON.stringify(e.detail);
+        if (currentJson !== newJson) {
+          setHistory(e.detail);
+        }
+      }
+    };
+    window.addEventListener('dm-history-updated', handleHistoryUpdated);
+    return () => window.removeEventListener('dm-history-updated', handleHistoryUpdated);
+  }, [history]);
+
+  // Reload history from localStorage on open to guarantee fresh data
+  useEffect(() => {
+    if (isOpen) {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            parsed.sort((a, b) => b.id.localeCompare(a.id));
+            setHistory(parsed);
+          }
+        } catch(e) {}
+      }
+    }
+  }, [isOpen, storageKey]);
 
   useEffect(() => {
     // Migrate old section-specific histories to global history
