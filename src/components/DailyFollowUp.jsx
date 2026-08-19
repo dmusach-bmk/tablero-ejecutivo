@@ -329,22 +329,32 @@ export default function DailyFollowUp({ teamTracking, credentials, onUpdateTeamT
     return true;
   });
 
-  const isCardCommentedToday = (card) => {
-    if (!card.comments || card.comments.length === 0) return false;
-    const todayShort = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit' }).split('/').reverse().join('-');
-    const todayAlt = new Date().toISOString().split('T')[0];
-    return card.comments.some(c => {
-      const cDate = (c.date || '').split(' ')[0];
-      return cDate === todayShort || cDate === todayAlt || cDate.includes('2026-08-18');
-    });
+  const getLatestCommentTime = (card) => {
+    let latestTime = 0;
+    if (commentedTopicIds.includes(card.id)) {
+      // Local session comment has highest priority
+      latestTime = Date.now();
+    }
+    if (card.comments && card.comments.length > 0) {
+      card.comments.forEach(c => {
+        if (!c.date) return;
+        const normalizedDate = c.date.replace(/-/g, '/');
+        const parsed = Date.parse(normalizedDate);
+        if (!isNaN(parsed) && parsed > latestTime) {
+          latestTime = parsed;
+        }
+      });
+    }
+    return latestTime;
   };
 
-  // Re-order OPEN cards: Uncommented first, Commented pushed to bottom
+  // Re-order OPEN cards: Uncommented first, Commented pushed to bottom (most recent to absolute bottom)
   const sortedOpenCards = [...openCards].sort((a, b) => {
-    const aCommented = commentedTopicIds.includes(a.id) || isCardCommentedToday(a);
-    const bCommented = commentedTopicIds.includes(b.id) || isCardCommentedToday(b);
-    if (aCommented && !bCommented) return 1;
-    if (!aCommented && bCommented) return -1;
+    const timeA = getLatestCommentTime(a);
+    const timeB = getLatestCommentTime(b);
+    if (timeA !== timeB) {
+      return timeA - timeB;
+    }
     return 0;
   });
 

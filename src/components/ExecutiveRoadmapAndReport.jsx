@@ -167,14 +167,19 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
     setFathomIngestSuccessMsg(`¡Éxito! Se ingesto la llamada Fathom #${callId} ("${meetingTitle}") directamente en tu Bloc de Notas sobre la Gestión.`);
   };
 
-  const isCardCommentedToday = (card) => {
-    if (!card.comments || card.comments.length === 0) return false;
-    const todayShort = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit' }).split('/').reverse().join('-');
-    const todayAlt = new Date().toISOString().split('T')[0];
-    return card.comments.some(c => {
-      const cDate = (c.date || '').split(' ')[0];
-      return cDate === todayShort || cDate === todayAlt || cDate.includes('2026-08-18');
-    });
+  const getLatestCommentTime = (card) => {
+    let latestTime = 0;
+    if (card.comments && card.comments.length > 0) {
+      card.comments.forEach(c => {
+        if (!c.date) return;
+        const normalizedDate = c.date.replace(/-/g, '/');
+        const parsed = Date.parse(normalizedDate);
+        if (!isNaN(parsed) && parsed > latestTime) {
+          latestTime = parsed;
+        }
+      });
+    }
+    return latestTime;
   };
 
   const generateStrategicPillars = (cards) => {
@@ -211,10 +216,11 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
       if (clusterCards.length === 0) return;
       
       clusterCards.sort((a, b) => {
-        const aCommented = isCardCommentedToday(a);
-        const bCommented = isCardCommentedToday(b);
-        if (aCommented && !bCommented) return 1;
-        if (!aCommented && bCommented) return -1;
+        const timeA = getLatestCommentTime(a);
+        const timeB = getLatestCommentTime(b);
+        if (timeA !== timeB) {
+          return timeA - timeB;
+        }
         
         const aCrit = a.priority === 'P1 - CRITICA' || a.priority?.includes('P1');
         const bCrit = b.priority === 'P1 - CRITICA' || b.priority?.includes('P1');
@@ -790,10 +796,11 @@ export default function ExecutiveRoadmapAndReport({ teamTracking = [], notionCar
         });
 
         const sortedFilteredCeoCards = [...filteredCeoCards].sort((a, b) => {
-          const aCommented = isCardCommentedToday(a);
-          const bCommented = isCardCommentedToday(b);
-          if (aCommented && !bCommented) return 1;
-          if (!aCommented && bCommented) return -1;
+          const timeA = getLatestCommentTime(a);
+          const timeB = getLatestCommentTime(b);
+          if (timeA !== timeB) {
+            return timeA - timeB;
+          }
           return 0;
         });
 
