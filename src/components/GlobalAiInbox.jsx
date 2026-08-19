@@ -180,23 +180,57 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
   const handleAnalyze = () => {
     if (!inputText.trim()) return;
     setIsAnalyzing(true);
+    const noteText = inputText.trim();
+
+    // Add note to history immediately so it is recorded even if modal is cancelled
+    const tempId = Date.now().toString();
+    const newRecord = {
+      id: tempId,
+      date: new Date().toLocaleString('es-ES'),
+      text: noteText,
+      status: 'pending',
+      actionTaken: 'Analizado',
+      targetTitle: 'Pendiente de confirmación'
+    };
+
+    setHistory(prev => {
+      // Prevent duplicate consecutive entries
+      if (prev.length > 0 && prev[0].text === noteText) {
+        return prev;
+      }
+      return [newRecord, ...prev];
+    });
     
     setTimeout(async () => {
-      const action = analyzeNoteWithAI(inputText);
+      const action = analyzeNoteWithAI(noteText);
       
       if (action.type === 'search') {
         setProposedAction(null);
         setIsAnalyzing(false);
         // Extract the search keywords from the query
         const stopWords = new Set(['el', 'la', 'los', 'las', 'un', 'una', 'con', 'para', 'por', 'sobre', 'decir', 'hacer']);
-        const tokens = inputText.toLowerCase().match(/[a-záéíóúñ]{4,}/g) || [];
+        const tokens = noteText.toLowerCase().match(/[a-záéíóúñ]{4,}/g) || [];
         const keywords = tokens.filter(w => !stopWords.has(w)).join(' ');
         
+        // Update history item to success for search
+        setHistory(prev => prev.map(item => {
+          if (item.id === tempId) {
+            return {
+              ...item,
+              status: 'success',
+              actionTaken: 'Búsqueda Realizada',
+              targetTitle: keywords
+            };
+          }
+          return item;
+        }));
+
         // Open new tab with the search query
         window.open(window.location.origin + '/#overview?q=' + encodeURIComponent(keywords), '_blank');
         setInputText('');
       } else {
-        setProposedAction(action);
+        // Attach tempId to proposed action to update it later
+        setProposedAction({ ...action, historyId: tempId });
         setIsAnalyzing(false);
 
         // Pre-fill suggested values
@@ -225,10 +259,7 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
   };
 
   const executeAction = async (actionType) => {
-    const newRecord = {
-      id: Date.now().toString(),
-      date: new Date().toLocaleString('es-ES'),
-      text: proposedAction.text,
+    const updatedOutcome = {
       status: 'pending',
       actionTaken: '',
       targetTitle: ''
@@ -248,9 +279,9 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
           onAddCommentAndSync(proposedAction.targetCard.id, proposedAction.text, 'Diego Musach (CTO)', updates);
         }
 
-        newRecord.status = 'success';
-        newRecord.actionTaken = 'Comentario Agregado';
-        newRecord.targetTitle = proposedAction.targetCard.title;
+        updatedOutcome.status = 'success';
+        updatedOutcome.actionTaken = 'Comentario Agregado';
+        updatedOutcome.targetTitle = proposedAction.targetCard.title;
 
         // EMAIL LOGIC
         if (sendEmailCopy) {
@@ -270,9 +301,9 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
           }
         }
       } catch (err) {
-        newRecord.status = 'error';
-        newRecord.actionTaken = 'Error al comentar';
-        newRecord.targetTitle = proposedAction.targetCard.title;
+        updatedOutcome.status = 'error';
+        updatedOutcome.actionTaken = 'Error al comentar';
+        updatedOutcome.targetTitle = proposedAction.targetCard.title;
       }
     } else {
       try {
@@ -296,16 +327,28 @@ export default function GlobalAiInbox({ sectionName, notionCards = [], credentia
           onAddNotionCard(newCard);
         }
 
-        newRecord.status = 'success';
-        newRecord.actionTaken = 'Nueva Tarjeta Creada';
-        newRecord.targetTitle = title;
+        updatedOutcome.status = 'success';
+        updatedOutcome.actionTaken = 'Nueva Tarjeta Creada';
+        updatedOutcome.targetTitle = title;
       } catch(err) {
-        newRecord.status = 'error';
-        newRecord.actionTaken = 'Error al crear';
+        updatedOutcome.status = 'error';
+        updatedOutcome.actionTaken = 'Error al crear';
       }
     }
 
-    setHistory(prev => [newRecord, ...prev]);
+    // Update existing history item
+    setHistory(prev => prev.map(item => {
+      if (item.id === proposedAction.historyId) {
+        return {
+          ...item,
+          status: updatedOutcome.status,
+          actionTaken: updatedOutcome.actionTaken,
+          targetTitle: updatedOutcome.targetTitle
+        };
+      }
+      return item;
+    }));
+
     setProposedAction(null);
     setInputText('');
     setSendEmailCopy(false);
