@@ -451,13 +451,20 @@ export default function DailyFollowUp({ teamTracking, notionCards = [], credenti
     let isMounted = true;
 
     async function syncVisibleNotionComments() {
-      const cardsToSync = sortedOpenCards.slice(0, 10);
-      for (const card of cardsToSync) {
+      // Sincronizar tarjetas visibles del miembro seleccionado (tanto abiertas como cerradas)
+      // O las primeras 15 abiertas si está en pestaña general 'all'
+      const visibleCards = activeMemberId === 'all'
+        ? sortedOpenCards.slice(0, 15)
+        : allCardsCross.filter(c => c.memberId === activeMemberId);
+
+      for (const card of visibleCards) {
         if (!isMounted) break;
         if (card.notionPageId) {
           const fresh = await fetchNotionComments(credentials?.notionToken, card.notionPageId);
           if (fresh && fresh.length > 0 && isMounted) {
             fresh.sort((a, b) => a.date.localeCompare(b.date));
+            
+            // 1. Actualizar el mapa local en memoria
             setLocalCommentsMap(prev => {
               const current = prev[card.id] || card.comments || [];
               const combined = [...current];
@@ -472,6 +479,27 @@ export default function DailyFollowUp({ teamTracking, notionCards = [], credenti
                 [card.id]: combined
               };
             });
+
+            // 2. Persistir en el estado global de teamTracking para que se guarde en localStorage
+            if (onUpdateTeamTracking) {
+              onUpdateTeamTracking(prevTeam => prevTeam.map(mem => ({
+                ...mem,
+                topics: (mem.topics || []).map(top => {
+                  if (top.id === card.id || top.notionPageId === card.id || top.id === card.notionPageId) {
+                    const current = top.comments || [];
+                    const combined = [...current];
+                    fresh.forEach(f => {
+                      if (!combined.some(c => c.text.trim() === f.text.trim())) {
+                        combined.push(f);
+                      }
+                    });
+                    combined.sort((a, b) => a.date.localeCompare(b.date));
+                    return { ...top, comments: combined };
+                  }
+                  return top;
+                })
+              })));
+            }
           }
         }
       }
