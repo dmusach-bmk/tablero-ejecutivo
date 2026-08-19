@@ -110,23 +110,54 @@ export default function App() {
     };
     handleHashChange(); // Run once to initialize
     window.addEventListener('hashchange', handleHashChange);
+    
+    // Clean up obsolete localStorage keys to free up quota
+    try {
+      const currentKeys = ['dm_notion_cards_v10', 'dm_team_tracking_v6', 'dm_excel_data', 'dm_credentials', 'dm_call_comments_drafts', 'dm_closed_topics_db', 'dm_contacts_directory'];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('dm_') && !currentKeys.includes(key)) {
+          localStorage.removeItem(key);
+          i--; // Adjust index since we removed an item
+        }
+      }
+    } catch (e) {
+      console.error('Error cleaning up obsolete localStorage keys:', e);
+    }
+
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('dm_notion_cards_v10', JSON.stringify(notionCards));
+    try {
+      localStorage.setItem('dm_notion_cards_v10', JSON.stringify(notionCards));
+    } catch (e) {
+      console.warn('LocalStorage quota exceeded for notion cards:', e);
+    }
   }, [notionCards]);
 
   useEffect(() => {
-    localStorage.setItem('dm_excel_data', JSON.stringify(excelData));
+    try {
+      localStorage.setItem('dm_excel_data', JSON.stringify(excelData));
+    } catch (e) {
+      console.warn('LocalStorage quota exceeded for excel data:', e);
+    }
   }, [excelData]);
 
   useEffect(() => {
-    localStorage.setItem('dm_team_tracking_v6', JSON.stringify(teamTracking));
+    try {
+      localStorage.setItem('dm_team_tracking_v6', JSON.stringify(teamTracking));
+    } catch (e) {
+      console.warn('LocalStorage quota exceeded for team tracking:', e);
+    }
   }, [teamTracking]);
 
   useEffect(() => {
-    localStorage.setItem('dm_credentials', JSON.stringify(credentials));
+    try {
+      localStorage.setItem('dm_credentials', JSON.stringify(credentials));
+    } catch (e) {
+      console.warn('LocalStorage quota exceeded for credentials:', e);
+    }
   }, [credentials]);
 
   const missingTasks = notionCards.filter(c => c.missingDeadline);
