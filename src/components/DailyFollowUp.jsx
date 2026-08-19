@@ -564,7 +564,7 @@ export default function DailyFollowUp({ teamTracking, notionCards = [], credenti
       {/* COMPACT MULTI-ROW MEMBER CHIPS (STICKY AT TOP) */}
       <div style={{
         position: 'sticky',
-        top: '59px',
+        top: '72px',
         zIndex: 90,
         background: 'rgba(13, 17, 23, 0.95)',
         backdropFilter: 'blur(12px)',
