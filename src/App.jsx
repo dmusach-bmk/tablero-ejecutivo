@@ -316,7 +316,7 @@ export default function App() {
   };
 
   const handleAddCommentAndSync = (cardId, commentText, author = 'Diego Musach (CTO)', extraUpdates = {}) => {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = new Date().toISOString().replace('T', ' ').substring(0, 16);
     
     // Parse reassignment from comment
     const membersMap = [

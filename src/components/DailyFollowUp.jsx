@@ -561,8 +561,21 @@ export default function DailyFollowUp({ teamTracking, notionCards = [], credenti
         </div>
       </div>
 
-      {/* COMPACT MULTI-ROW MEMBER CHIPS */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem', marginBottom: '0.85rem' }}>
+      {/* COMPACT MULTI-ROW MEMBER CHIPS (STICKY AT TOP) */}
+      <div style={{
+        position: 'sticky',
+        top: '59px',
+        zIndex: 90,
+        background: 'rgba(13, 17, 23, 0.95)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        padding: '0.65rem 0.5rem',
+        margin: '0 -0.5rem 0.85rem -0.5rem',
+        borderBottom: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '0.45rem'
+      }}>
         <button
           onClick={() => {
             setActiveMemberId('all');
