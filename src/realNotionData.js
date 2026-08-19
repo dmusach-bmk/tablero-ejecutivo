@@ -763,6 +763,7 @@ export const REAL_NOTION_CARDS = [
     "id": "notion-real-15",
     "notionPageId": "37bce95d-6a9a-809a-8536-c24004ae1774",
     "notionId": "37bce95d-6a9a-809a-8536-c24004ae1774",
+    "isCEOCard": true,
     "title": "POC Delsur",
     "project": "Control de Gesti\u00f3n CTO",
     "status": "Abierto",

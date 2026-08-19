@@ -43,7 +43,7 @@ export default function App() {
   // Use REAL_NOTION_CARDS from Notion API
   const [notionCards, setNotionCards] = useState(() => {
     try {
-      const saved = localStorage.getItem('dm_notion_cards_v10');
+      const saved = localStorage.getItem('dm_notion_cards_v11');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed && parsed.length >= 160 && parsed[0].notionPageId) return parsed;
@@ -113,7 +113,7 @@ export default function App() {
     
     // Clean up obsolete localStorage keys to free up quota
     try {
-      const currentKeys = ['dm_notion_cards_v10', 'dm_team_tracking_v6', 'dm_excel_data', 'dm_credentials', 'dm_call_comments_drafts', 'dm_closed_topics_db', 'dm_contacts_directory'];
+      const currentKeys = ['dm_notion_cards_v11', 'dm_team_tracking_v6', 'dm_excel_data', 'dm_credentials', 'dm_call_comments_drafts', 'dm_closed_topics_db', 'dm_contacts_directory'];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && key.startsWith('dm_') && !currentKeys.includes(key)) {
@@ -130,7 +130,7 @@ export default function App() {
 
   useEffect(() => {
     try {
-      localStorage.setItem('dm_notion_cards_v10', JSON.stringify(notionCards));
+      localStorage.setItem('dm_notion_cards_v11', JSON.stringify(notionCards));
     } catch (e) {
       console.warn('LocalStorage quota exceeded for notion cards:', e);
     }
